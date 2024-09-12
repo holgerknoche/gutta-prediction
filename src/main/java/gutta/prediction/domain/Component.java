@@ -1,3 +1,4 @@
 package gutta.prediction.domain;
 
-public record Component(String name) {}
+public record Component(String name) {
+}
