@@ -1,12 +1,12 @@
 package gutta.prediction.domain;
 
+import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
 
 public class ComponentConnections {
 

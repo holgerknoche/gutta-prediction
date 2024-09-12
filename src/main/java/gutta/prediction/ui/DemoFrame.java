@@ -1,5 +1,12 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.ui.TransactionEventShape.EventType;
+import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
+import org.apache.batik.dom.GenericDOMImplementation;
+import org.apache.batik.svggen.SVGGraphics2D;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -22,14 +29,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-
-import org.apache.batik.dom.GenericDOMImplementation;
-import org.apache.batik.svggen.SVGGraphics2D;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-
-import gutta.prediction.ui.TransactionEventShape.EventType;
-import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 
 class DemoFrame extends JFrame {
 
