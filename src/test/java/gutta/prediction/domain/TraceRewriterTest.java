@@ -1,7 +1,6 @@
 package gutta.prediction.domain;
 
 import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
-import gutta.prediction.event.ArtificialLocation;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -23,7 +22,7 @@ import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class LatencyRewriterTest {
+class TraceRewriterTest {
 
     /**
      * Test case: Rewrite a trace containing all event types with a configuration that does not introduce any changes.
@@ -54,7 +53,7 @@ class LatencyRewriterTest {
         var useCaseAllocation = Collections.singletonMap("uc1", component);
         var methodAllocation = Collections.singletonMap("sc1", component);
 
-        var rewrittenTrace = new LatencyTraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections());
+        var rewrittenTrace = new TraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections());
 
         assertEquals(inputTrace, rewrittenTrace);
     }
@@ -84,7 +83,7 @@ class LatencyRewriterTest {
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var methodAllocation = Collections.singletonMap("sc1", component2);
 
-        var rewrittenTrace = new LatencyTraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2));
+        var rewrittenTrace = new TraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2));
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -123,7 +122,7 @@ class LatencyRewriterTest {
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var methodAllocation = Collections.singletonMap("sc1", component2);
 
-        var artificialLocation = new ArtificialLocation();
+        var artificialLocation = new SyntheticLocation();
         
         var rewrittenTrace = new TraceRewriterWithGivenArtificialLocations(artificialLocation).rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2));
 
@@ -139,16 +138,16 @@ class LatencyRewriterTest {
         assertEquals(expectedTrace, rewrittenTrace);
     }
     
-    private static class TraceRewriterWithGivenArtificialLocations extends LatencyTraceRewriter {
+    private static class TraceRewriterWithGivenArtificialLocations extends TraceRewriter {
         
-        private final Iterator<ArtificialLocation> locations;
+        private final Iterator<SyntheticLocation> locations;
         
-        public TraceRewriterWithGivenArtificialLocations(ArtificialLocation... locations) {
+        public TraceRewriterWithGivenArtificialLocations(SyntheticLocation... locations) {
             this.locations = Arrays.asList(locations).iterator();
         }
         
         @Override
-        ArtificialLocation createArtificialLocation() {
+        SyntheticLocation createArtificialLocation() {
             if (this.locations.hasNext()) {
                 return this.locations.next();
             } else {

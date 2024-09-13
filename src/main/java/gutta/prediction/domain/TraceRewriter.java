@@ -1,6 +1,5 @@
 package gutta.prediction.domain;
 
-import gutta.prediction.event.ArtificialLocation;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;
@@ -23,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class LatencyTraceRewriter {
+public class TraceRewriter {
         
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
             ComponentConnections connections) {
@@ -31,8 +30,8 @@ public class LatencyTraceRewriter {
         return new TraceRewriteWorker(events, useCaseAllocation, methodAllocation, connections, this::createArtificialLocation).rewriteTrace();
     }
     
-    ArtificialLocation createArtificialLocation() {
-        return new ArtificialLocation();
+    SyntheticLocation createArtificialLocation() {
+        return new SyntheticLocation();
     }
 
     private static class TraceRewriteWorker implements MonitoringEventVisitor<Void> {
@@ -45,7 +44,7 @@ public class LatencyTraceRewriter {
 
         private final ComponentConnections connections;
         
-        private final Supplier<ArtificialLocation> artificialLocationSupplier;
+        private final Supplier<SyntheticLocation> artificialLocationSupplier;
 
         private List<MonitoringEvent> rewrittenEvents;
 
@@ -60,7 +59,7 @@ public class LatencyTraceRewriter {
         private long timeOffset;
 
         public TraceRewriteWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
-                ComponentConnections connections, Supplier<ArtificialLocation> artificialLocationSupplier) {
+                ComponentConnections connections, Supplier<SyntheticLocation> artificialLocationSupplier) {
             this.events = new EventStream(events);
 
             this.useCaseAllocation = useCaseAllocation;
@@ -95,12 +94,12 @@ public class LatencyTraceRewriter {
             return null;
         }
         
-        private ArtificialLocation createArtificialLocation() {
+        private SyntheticLocation createArtificialLocation() {
             return this.artificialLocationSupplier.get();
         }
 
         private void assertExpectedLocation(MonitoringEvent event) {
-            if (this.currentLocation == null || this.currentLocation.isArtificial()) {
+            if (this.currentLocation == null || this.currentLocation.isSynthetic()) {
                 return;
             } else if (!this.currentLocation.equals(event.location())) {
                 throw new IllegalStateException(

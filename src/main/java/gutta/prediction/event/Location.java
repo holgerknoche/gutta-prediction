@@ -6,6 +6,11 @@ package gutta.prediction.event;
  */
 public interface Location {
     
-    boolean isArtificial();
+    /**
+     * Returns whether this location is synthetic, i.e., inserted as part of the simulation process. 
+     * 
+     * @return {@code True} if this location is synthetic, {@code false} otherwise
+     */
+    boolean isSynthetic();
     
 }
