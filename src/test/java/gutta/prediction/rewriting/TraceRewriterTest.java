@@ -1,5 +1,8 @@
-package gutta.prediction.domain;
+package gutta.prediction.rewriting;
 
+import gutta.prediction.domain.Component;
+import gutta.prediction.domain.ComponentConnection;
+import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
@@ -14,6 +17,8 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.rewriting.SyntheticLocation;
+import gutta.prediction.rewriting.TraceRewriter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

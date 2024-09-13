@@ -1,5 +1,8 @@
-package gutta.prediction.domain;
+package gutta.prediction.rewriting;
 
+import gutta.prediction.domain.Component;
+import gutta.prediction.domain.ComponentConnectionProperties;
+import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;

@@ -1,4 +1,4 @@
-package gutta.prediction.domain;
+package gutta.prediction.rewriting;
 
 import gutta.prediction.event.Location;
 
