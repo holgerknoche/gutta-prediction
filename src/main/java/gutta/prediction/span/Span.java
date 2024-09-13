@@ -1,4 +1,4 @@
-package gutta.prediction.domain;
+package gutta.prediction.span;
 
 import java.util.ArrayList;
 import java.util.List;

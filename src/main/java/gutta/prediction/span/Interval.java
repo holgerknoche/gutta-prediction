@@ -1,4 +1,4 @@
-package gutta.prediction.domain;
+package gutta.prediction.span;
 
 public abstract class Interval {
 

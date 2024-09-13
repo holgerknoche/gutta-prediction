@@ -1,4 +1,4 @@
-package gutta.prediction.domain;
+package gutta.prediction.span;
 
 public class RootSpan extends Span {
 
