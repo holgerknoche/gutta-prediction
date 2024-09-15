@@ -27,7 +27,10 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class TraceRewriterTest {
+/**
+ * Test cases for the class {@link LatencyRewriter}.
+ */
+class LatencyRewriterTest {
 
     /**
      * Test case: Rewrite a trace containing all event types with a configuration that does not introduce any changes.
