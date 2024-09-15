@@ -82,13 +82,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         protected void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
-            if (connection.isSynthetic()) {
-                // For transitions over synthetic connections, we may need to adjust the time offset as we do not preserve the latency
-                var observedLatency = (entryEvent.timestamp() - invocationEvent.timestamp());
-                var newLatency = connection.latency();
-
-                this.timeOffset += (newLatency - observedLatency);
-            }
+            this.adjustLatency(invocationEvent, entryEvent, connection);
         }
 
         @Override
@@ -105,11 +99,16 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         protected void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
+            this.adjustLatency(exitEvent, returnEvent, connection);
+        }
+        
+        private void adjustLatency(MonitoringEvent startEvent, MonitoringEvent endEvent, ComponentConnection connection) {
             if (connection.isSynthetic()) {
-                // Determine the new latency and adjust the time offset accordingly
-                var existingLatency = (returnEvent.timestamp() - exitEvent.timestamp());
+                // For transitions over synthetic connections, we may need to adjust the time offset as we do not preserve the latency
+                var observedLatency = (endEvent.timestamp() - startEvent.timestamp());
                 var newLatency = connection.latency();
-                this.timeOffset += (newLatency - existingLatency);
+
+                this.timeOffset += (newLatency - observedLatency);
             }
         }
 
