@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -57,7 +58,7 @@ class TraceRewriterTest {
         var useCaseAllocation = Collections.singletonMap("uc1", component);
         var methodAllocation = Collections.singletonMap("sc1", component);
 
-        var rewrittenTrace = new TraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections());
+        var rewrittenTrace = new LatencyRewriter(useCaseAllocation, methodAllocation, new ComponentConnections()).rewriteTrace(inputTrace);
 
         assertEquals(inputTrace, rewrittenTrace);
     }
@@ -87,7 +88,7 @@ class TraceRewriterTest {
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var methodAllocation = Collections.singletonMap("sc1", component2);
 
-        var rewrittenTrace = new TraceRewriter().rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2));
+        var rewrittenTrace = new LatencyRewriter(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -104,7 +105,7 @@ class TraceRewriterTest {
     }
     
     /**
-     * Test case: For non-local connections, a location change is introduced.
+     * Test case: For remote connections, a location change is introduced and latency is adjusted.
      */
     @Test
     void locationChange() {
@@ -130,7 +131,7 @@ class TraceRewriterTest {
 
         var artificialLocation = new SyntheticLocation();
         
-        var rewrittenTrace = new TraceRewriterWithGivenArtificialLocations(artificialLocation).rewriteTrace(inputTrace, useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2));
+        var rewrittenTrace = new TraceRewriterWithGivenArtificialLocations(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -144,11 +145,13 @@ class TraceRewriterTest {
         assertEquals(expectedTrace, rewrittenTrace);
     }
     
-    private static class TraceRewriterWithGivenArtificialLocations extends TraceRewriter {
+    private static class TraceRewriterWithGivenArtificialLocations extends LatencyRewriter {
         
         private final Iterator<SyntheticLocation> locations;
         
-        public TraceRewriterWithGivenArtificialLocations(SyntheticLocation... locations) {
+        public TraceRewriterWithGivenArtificialLocations(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections, SyntheticLocation... locations) {
+            super(useCaseAllocation, methodAllocation, connections);
+            
             this.locations = Arrays.asList(locations).iterator();
         }
         
