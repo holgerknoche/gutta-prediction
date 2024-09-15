@@ -1,9 +1,10 @@
 package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
-import gutta.prediction.domain.ComponentConnection;
-import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.LocalComponentConnection;
+import gutta.prediction.domain.RemoteComponentConnection;
+import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -62,10 +63,10 @@ class TraceRewriterTest {
     }
 
     /**
-     * Test case: Rewrite a trace with a configuration that introduces a single latency change.
+     * Test case: A local transition removes existing latency (if any) and does not introduce a location change.
      */
     @Test
-    void singleLatencyChange() {
+    void localTransition() {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
@@ -81,7 +82,7 @@ class TraceRewriterTest {
         var component1 = new Component("comp1");
         var component2 = new Component("comp2");
 
-        var connectionC1C2 = new ComponentConnection(component1, component2, true, 50, ConnectionType.LOCAL, true);
+        var connectionC1C2 = new LocalComponentConnection(component1, component2, true);
 
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var methodAllocation = Collections.singletonMap("sc1", component2);
@@ -91,10 +92,12 @@ class TraceRewriterTest {
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 250, location, "sc1"),
-                new ServiceCandidateExitEvent(traceId, 440, location, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 490, location, "sc1"),
-                new UseCaseEndEvent(traceId, 580, location, "uc1")
+                // Remove latency from the input trace
+                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 390, location, "sc1"),
+                // Again, latency is removed
+                new ServiceCandidateReturnEvent(traceId, 390, location, "sc1"),
+                new UseCaseEndEvent(traceId, 480, location, "uc1")
                 );
 
         assertEquals(expectedTrace, rewrittenTrace);
@@ -120,7 +123,7 @@ class TraceRewriterTest {
         var component1 = new Component("comp1");
         var component2 = new Component("comp2");
 
-        var connectionC1C2 = new ComponentConnection(component1, component2, true, 50, ConnectionType.REMOTE_WITHOUT_TRANSACTION_PROPAGATION, true);
+        var connectionC1C2 = new RemoteComponentConnection(component1, component2, true, 50, TransactionPropagation.NONE, true);
 
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var methodAllocation = Collections.singletonMap("sc1", component2);

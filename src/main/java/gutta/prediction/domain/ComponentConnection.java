@@ -1,11 +1,39 @@
 package gutta.prediction.domain;
 
-import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
+import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
 
-public record ComponentConnection(Component source, Component target, boolean symmetric, ComponentConnectionProperties properties) {
+public abstract class ComponentConnection {
 
-    public ComponentConnection(Component source, Component target, boolean symmetric, long latency, ConnectionType type, boolean modified) {
-        this(source, target, symmetric, new ComponentConnectionProperties(latency, type, modified));
+    private final Component source;
+    
+    private final Component target;
+    
+    private final boolean synthetic;
+        
+    protected ComponentConnection(Component source, Component target, boolean synthetic) {
+        this.source = source;
+        this.target = target;
+        this.synthetic = synthetic;        
     }
+    
+    public Component source() {
+        return this.source;
+    }
+    
+    public Component target() {
+        return this.target;
+    }        
+    
+    public boolean isSynthetic() {
+        return this.synthetic;
+    }
+    
+    public abstract long latency();
+    
+    public abstract boolean isSymmetric();
+    
+    public abstract boolean isRemote();
+    
+    public abstract TransactionPropagation transactionPropagation();
 
 }

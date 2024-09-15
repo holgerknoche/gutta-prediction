@@ -1,7 +1,5 @@
 package gutta.prediction.domain;
 
-import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -10,38 +8,36 @@ import java.util.Optional;
 
 public class ComponentConnections {
 
-    private static final ComponentConnectionProperties IDENTITY_CONNECTION_PROPERTIES = new ComponentConnectionProperties(0, ConnectionType.LOCAL, false);
-
-    private final Map<ConnectionKey, ComponentConnectionProperties> connectionPropertiesLookup;
+    private final Map<ConnectionKey, ComponentConnection> connectionLookup;
 
     public ComponentConnections(ComponentConnection... connections) {
         this(Arrays.asList(connections));
     }
 
     public ComponentConnections(Collection<ComponentConnection> connections) {
-        this.connectionPropertiesLookup = createPropertiesLookup(connections);
+        this.connectionLookup = createConnectionLookup(connections);
     }
 
-    private static Map<ConnectionKey, ComponentConnectionProperties> createPropertiesLookup(Collection<ComponentConnection> connections) {
-        var lookup = new HashMap<ConnectionKey, ComponentConnectionProperties>(connections.size() * 2);
+    private static Map<ConnectionKey, ComponentConnection> createConnectionLookup(Collection<ComponentConnection> connections) {
+        var lookup = new HashMap<ConnectionKey, ComponentConnection>(connections.size() * 2);
 
         for (var connection : connections) {
-            lookup.put(new ConnectionKey(connection), connection.properties());
+            lookup.put(new ConnectionKey(connection), connection);
 
-            if (connection.symmetric()) {
-                lookup.put(new ConnectionKey(connection.target(), connection.source()), connection.properties());
+            if (connection.isSymmetric()) {
+                lookup.put(new ConnectionKey(connection.target(), connection.source()), connection);
             }
         }
 
         return lookup;
     }
 
-    public Optional<ComponentConnectionProperties> getConnection(Component source, Component target) {
+    public Optional<ComponentConnection> getConnection(Component source, Component target) {
         if (source.equals(target)) {
-            return Optional.of(IDENTITY_CONNECTION_PROPERTIES);
+            return Optional.of(new LocalComponentConnection(source, target, false));
         } else {
             var searchKey = new ConnectionKey(source, target);
-            return Optional.ofNullable(this.connectionPropertiesLookup.get(searchKey));
+            return Optional.ofNullable(this.connectionLookup.get(searchKey));
         }
     }
 

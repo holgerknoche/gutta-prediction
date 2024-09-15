@@ -1,7 +1,7 @@
 package gutta.prediction.common;
 
 import gutta.prediction.domain.Component;
-import gutta.prediction.domain.ComponentConnectionProperties;
+import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
@@ -47,7 +47,7 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
         return component;
     }
     
-    protected ComponentConnectionProperties determineConnectionBetween(Component sourceComponent, Component targetComponent) {
+    protected ComponentConnection determineConnectionBetween(Component sourceComponent, Component targetComponent) {
         return this.connections.getConnection(sourceComponent, targetComponent)
                 .orElseThrow(() -> new IllegalStateException("No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
     }
@@ -74,7 +74,7 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
             var targetComponent = this.determineComponentForServiceCandidate(entryEvent.name());                
             var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
 
-            action.perform(invocationEvent, entryEvent, sourceComponent, connection);
+            action.perform(invocationEvent, entryEvent, connection);
         } else {
             throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
         }
@@ -82,7 +82,7 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
         
     protected interface ActionOnCandidateInvocation {
         
-        void perform(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, Component targetComponent, ComponentConnectionProperties connection);
+        void perform(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection);
         
     }
     

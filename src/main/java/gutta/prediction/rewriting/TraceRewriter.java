@@ -2,7 +2,7 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.common.AbstractMonitoringEventProcessor;
 import gutta.prediction.domain.Component;
-import gutta.prediction.domain.ComponentConnectionProperties;
+import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
@@ -117,46 +117,46 @@ public class TraceRewriter {
             return this.addRewrittenEvent(rewrittenEvent);            
         }
         
-        private void performTransitionToCandidate(MonitoringEvent transitionStartEvent, ServiceCandidateEntryEvent transitionEndEvent, Component targetComponent, ComponentConnectionProperties connection) {
+        private void performTransitionToCandidate(MonitoringEvent transitionStartEvent, ServiceCandidateEntryEvent transitionEndEvent, ComponentConnection connection) {
             // Save the current state on the stack before making changes
             this.stack.push(new StackEntry(this.currentServiceCandidate, this.currentComponent, this.currentLocation));
-                        
-            if (connection.modified()) {
+
+            var targetComponent = connection.target();
+            if (connection.isSynthetic()) {
                 this.performSimulatedTransition(transitionStartEvent, transitionEndEvent, targetComponent, connection);
             } else {
                 this.performObservedTransition(transitionStartEvent, transitionEndEvent, targetComponent, connection);
             }
                         
             this.currentServiceCandidate = transitionEndEvent.name();
-            // FIXME This is wrong, the component may be synthetic
             this.currentComponent = targetComponent;
         }
         
-        private void performSimulatedTransition(MonitoringEvent transitionStartEvent, MonitoringEvent transitionEndEvent, Component targetComponent, ComponentConnectionProperties connection) {
+        private void performSimulatedTransition(MonitoringEvent transitionStartEvent, MonitoringEvent transitionEndEvent, Component targetComponent, ComponentConnection connection) {
             // For simulated transitions, we may need to adjust the time offset as we do not preserve the latency
             var observedLatency = (transitionEndEvent.timestamp() - transitionStartEvent.timestamp());
             var newLatency = connection.latency();
             
             this.timeOffset += (newLatency - observedLatency);
         
-            if (connection.type().isRemote()) {
+            if (connection.isRemote()) {
                 // For remote transitions, we move to an artificial location that is guaranteed to be different from all others
                 // TODO Affinities, i.e., return to the same location for a later invocation
                 var newLocation = this.createArtificialLocation();
                 this.currentLocation = newLocation;
             }
-            
-            // TODO Check validity of component changes
         }
                 
-        private void performObservedTransition(MonitoringEvent transitionStartEvent, MonitoringEvent transitionEndEvent, Component targetComponent, ComponentConnectionProperties connection) {
+        private void performObservedTransition(MonitoringEvent transitionStartEvent, MonitoringEvent transitionEndEvent, Component targetComponent, ComponentConnection connection) {
             var sourceLocation = transitionStartEvent.location();
             var targetLocation = transitionEndEvent.location();
             
-            if (connection.type().isRemote() && sourceLocation.equals(targetLocation)) {
+            var locationChanged = !sourceLocation.equals(targetLocation);
+            
+            if (connection.isRemote() && !locationChanged) {
                 // Remote connections are expected to change the location
                 throw new IllegalStateException("Remote invocation without change of location detected.");
-            } else if (!connection.type().isRemote() && !sourceLocation.equals(targetLocation)) {
+            } else if (!connection.isRemote() && locationChanged) {
                 // Location changes with non-remote connections are inadmissible
                 throw new IllegalStateException("Change of location with non-remote invocation detected.");
             }
@@ -185,7 +185,7 @@ public class TraceRewriter {
                 var targetComponent = this.stack.peek().component();
                 var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
 
-                if (connection.modified()) {
+                if (connection.isSynthetic()) {
                     // Determine the new latency and adjust the time offset accordingly
                     var existingLatency = (returnEvent.timestamp() - event.timestamp());
                     var newLatency = connection.latency();
