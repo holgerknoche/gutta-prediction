@@ -8,6 +8,10 @@ public interface MonitoringEvent {
 
     Location location();
 
+    default boolean isSynthetic() {
+        return false;
+    }
+    
     <R> R accept(MonitoringEventVisitor<R> visitor);
 
 }

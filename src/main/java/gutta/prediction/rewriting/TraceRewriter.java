@@ -1,5 +1,6 @@
 package gutta.prediction.rewriting;
 
+import gutta.prediction.common.AbstractMonitoringEventProcessor;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnectionProperties;
 import gutta.prediction.domain.ComponentConnections;
@@ -7,7 +8,6 @@ import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.MonitoringEventVisitor;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -37,15 +37,7 @@ public class TraceRewriter {
         return new SyntheticLocation();
     }
 
-    private static class TraceRewriteWorker implements MonitoringEventVisitor<Void> {
-
-        private final EventStream events;
-
-        private final Map<String, Component> useCaseAllocation;
-
-        private final Map<String, Component> methodAllocation;
-
-        private final ComponentConnections connections;
+    private static class TraceRewriteWorker extends AbstractMonitoringEventProcessor {
         
         private final Supplier<SyntheticLocation> artificialLocationSupplier;
 
@@ -63,27 +55,16 @@ public class TraceRewriter {
 
         public TraceRewriteWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
                 ComponentConnections connections, Supplier<SyntheticLocation> artificialLocationSupplier) {
-            this.events = new EventStream(events);
-
-            this.useCaseAllocation = useCaseAllocation;
-            this.methodAllocation = methodAllocation;
-            this.connections = connections;
+            
+            super(events, useCaseAllocation, methodAllocation, connections);
             this.artificialLocationSupplier = artificialLocationSupplier;
         }
 
         public List<MonitoringEvent> rewriteTrace() {
-            this.rewrittenEvents = new ArrayList<>(this.events.size());
+            this.rewrittenEvents = new ArrayList<>();
             this.timeOffset = 0;
 
-            while (true) {
-                var currentEvent = this.events.lookahead(0);
-                if (currentEvent == null) {
-                    break;
-                }
-
-                currentEvent.accept(this);
-                this.events.consume();
-            }
+            this.processEvents();
 
             return this.rewrittenEvents;
         }
@@ -117,10 +98,7 @@ public class TraceRewriter {
             var useCaseName = event.name();            
 
             // Determine the component providing the given use case
-            var component = this.useCaseAllocation.get(useCaseName);
-            if (component == null) {
-                throw new IllegalStateException("Use case '" + useCaseName + "' is not assigned to a component.");
-            }
+            var component = this.determineComponentForUseCase(useCaseName);
 
             this.currentComponent = component;
             this.currentLocation = event.location();
@@ -128,43 +106,18 @@ public class TraceRewriter {
             var rewrittenEvent = new UseCaseStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), this.currentLocation, event.name());
             return this.addRewrittenEvent(rewrittenEvent);
         }
-
-        private Component determineComponentForServiceCandidate(String candidateName) {
-            var component = this.methodAllocation.get(candidateName);
-            if (component == null) {
-                throw new IllegalStateException("Service candidate '" + candidateName + "' is not assigned to a component.");
-            }
-            
-            return component;
-        }
-        
-        private ComponentConnectionProperties determineConnectionBetween(Component sourceComponent, Component targetComponent) {
-            return this.connections.getConnection(sourceComponent, targetComponent)
-                    .orElseThrow(() -> new IllegalStateException("No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
-        }
-        
+                
         @Override
         public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
             this.assertExpectedLocation(event);
 
             var rewrittenEvent = new ServiceCandidateInvocationEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), event.location(), event.name());
 
-            var nextEvent = this.events.lookahead(1);
-            if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
-                var sourceComponent = this.currentComponent;
-                var targetComponent = this.determineComponentForServiceCandidate(entryEvent.name());                
-                var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
-
-                // Update the necessary fields for the transition
-                this.performTransition(event, entryEvent, targetComponent, connection);                                
-               
-                return this.addRewrittenEvent(rewrittenEvent);
-            } else {
-                throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
-            }
+            this.processCandidateInvocation(this.currentComponent, event, this::performTransitionToCandidate);
+            return this.addRewrittenEvent(rewrittenEvent);            
         }
         
-        private void performTransition(MonitoringEvent transitionStartEvent, ServiceCandidateEntryEvent transitionEndEvent, Component targetComponent, ComponentConnectionProperties connection) {
+        private void performTransitionToCandidate(MonitoringEvent transitionStartEvent, ServiceCandidateEntryEvent transitionEndEvent, Component targetComponent, ComponentConnectionProperties connection) {
             // Save the current state on the stack before making changes
             this.stack.push(new StackEntry(this.currentServiceCandidate, this.currentComponent, this.currentLocation));
                         
@@ -175,6 +128,7 @@ public class TraceRewriter {
             }
                         
             this.currentServiceCandidate = transitionEndEvent.name();
+            // FIXME This is wrong, the component may be synthetic
             this.currentComponent = targetComponent;
         }
         
@@ -224,7 +178,7 @@ public class TraceRewriter {
 
             var rewrittenEvent = new ServiceCandidateExitEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), this.currentLocation, event.name());
 
-            var nextEvent = this.events.lookahead(1);
+            var nextEvent = this.lookahead(1);
             if (nextEvent instanceof ServiceCandidateReturnEvent returnEvent) {
                 var sourceComponent = this.currentComponent;
                 // Determine the component to return to from the top of the stack
@@ -311,40 +265,6 @@ public class TraceRewriter {
             this.currentLocation = null;
 
             return this.addRewrittenEvent(rewrittenEvent);
-        }
-
-    }
-
-    private static class EventStream {
-
-        private final List<MonitoringEvent> events;
-
-        private int maxPosition;
-
-        private int currentPosition;
-
-        public EventStream(List<MonitoringEvent> events) {
-            this.events = events;
-            this.maxPosition = (events.size() - 1);
-        }
-
-        public int size() {
-            return this.events.size();
-        }
-
-        public MonitoringEvent lookahead(int amount) {
-            var desiredPosition = (this.currentPosition + amount);
-            if (desiredPosition > this.maxPosition) {
-                return null;
-            }
-
-            return this.events.get(desiredPosition);
-        }
-
-        public void consume() {
-            if (this.currentPosition <= this.maxPosition) {
-                this.currentPosition++;
-            }
         }
 
     }

@@ -2,8 +2,8 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
-import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.domain.ComponentConnectionProperties.ConnectionType;
+import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -17,8 +17,6 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.rewriting.SyntheticLocation;
-import gutta.prediction.rewriting.TraceRewriter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -35,7 +33,7 @@ class TraceRewriterTest {
     @Test
     void identityRewrite() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234);
+        final var location = new ProcessLocation("test", 1234, 1);
 
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -69,7 +67,7 @@ class TraceRewriterTest {
     @Test
     void singleLatencyChange() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234);
+        final var location = new ProcessLocation("test", 1234, 1);
 
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -108,7 +106,7 @@ class TraceRewriterTest {
     @Test
     void locationChange() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234);
+        final var location = new ProcessLocation("test", 1234, 1);
 
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),

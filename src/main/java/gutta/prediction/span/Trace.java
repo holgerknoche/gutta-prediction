@@ -1,11 +1,11 @@
 package gutta.prediction.span;
 
-public record Trace(String id, Span rootSpan) {
+public record Trace(long id, String name, RootSpan rootSpan) {
 
     private static final Trace EMPTY_TRACE = buildEmptyTrace();
 
     private static Trace buildEmptyTrace() {
-        return new Trace("", new RootSpan(0));
+        return new Trace(0, "", new RootSpan(0));
     }
 
     public static Trace emptyTrace() {
