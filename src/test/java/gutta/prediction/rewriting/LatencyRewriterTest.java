@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -108,7 +109,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
 
         var artificialLocation = new SyntheticLocation();
         
-        var rewrittenTrace = new TraceRewriterWithGivenArtificialLocations(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriterWithGivenSyntheticLocations(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -122,23 +123,37 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         assertEquals(expectedTrace, rewrittenTrace);
     }
     
-    private static class TraceRewriterWithGivenArtificialLocations extends LatencyRewriter {
+    private static class LatencyRewriterWithGivenSyntheticLocations extends LatencyRewriter {
         
         private final Iterator<SyntheticLocation> locations;
         
-        public TraceRewriterWithGivenArtificialLocations(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections, SyntheticLocation... locations) {
+        public LatencyRewriterWithGivenSyntheticLocations(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections, SyntheticLocation... locations) {
             super(useCaseAllocation, methodAllocation, connections);
             
             this.locations = Arrays.asList(locations).iterator();
         }
         
         @Override
-        SyntheticLocation createArtificialLocation() {
-            if (this.locations.hasNext()) {
-                return this.locations.next();
-            } else {
-                throw new IllegalStateException();
+        LatencyRewriterWorker createWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
+            return new LatencyRewriterWorkerWithGivenSyntheticLocations(events, useCaseAllocation, methodAllocation, connections);
+        }
+                
+        private class LatencyRewriterWorkerWithGivenSyntheticLocations extends LatencyRewriterWorker {
+
+            public LatencyRewriterWorkerWithGivenSyntheticLocations(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation,
+                    Map<String, Component> methodAllocation, ComponentConnections connections) {
+                super(events, useCaseAllocation, methodAllocation, connections);
             }
+            
+            @Override
+            protected SyntheticLocation createSyntheticLocation() {
+                if (LatencyRewriterWithGivenSyntheticLocations.this.locations.hasNext()) {
+                    return LatencyRewriterWithGivenSyntheticLocations.this.locations.next();
+                } else {
+                    throw new IllegalStateException();
+                }
+            }
+            
         }
         
     }

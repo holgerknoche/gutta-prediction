@@ -5,8 +5,6 @@ import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
-import gutta.prediction.event.ServiceCandidateEntryEvent;
-import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.util.EventStream;
 
 import java.util.List;
@@ -67,23 +65,5 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
     protected MonitoringEvent lookahead(int amount) {
         return this.events.lookahead(amount);
     }
-    
-    protected void processCandidateInvocation(Component sourceComponent, ServiceCandidateInvocationEvent invocationEvent, ActionOnCandidateInvocation action) {
-        var nextEvent = this.lookahead(1);
-        if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
-            var targetComponent = this.determineComponentForServiceCandidate(entryEvent.name());                
-            var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
-
-            action.perform(invocationEvent, entryEvent, connection);
-        } else {
-            throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
-        }
-    }
-        
-    protected interface ActionOnCandidateInvocation {
-        
-        void perform(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection);
-        
-    }
-    
+                
 }

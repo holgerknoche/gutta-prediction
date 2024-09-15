@@ -21,6 +21,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var rewrittenTrace = new TransactionContextRewriter(fixture.useCaseAllocation(), fixture.methodAllocation(), new ComponentConnections()).rewriteTrace(inputTrace);
 
         assertEquals(inputTrace, rewrittenTrace);
-    }        
+    }
+    
+    
 
 }

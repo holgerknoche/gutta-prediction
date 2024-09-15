@@ -2,11 +2,13 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,11 @@ public class TransactionContextRewriter implements TraceRewriter {
         return new TransactionContextRewriterWorker(inputTrace, useCaseAllocation, methodAllocation, connections).rewriteTrace();
     }
     
-    private static class TransactionContextRewriterWorker extends TraceRewriterWorker {
+    static class TransactionContextRewriterWorker extends TraceRewriterWorker {
+        
+        private Map<Location, Transaction> openTransactions;
+        
+        private Transaction propagatedTransaction;
         
         public TransactionContextRewriterWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
                 ComponentConnections connections) {
@@ -39,6 +45,8 @@ public class TransactionContextRewriter implements TraceRewriter {
         
         public List<MonitoringEvent> rewriteTrace() {
             this.rewrittenEvents = new ArrayList<>();
+            this.openTransactions = new HashMap<>();
+            this.propagatedTransaction = null;
 
             this.processEvents();
 
@@ -46,17 +54,17 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
         @Override
-        public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
+        protected void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
             // TODO Auto-generated method stub
-            return super.handleServiceCandidateInvocationEvent(event);
+            // TODO Determine whether the transaction could be propagated 
         }
         
         @Override
-        public Void handleServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
+        protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
             // TODO Auto-generated method stub
-            return super.handleServiceCandidateExitEvent(event);
-        }
-                
+            // TODO Commit the current transaction if it is implicitly demarcated and was opened by the appropriate method             
+        }                
+
     }
-    
+        
 }
