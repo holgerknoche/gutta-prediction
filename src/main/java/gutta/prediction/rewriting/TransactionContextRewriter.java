@@ -56,13 +56,15 @@ public class TransactionContextRewriter implements TraceRewriter {
         @Override
         protected void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
             // TODO Auto-generated method stub
-            // TODO Determine whether the transaction could be propagated 
+            // TODO Determine whether the transaction could be propagated
+            super.onServiceCandidateInvocationEvent(event);
         }
         
         @Override
         protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
             // TODO Auto-generated method stub
-            // TODO Commit the current transaction if it is implicitly demarcated and was opened by the appropriate method             
+            // TODO Commit the current transaction if it is implicitly demarcated and was opened by the appropriate method
+            super.onServiceCandidateExitEvent(event);
         }                
 
     }
