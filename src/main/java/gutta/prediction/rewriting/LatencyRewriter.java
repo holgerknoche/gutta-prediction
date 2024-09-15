@@ -1,6 +1,5 @@
 package gutta.prediction.rewriting;
 
-import gutta.prediction.common.AbstractMonitoringEventProcessor;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
@@ -52,11 +51,9 @@ public class LatencyRewriter implements TraceRewriter {
         return new SyntheticLocation();
     }
 
-    private static class TraceRewriteWorker extends AbstractMonitoringEventProcessor {
+    private static class TraceRewriteWorker extends TraceRewriterWorker {
         
         private final Supplier<SyntheticLocation> artificialLocationSupplier;
-
-        private List<MonitoringEvent> rewrittenEvents;
 
         private Deque<StackEntry> stack = new ArrayDeque<>();
 
@@ -86,11 +83,6 @@ public class LatencyRewriter implements TraceRewriter {
 
         private long adjustTimestamp(long originalTimestamp) {
             return (originalTimestamp + this.timeOffset);
-        }
-
-        private Void addRewrittenEvent(MonitoringEvent event) {
-            this.rewrittenEvents.add(event);
-            return null;
         }
         
         private SyntheticLocation createArtificialLocation() {
@@ -230,7 +222,7 @@ public class LatencyRewriter implements TraceRewriter {
         public Void handleTransactionStartEvent(TransactionStartEvent event) {
             this.assertExpectedLocation(event);
 
-            var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), this.currentLocation, event.transactionId());
+            var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), this.currentLocation, event.transactionId(), event.demarcation());
             return this.addRewrittenEvent(rewrittenEvent);
         }
 

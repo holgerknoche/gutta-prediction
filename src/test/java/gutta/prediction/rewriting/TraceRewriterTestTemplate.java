@@ -1,5 +1,6 @@
-package gutta.prediction.span;
+package gutta.prediction.rewriting;
 
+import gutta.prediction.domain.Component;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -14,21 +15,19 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
-import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-class TraceBuilderTest {
+abstract class TraceRewriterTestTemplate {
     
-    /**
-     * Test case: A trace without a change in location is processed as expected.
-     */
-    @Test
-    void localTrace() {
+    protected TraceFixture createIdentityTraceFixture() {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
-        var inputEvents = Arrays.<MonitoringEvent>asList(
+        var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new TransactionStartEvent(traceId, 200, location, "tx1", Demarcation.EXPLICIT),
                 // Same timestamp for invocation and entry as to avoid latency adjustment
@@ -44,11 +43,14 @@ class TraceBuilderTest {
                 new TransactionAbortEvent(traceId, 900, location, "tx2", "NullPointerException"),
                 new UseCaseEndEvent(traceId, 1000, location, "uc1")
                 );
-        
-        var trace = new TraceBuilder().buildTrace(inputEvents);
-        
-        System.out.println(trace);
-        
+
+        var component = new Component("test");
+        var useCaseAllocation = Collections.singletonMap("uc1", component);
+        var methodAllocation = Collections.singletonMap("sc1", component);
+
+        return new TraceFixture(inputTrace, useCaseAllocation, methodAllocation);
     }
+    
+    protected record TraceFixture(List<MonitoringEvent> trace, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation) {}
 
 }

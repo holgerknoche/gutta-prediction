@@ -8,6 +8,7 @@ import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
+import gutta.prediction.event.TransactionStartEvent.Demarcation;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ class EntityAccessConflictAnalysisTest {
 
         var inputEvents = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new TransactionStartEvent(traceId, 200, location, "tx1"),
+                new TransactionStartEvent(traceId, 200, location, "tx1", Demarcation.EXPLICIT),
                 new EntityReadEvent(traceId, 300, location, "et1", "id1"),
                 new EntityWriteEvent(traceId, 400, location, "et1", "id1"),
                 new EntityReadEvent(traceId, 500, location, "et1", "id1"),
