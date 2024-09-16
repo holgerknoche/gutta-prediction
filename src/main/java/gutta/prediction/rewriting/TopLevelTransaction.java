@@ -6,7 +6,8 @@ final class TopLevelTransaction extends Transaction {
         super(id);
     }
         
-    public void commit() {
+    public TransactionOutcome commit() {
+        return null;
     }
     
 }
