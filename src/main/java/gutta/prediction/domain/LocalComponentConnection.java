@@ -1,7 +1,5 @@
 package gutta.prediction.domain;
 
-import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
-
 public class LocalComponentConnection extends ComponentConnection {
     
     public LocalComponentConnection(Component source, Component target, boolean synthetic) {
@@ -22,7 +20,7 @@ public class LocalComponentConnection extends ComponentConnection {
     public boolean isRemote() {
         return false;
     }
-
+    
     @Override
     public TransactionPropagation transactionPropagation() {
         return TransactionPropagation.IDENTICAL;

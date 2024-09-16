@@ -4,9 +4,9 @@ import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.domain.LocalComponentConnection;
 import gutta.prediction.domain.RemoteComponentConnection;
-import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
-import gutta.prediction.domain.ServiceCandidate.TransactionMode;
 import gutta.prediction.domain.ServiceCandidate;
+import gutta.prediction.domain.TransactionBehavior;
+import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
@@ -65,7 +65,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
 
         var connectionC1C2 = new LocalComponentConnection(component1, component2, true);
 
-        var candidate = new ServiceCandidate("sc1", TransactionMode.SUPPORTED);
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var candidateAllocation = Collections.singletonMap(candidate, component2);
@@ -108,7 +108,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
 
         var connectionC1C2 = new RemoteComponentConnection(component1, component2, true, 50, TransactionPropagation.NONE, true);
         
-        var candidate = new ServiceCandidate("sc1", TransactionMode.SUPPORTED);
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
 
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var candidateAllocation = Collections.singletonMap(candidate, component2);

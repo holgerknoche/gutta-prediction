@@ -2,7 +2,7 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ServiceCandidate;
-import gutta.prediction.domain.ServiceCandidate.TransactionMode;
+import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -47,7 +47,7 @@ abstract class TraceRewriterTestTemplate {
                 );
 
         var component = new Component("test");
-        var candidate = new ServiceCandidate("sc1", TransactionMode.SUPPORTED);
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
         var serviceCandidates = Collections.singletonList(candidate);
         var useCaseAllocation = Collections.singletonMap("uc1", component);

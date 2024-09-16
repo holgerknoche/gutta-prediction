@@ -1,7 +1,5 @@
 package gutta.prediction.domain;
 
-import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
-
 public abstract class ComponentConnection {
 
     private final Component source;
@@ -33,6 +31,10 @@ public abstract class ComponentConnection {
     public abstract boolean isSymmetric();
     
     public abstract boolean isRemote();
+    
+    public boolean canPropagateTransactions() {
+        return this.transactionPropagation().canPropagateTransactions();
+    }
     
     public abstract TransactionPropagation transactionPropagation();
 

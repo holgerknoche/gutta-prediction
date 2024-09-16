@@ -15,12 +15,6 @@ public class RemoteComponentConnection extends ComponentConnection {
         this.latency = latency;
         this.transactionPropagation = transactionPropagation;
     }
-        
-    public enum TransactionPropagation {
-        IDENTICAL,
-        SUBORDINATE,
-        NONE
-    }
 
     @Override
     public long latency() {
