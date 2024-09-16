@@ -5,6 +5,8 @@ import gutta.prediction.domain.ComponentConnections;
 import gutta.prediction.domain.LocalComponentConnection;
 import gutta.prediction.domain.RemoteComponentConnection;
 import gutta.prediction.domain.RemoteComponentConnection.TransactionPropagation;
+import gutta.prediction.domain.ServiceCandidate.TransactionMode;
+import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
@@ -36,7 +38,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var fixture = this.createIdentityTraceFixture();
         
         var inputTrace = fixture.trace();
-        var rewrittenTrace = new LatencyRewriter(fixture.useCaseAllocation(), fixture.methodAllocation(), new ComponentConnections()).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriter(fixture.serviceCandidates(), fixture.useCaseAllocation(), fixture.candidateAllocation(), new ComponentConnections()).rewriteTrace(inputTrace);
 
         assertEquals(inputTrace, rewrittenTrace);
     }
@@ -57,16 +59,18 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 new ServiceCandidateReturnEvent(traceId, 410, location, "sc1"),
                 new UseCaseEndEvent(traceId, 500, location, "uc1")
                 );
-
+        
         var component1 = new Component("comp1");
         var component2 = new Component("comp2");
 
         var connectionC1C2 = new LocalComponentConnection(component1, component2, true);
 
+        var candidate = new ServiceCandidate("sc1", TransactionMode.SUPPORTED);
+        
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
-        var methodAllocation = Collections.singletonMap("sc1", component2);
+        var candidateAllocation = Collections.singletonMap(candidate, component2);
 
-        var rewrittenTrace = new LatencyRewriter(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -103,13 +107,15 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var component2 = new Component("comp2");
 
         var connectionC1C2 = new RemoteComponentConnection(component1, component2, true, 50, TransactionPropagation.NONE, true);
+        
+        var candidate = new ServiceCandidate("sc1", TransactionMode.SUPPORTED);
 
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
-        var methodAllocation = Collections.singletonMap("sc1", component2);
+        var candidateAllocation = Collections.singletonMap(candidate, component2);
 
         var artificialLocation = new SyntheticLocation();
         
-        var rewrittenTrace = new LatencyRewriterWithGivenSyntheticLocations(useCaseAllocation, methodAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriterWithGivenSyntheticLocations(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -127,22 +133,22 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         
         private final Iterator<SyntheticLocation> locations;
         
-        public LatencyRewriterWithGivenSyntheticLocations(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections, SyntheticLocation... locations) {
-            super(useCaseAllocation, methodAllocation, connections);
+        public LatencyRewriterWithGivenSyntheticLocations(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections, SyntheticLocation... locations) {
+            super(serviceCandidates, useCaseAllocation, candidateAllocation, connections);
             
             this.locations = Arrays.asList(locations).iterator();
         }
         
         @Override
-        LatencyRewriterWorker createWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
-            return new LatencyRewriterWorkerWithGivenSyntheticLocations(events, useCaseAllocation, methodAllocation, connections);
+        LatencyRewriterWorker createWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+            return new LatencyRewriterWorkerWithGivenSyntheticLocations(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
         }
                 
         private class LatencyRewriterWorkerWithGivenSyntheticLocations extends LatencyRewriterWorker {
 
-            public LatencyRewriterWorkerWithGivenSyntheticLocations(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation,
-                    Map<String, Component> methodAllocation, ComponentConnections connections) {
-                super(events, useCaseAllocation, methodAllocation, connections);
+            public LatencyRewriterWorkerWithGivenSyntheticLocations(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation,
+                    Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+                super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
             }
             
             @Override

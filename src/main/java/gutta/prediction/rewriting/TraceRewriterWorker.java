@@ -4,6 +4,7 @@ import gutta.prediction.common.AbstractMonitoringEventProcessor;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;
@@ -19,26 +20,55 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     
+    private final Map<String, ServiceCandidate> nameToCandidate;
+    
     private Deque<StackEntry> stack = new ArrayDeque<>();
 
-    private String currentServiceCandidate;
+    private ServiceCandidate currentServiceCandidate;
 
     private Component currentComponent;
 
     private Location currentLocation;
     
-    protected List<MonitoringEvent> rewrittenEvents;
+    private List<MonitoringEvent> rewrittenEvents;
 
-    protected TraceRewriterWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
+    protected TraceRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> methodAllocation,
             ComponentConnections connections) {
 
         super(events, useCaseAllocation, methodAllocation, connections);
+        
+        this.nameToCandidate = serviceCandidates.stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));
+    }
+    
+    public List<MonitoringEvent> rewriteTrace() {
+        this.rewrittenEvents = new ArrayList<>();
+
+        this.onStartOfRewrite();
+        this.processEvents();
+        this.onEndOfRewrite();
+
+        return this.rewrittenEvents;
+    }
+    
+    protected void onStartOfRewrite() {
+        // Do nothing by default
+    }
+    
+    protected void onEndOfRewrite() {
+     // Do nothing by default
+    }
+    
+    protected ServiceCandidate currentServiceCandidate() {
+        return this.currentServiceCandidate;
     }
     
     protected Component currentComponent() {
@@ -68,6 +98,15 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
             throw new IllegalStateException(
                     "Unexpected location at event '" + event + "': Expected '" + this.currentLocation + ", but found '" + event.location() + "'.");    
         }
+    }
+    
+    private ServiceCandidate resolveCandidate(String name) {
+        var candidate = this.nameToCandidate.get(name);
+        if (candidate == null) {
+            throw new IllegalArgumentException("No service candidate with name '" + name + "'.");
+        }
+        
+        return candidate;
     }
     
     @Override
@@ -143,7 +182,8 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         var nextEvent = this.lookahead(1);
         if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
             var sourceComponent = this.currentComponent; 
-            var targetComponent = this.determineComponentForServiceCandidate(entryEvent.name());                
+            var invokedCandidate = this.resolveCandidate(entryEvent.name());
+            var targetComponent = this.determineComponentForServiceCandidate(invokedCandidate);                
             var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
 
             this.performComponentTransition(event, entryEvent, connection);
@@ -178,7 +218,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         // Ensure that the transition is valid
         this.ensureValidLocationTransition(sourceLocation, targetLocation, connection);
                     
-        this.currentServiceCandidate = entryEvent.name();
+        this.currentServiceCandidate = this.resolveCandidate(entryEvent.name());
         this.currentComponent = targetComponent;
         this.currentLocation = targetLocation;
     }   
@@ -204,7 +244,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         this.assertExpectedLocation(event);        
         
         var stackEntry = this.stack.pop();
-        this.currentServiceCandidate = stackEntry.methodName();
+        this.currentServiceCandidate = stackEntry.serviceCandidate();
         this.currentComponent = stackEntry.component();
         this.currentLocation = stackEntry.location();
 
@@ -291,6 +331,6 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         this.copyUnchanged(event);        
     }
     
-    private record StackEntry(String methodName, Component component, Location location) {}
+    private record StackEntry(ServiceCandidate serviceCandidate, Component component, Location location) {}
 
 }

@@ -3,6 +3,7 @@ package gutta.prediction.common;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
 import gutta.prediction.util.EventStream;
@@ -16,11 +17,11 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
 
     private final Map<String, Component> useCaseAllocation;
 
-    private final Map<String, Component> methodAllocation;
+    private final Map<ServiceCandidate, Component> methodAllocation;
 
     private final ComponentConnections connections;
 
-    protected AbstractMonitoringEventProcessor(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
+    protected AbstractMonitoringEventProcessor(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> methodAllocation, ComponentConnections connections) {
         this.events = new EventStream(events);
         this.useCaseAllocation = useCaseAllocation;
         this.methodAllocation = methodAllocation;
@@ -36,10 +37,10 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
         return component;
     }
     
-    protected Component determineComponentForServiceCandidate(String candidateName) {
-        var component = this.methodAllocation.get(candidateName);
+    protected Component determineComponentForServiceCandidate(ServiceCandidate candidate) {
+        var component = this.methodAllocation.get(candidate);
         if (component == null) {
-            throw new IllegalStateException("Service candidate '" + candidateName + "' is not assigned to a component.");
+            throw new IllegalStateException("Service candidate '" + candidate + "' is not assigned to a component.");
         }
         
         return component;

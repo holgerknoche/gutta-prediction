@@ -3,6 +3,7 @@ package gutta.prediction.rewriting;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -16,7 +17,6 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,42 +26,41 @@ import java.util.Map;
  */
 public class LatencyRewriter implements TraceRewriter {
 
+    private final List<ServiceCandidate> serviceCandidates;
+    
     private final Map<String, Component> useCaseAllocation;
 
-    private final Map<String, Component> methodAllocation;
+    private final Map<ServiceCandidate, Component> candidateAllocation;
 
     private final ComponentConnections connections;
 
-    public LatencyRewriter(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
+    public LatencyRewriter(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+        this.serviceCandidates = serviceCandidates;
         this.useCaseAllocation = useCaseAllocation;
-        this.methodAllocation = methodAllocation;
+        this.candidateAllocation = candidateAllocation;
         this.connections = connections;
     }
 
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> events) {
-        return this.createWorker(events, this.useCaseAllocation, this.methodAllocation, this.connections).rewriteTrace();
+        return this.createWorker(events, this.serviceCandidates, this.useCaseAllocation, this.candidateAllocation, this.connections).rewriteTrace();
     }
     
-    LatencyRewriterWorker createWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
-        return new LatencyRewriterWorker(events, useCaseAllocation, methodAllocation, connections); 
+    LatencyRewriterWorker createWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+        return new LatencyRewriterWorker(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections); 
     }
 
     static class LatencyRewriterWorker extends TraceRewriterWorker {        
 
         private long timeOffset;
 
-        public LatencyRewriterWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
-            super(events, useCaseAllocation, methodAllocation, connections);
+        public LatencyRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+            super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
         }
-
-        public List<MonitoringEvent> rewriteTrace() {
-            this.rewrittenEvents = new ArrayList<>();
+        
+        @Override
+        protected void onStartOfRewrite() {
             this.timeOffset = 0;
-
-            this.processEvents();
-
-            return this.rewrittenEvents;
         }
 
         private long adjustTimestamp(long originalTimestamp) {

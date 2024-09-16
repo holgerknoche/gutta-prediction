@@ -1,72 +1,59 @@
 package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
+import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TransactionContextRewriter implements TraceRewriter {
 
+    private final List<ServiceCandidate> serviceCandidates;
+    
     private final Map<String, Component> useCaseAllocation;
     
-    private final Map<String, Component> methodAllocation;
+    private final Map<ServiceCandidate, Component> candidateAllocation;
     
     private final ComponentConnections connections;
     
-    public TransactionContextRewriter(Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation, ComponentConnections connections) {
+    public TransactionContextRewriter(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
+        this.serviceCandidates = serviceCandidates;
         this.useCaseAllocation = useCaseAllocation;
-        this.methodAllocation = methodAllocation;
+        this.candidateAllocation = candidateAllocation;
         this.connections = connections;
     }        
     
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> inputTrace) {
-        return new TransactionContextRewriterWorker(inputTrace, useCaseAllocation, methodAllocation, connections).rewriteTrace();
+        return new TransactionContextRewriterWorker(inputTrace, this.serviceCandidates, this.useCaseAllocation, this.candidateAllocation, this.connections).rewriteTrace();
     }
     
-    static class TransactionContextRewriterWorker extends TraceRewriterWorker {
+    static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
         
         private Map<Location, Transaction> openTransactions;
         
-        private Transaction propagatedTransaction;
+        private Transaction currentTransaction;                
         
-        public TransactionContextRewriterWorker(List<MonitoringEvent> events, Map<String, Component> useCaseAllocation, Map<String, Component> methodAllocation,
+        public TransactionContextRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation,
                 ComponentConnections connections) {
             
-            super(events, useCaseAllocation, methodAllocation, connections);
+            super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
         }
-        
-        public List<MonitoringEvent> rewriteTrace() {
-            this.rewrittenEvents = new ArrayList<>();
+                
+        @Override
+        protected void onStartOfRewrite() {
             this.openTransactions = new HashMap<>();
-            this.propagatedTransaction = null;
-
-            this.processEvents();
-
-            return this.rewrittenEvents;
+            this.currentTransaction = null;
         }
         
-        @Override
-        protected void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
-            // TODO Auto-generated method stub
-            // TODO Determine whether the transaction could be propagated
-            super.onServiceCandidateInvocationEvent(event);
-        }
-        
-        @Override
-        protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
-            // TODO Auto-generated method stub
-            // TODO Commit the current transaction if it is implicitly demarcated and was opened by the appropriate method
-            super.onServiceCandidateExitEvent(event);
-        }                
-
     }
         
 }
