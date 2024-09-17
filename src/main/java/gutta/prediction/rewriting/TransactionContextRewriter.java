@@ -88,7 +88,7 @@ public class TransactionContextRewriter implements TraceRewriter {
                 return propagatedTransaction.transaction();
                 
             case SUBORDINATE:
-                return new SubordinateTransaction(this.createSyntheticTransactionId(), location, true, propagatedTransaction.transaction());
+                return new SubordinateTransaction(this.createSyntheticTransactionId(), location, propagatedTransaction.transaction());
                 
             case NONE:                
                 return null;
@@ -128,20 +128,20 @@ public class TransactionContextRewriter implements TraceRewriter {
               
             // We must only change something when the actual state does not fit the expectation
             if (transactionStartEventPresent && !transactionStartEventRequired) {
-                // TODO Transaction event present, but not required => delete transaction
+                // If a transaction start event is present, but is no longer required, mark the respective transaction ID for removal
+                var transactionStartEvent = (TransactionStartEvent) this.lookahead(1);
+                this.removedTransactionIds.add(transactionStartEvent.transactionId());
             } else if (!transactionStartEventPresent && transactionStartEventRequired) {
-                // Transaction event not present, but required => create a synthetic transaction and insert synthetic event
-
-                // Create a synthetic transaction
+                // If a transaction start event is missing although it is required, insert a synthetic transaction
                 Transaction syntheticTransaction;
                 if (propagatedTransaction.transaction() != null) {
                     syntheticTransaction = this.buildLocalTransactionFor(propagatedTransaction, event.location());
                 } else {
-                    syntheticTransaction = new TopLevelTransaction(this.createSyntheticTransactionId(), this.currentLocation(), true);
+                    syntheticTransaction = new TopLevelTransaction(this.createSyntheticTransactionId(), this.currentLocation());
                 }
                 this.registerTransactionAndSetAsCurrent(syntheticTransaction);                
                 
-                // Insert a synthetic transaction start event
+                // Insert a synthetic transaction start event for the transaction
                 var syntheticStartEvent = new TransactionStartEvent(event.traceId(), event.timestamp(), this.currentLocation(), syntheticTransaction.id(), Demarcation.IMPLICIT);                
                 this.addRewrittenEvent(syntheticStartEvent);                
             }
@@ -205,7 +205,7 @@ public class TransactionContextRewriter implements TraceRewriter {
                 throw new TraceRewriteException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
             }
             
-            var newTransaction = new TopLevelTransaction(event.transactionId(), event.location(), false);
+            var newTransaction = new TopLevelTransaction(event.transactionId(), event.location());
             this.registerTransactionAndSetAsCurrent(newTransaction);
             
             // Explicitly demarcated transaction start events are always kept
@@ -240,15 +240,12 @@ public class TransactionContextRewriter implements TraceRewriter {
         private final String id;
         
         private final Location location;
-        
-        private final boolean synthetic;
-        
+                
         private final Set<SubordinateTransaction> subordinates;
         
-        protected Transaction(String id, Location location, boolean synthetic) {
+        protected Transaction(String id, Location location) {
             this.id = id;
             this.location = location;
-            this.synthetic = synthetic;
             this.subordinates = new HashSet<>();
         }
         
@@ -265,11 +262,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
         public abstract boolean isSubordinate();
-        
-        public boolean isSynthetic() {
-            return this.synthetic;
-        }
-        
+                
         public Set<Transaction> getThisAndAllSubordinates() {
             var allSubordinates = new HashSet<Transaction>();
             
@@ -290,8 +283,8 @@ public class TransactionContextRewriter implements TraceRewriter {
     
     private static class TopLevelTransaction extends Transaction {
         
-        public TopLevelTransaction(String id, Location location, boolean synthetic) {
-            super(id, location, synthetic);
+        public TopLevelTransaction(String id, Location location) {
+            super(id, location);
         }                
         
         @Override
@@ -303,8 +296,8 @@ public class TransactionContextRewriter implements TraceRewriter {
     
     private static class SubordinateTransaction extends Transaction {
                 
-        public SubordinateTransaction(String id, Location location, boolean synthetic, Transaction parent) {
-            super(id, location, synthetic);
+        public SubordinateTransaction(String id, Location location, Transaction parent) {
+            super(id, location);
             
             parent.registerSubordinate(this);
         }
