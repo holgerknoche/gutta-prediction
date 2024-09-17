@@ -1,9 +1,7 @@
 package gutta.prediction.rewriting;
 
-import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
-import gutta.prediction.domain.ComponentConnections;
-import gutta.prediction.domain.ServiceCandidate;
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -18,7 +16,6 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * This rewriter adjusts the latencies within a given trace, i.e., the difference between the timestamps of service canidate invocation/entry events as well as
@@ -26,36 +23,27 @@ import java.util.Map;
  */
 public class LatencyRewriter implements TraceRewriter {
 
-    private final List<ServiceCandidate> serviceCandidates;
+    private final DeploymentModel originalDeploymentModel;
     
-    private final Map<String, Component> useCaseAllocation;
+    private final DeploymentModel modifiedDeploymentModel;
 
-    private final Map<ServiceCandidate, Component> candidateAllocation;
-
-    private final ComponentConnections connections;
-
-    public LatencyRewriter(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-        this.serviceCandidates = serviceCandidates;
-        this.useCaseAllocation = useCaseAllocation;
-        this.candidateAllocation = candidateAllocation;
-        this.connections = connections;
+    public LatencyRewriter(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
+        this.originalDeploymentModel = originalDeploymentModel;
+        this.modifiedDeploymentModel = modifiedDeploymentModel;
     }
 
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> events) {
-        return this.createWorker(events, this.serviceCandidates, this.useCaseAllocation, this.candidateAllocation, this.connections).rewriteTrace();
+        var worker = new LatencyRewriterWorker(events, this.originalDeploymentModel, this.modifiedDeploymentModel); 
+        return worker.rewriteTrace();        
     }
     
-    LatencyRewriterWorker createWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-        return new LatencyRewriterWorker(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections); 
-    }
-
-    static class LatencyRewriterWorker extends TraceRewriterWorker {        
+    private static class LatencyRewriterWorker extends TraceRewriterWorker {        
 
         private long timeOffset;
 
-        public LatencyRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-            super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
+        public LatencyRewriterWorker(List<MonitoringEvent> events, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
+            super(events, originalDeploymentModel, modifiedDeploymentModel);
         }
         
         @Override

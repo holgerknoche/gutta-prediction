@@ -1,8 +1,7 @@
 package gutta.prediction.rewriting;
 
-import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
-import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.event.Location;
@@ -27,27 +26,22 @@ import java.util.function.Consumer;
 
 public class TransactionContextRewriter implements TraceRewriter {
 
-    private final List<ServiceCandidate> serviceCandidates;
+    private final DeploymentModel originalDeploymentModel;
     
-    private final Map<String, Component> useCaseAllocation;
+    private final DeploymentModel modifiedDeploymentModel;
     
-    private final Map<ServiceCandidate, Component> candidateAllocation;
-    
-    private final ComponentConnections connections;
-    
-    public TransactionContextRewriter(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-        this.serviceCandidates = serviceCandidates;
-        this.useCaseAllocation = useCaseAllocation;
-        this.candidateAllocation = candidateAllocation;
-        this.connections = connections;
+    public TransactionContextRewriter(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
+        this.originalDeploymentModel = originalDeploymentModel;
+        this.modifiedDeploymentModel = modifiedDeploymentModel;
     }        
     
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> inputTrace) {
-        return new TransactionContextRewriterWorker(inputTrace, this.serviceCandidates, this.useCaseAllocation, this.candidateAllocation, this.connections).rewriteTrace();
+        var worker = new TransactionContextRewriterWorker(inputTrace, this.originalDeploymentModel, this.modifiedDeploymentModel);
+        return worker.rewriteTrace();
     }
     
-    static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
+    private static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
 
         private Map<Location, Transaction> transactionAtLocation;
         
@@ -59,10 +53,8 @@ public class TransactionContextRewriter implements TraceRewriter {
         
         private Transaction currentTransaction;
                 
-        public TransactionContextRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation,
-                ComponentConnections connections) {
-            
-            super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
+        public TransactionContextRewriterWorker(List<MonitoringEvent> events, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {            
+            super(events, originalDeploymentModel, modifiedDeploymentModel);
         }
                 
         @Override
@@ -118,7 +110,7 @@ public class TransactionContextRewriter implements TraceRewriter {
             this.adjustLocationAndAdd(event);
             
             // Then, we have to determine if we need to add / remove a transaction start event
-            var serviceCandidate = this.resolveCandidate(event.name());
+            var serviceCandidate = this.resolveModifiedServiceCandidate(event.name());
             var propagatedTransaction = this.transactionPropagationStack.peek();
             
             var transactionStartEventPresent = (this.lookahead(1) instanceof TransactionStartEvent);

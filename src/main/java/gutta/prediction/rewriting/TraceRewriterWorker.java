@@ -3,8 +3,9 @@ package gutta.prediction.rewriting;
 import gutta.prediction.common.AbstractMonitoringEventProcessor;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
-import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
+import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;
@@ -23,14 +24,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
-    
-    private final Map<String, ServiceCandidate> nameToCandidate;
-    
+        
     private long syntheticLocationIdCount;
     
     private Deque<StackEntry> stack = new ArrayDeque<>();
@@ -43,12 +39,8 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     
     private List<MonitoringEvent> rewrittenEvents;        
 
-    protected TraceRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> methodAllocation,
-            ComponentConnections connections) {
-
-        super(events, useCaseAllocation, methodAllocation, connections);
-        
-        this.nameToCandidate = serviceCandidates.stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));
+    protected TraceRewriterWorker(List<MonitoringEvent> events, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
+        super(events, originalDeploymentModel, modifiedDeploymentModel);
     }
     
     public List<MonitoringEvent> rewriteTrace() {
@@ -97,16 +89,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
                     "Unexpected location at event '" + event + "': Expected '" + this.currentLocation + ", but found '" + event.location() + "'.");    
         }
     }
-    
-    protected ServiceCandidate resolveCandidate(String name) {
-        var candidate = this.nameToCandidate.get(name);
-        if (candidate == null) {
-            throw new IllegalArgumentException("No service candidate with name '" + name + "'.");
-        }
         
-        return candidate;
-    }
-    
     @Override
     public final Void handleEntityReadEvent(EntityReadEvent event) {
         this.assertExpectedLocation(event);
@@ -177,7 +160,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
             var sourceComponent = this.currentComponent;
             // Determine the component to return to from the top of the stack
             var targetComponent = this.stack.peek().component();
-            var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
+            var connection = this.determineModifiedConnectionBetween(sourceComponent, targetComponent);
 
             this.onComponentReturn(event, returnEvent, connection);
         } else {
@@ -212,9 +195,9 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         var nextEvent = this.lookahead(1);
         if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
             var sourceComponent = this.currentComponent; 
-            var invokedCandidate = this.resolveCandidate(entryEvent.name());
-            var targetComponent = this.determineComponentForServiceCandidate(invokedCandidate);                
-            var connection = this.determineConnectionBetween(sourceComponent, targetComponent);
+            var invokedCandidate = this.resolveModifiedServiceCandidate(entryEvent.name());
+            var targetComponent = this.determineModifiedComponentForServiceCandidate(invokedCandidate);                
+            var connection = this.determineModifiedConnectionBetween(sourceComponent, targetComponent);
 
             this.performComponentTransition(event, entryEvent, connection);
         } else {
@@ -254,22 +237,22 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         }
 
         // Ensure that the transition is valid
-        this.ensureValidLocationTransition(sourceLocation, targetLocation, connection);
+        this.ensureValidLocationTransition(sourceLocation, targetLocation, connection, entryEvent);
                     
-        this.currentServiceCandidate = this.resolveCandidate(entryEvent.name());
+        this.currentServiceCandidate = this.resolveModifiedServiceCandidate(entryEvent.name());
         this.currentComponent = targetComponent;
         this.currentLocation = targetLocation;
     }   
     
-    private void ensureValidLocationTransition(Location sourceLocation, Location targetLocation, ComponentConnection connection) {
+    private void ensureValidLocationTransition(Location sourceLocation, Location targetLocation, ComponentConnection connection, MonitoringEvent event) {
         var locationChanged = !sourceLocation.equals(targetLocation);
         
         if (connection.isRemote() && !locationChanged) {
             // Remote connections are expected to change the location
-            throw new IllegalStateException("Remote invocation without change of location detected.");
+            throw new TraceRewriteException(event, "Remote invocation without change of location detected.");
         } else if (!connection.isRemote() && locationChanged) {
             // Location changes with non-remote connections are inadmissible
-            throw new IllegalStateException("Change of location with non-remote invocation detected.");
+            throw new TraceRewriteException(event, "Change of location with non-remote invocation detected.");
         }
     }
         
@@ -369,8 +352,8 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         this.assertExpectedLocation(event);                
         
         // Determine the component providing the given use case
-        var useCaseName = event.name();            
-        var component = this.determineComponentForUseCase(useCaseName);
+        var useCase = new UseCase(event.name());            
+        var component = this.determineModifiedComponentForUseCase(useCase);
 
         this.currentComponent = component;
         this.currentLocation = event.location();

@@ -1,8 +1,10 @@
 package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
+import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -19,9 +21,7 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 abstract class TraceRewriterTestTemplate {
     
@@ -47,15 +47,17 @@ abstract class TraceRewriterTestTemplate {
                 );
 
         var component = new Component("test");
+        var useCase = new UseCase("uc1");
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
-        var serviceCandidates = Collections.singletonList(candidate);
-        var useCaseAllocation = Collections.singletonMap("uc1", component);
-        var candidateAllocation = Collections.singletonMap(candidate, component);
-
-        return new TraceFixture(inputTrace, serviceCandidates, useCaseAllocation, candidateAllocation);
+        var originalDeploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(candidate, component)
+                .build();        
+        
+        return new TraceFixture(inputTrace, originalDeploymentModel, originalDeploymentModel);
     }
     
-    protected record TraceFixture(List<MonitoringEvent> trace, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation) {}
+    protected record TraceFixture(List<MonitoringEvent> trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {}
 
 }
