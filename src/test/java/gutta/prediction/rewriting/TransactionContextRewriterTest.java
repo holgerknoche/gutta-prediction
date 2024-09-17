@@ -2,10 +2,17 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnections;
+import gutta.prediction.domain.RemoteComponentConnection;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
+import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ServiceCandidateEntryEvent;
+import gutta.prediction.event.ServiceCandidateExitEvent;
+import gutta.prediction.event.ServiceCandidateInvocationEvent;
+import gutta.prediction.event.ServiceCandidateReturnEvent;
+import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
 import gutta.prediction.event.UseCaseEndEvent;
@@ -14,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -66,7 +74,46 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         
         // Make sure that the exception has the expected message and occurs at the expected event
         assertEquals(offendingEvent, exception.offendingEvent());
-        assertTrue(exception.getMessage().contains("Found an active transaction"));
+        assertTrue(exception.getMessage().contains("A transaction was active"));
+    }
+    
+    /**
+     * Test case: If a subordinate-propagation-capable transition is added within an explicitly started transaction, synthetic start and commit events are added.  
+     */
+    @Test
+    void introduceSubordinatePropagationToExplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        final var inputEvents = Arrays.<MonitoringEvent> asList(
+                new UseCaseStartEvent(traceId, 0, location, "uc1"),
+                new TransactionStartEvent(traceId, 50, location, "tx1", Demarcation.EXPLICIT),
+                new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, location, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 120, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 130, location, "sc1"),
+                new TransactionCommitEvent(traceId, 150, location, "tx1"),
+                new UseCaseEndEvent(traceId, 200, location, "uc1")
+                );
+        
+        var component1 = new Component("c1");
+        var component2 = new Component("c2");
+        var useCaseAllocation = Collections.singletonMap("uc1", component1);
+        
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED); 
+        var candidateAllocation = Collections.singletonMap(candidate, component2);
+        
+        var connectionC1C2 = new RemoteComponentConnection(component1, component2, true, 0, TransactionPropagation.SUBORDINATE, true);
+        
+        var rewrittenTrace = new TransactionContextRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputEvents);
+        
+        printTrace(rewrittenTrace);
+    }
+    
+    private static void printTrace(List<MonitoringEvent> trace) {
+        for (var event : trace) {
+            System.out.println(event);
+        }
     }
 
 }

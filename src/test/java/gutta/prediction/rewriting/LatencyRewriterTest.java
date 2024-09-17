@@ -19,9 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -113,9 +110,9 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var useCaseAllocation = Collections.singletonMap("uc1", component1);
         var candidateAllocation = Collections.singletonMap(candidate, component2);
 
-        var artificialLocation = new SyntheticLocation();
+        var artificialLocation = new SyntheticLocation(0);
         
-        var rewrittenTrace = new LatencyRewriterWithGivenSyntheticLocations(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2), artificialLocation).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
@@ -129,39 +126,5 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         assertEquals(expectedTrace, rewrittenTrace);
     }
     
-    private static class LatencyRewriterWithGivenSyntheticLocations extends LatencyRewriter {
-        
-        private final Iterator<SyntheticLocation> locations;
-        
-        public LatencyRewriterWithGivenSyntheticLocations(List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections, SyntheticLocation... locations) {
-            super(serviceCandidates, useCaseAllocation, candidateAllocation, connections);
-            
-            this.locations = Arrays.asList(locations).iterator();
-        }
-        
-        @Override
-        LatencyRewriterWorker createWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-            return new LatencyRewriterWorkerWithGivenSyntheticLocations(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
-        }
-                
-        private class LatencyRewriterWorkerWithGivenSyntheticLocations extends LatencyRewriterWorker {
-
-            public LatencyRewriterWorkerWithGivenSyntheticLocations(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation,
-                    Map<ServiceCandidate, Component> candidateAllocation, ComponentConnections connections) {
-                super(events, serviceCandidates, useCaseAllocation, candidateAllocation, connections);
-            }
-            
-            @Override
-            protected SyntheticLocation createSyntheticLocation() {
-                if (LatencyRewriterWithGivenSyntheticLocations.this.locations.hasNext()) {
-                    return LatencyRewriterWithGivenSyntheticLocations.this.locations.next();
-                } else {
-                    throw new IllegalStateException();
-                }
-            }
-            
-        }
-        
-    }
 
 }

@@ -21,13 +21,17 @@ public class EventStream {
         return this.events.size();
     }
 
-    public MonitoringEvent lookahead(int amount) {
+    public MonitoringEvent lookahead(int amount) {        
         var desiredPosition = (this.currentPosition + amount);
-        if (desiredPosition > this.maxPosition) {
+        if (desiredPosition > this.maxPosition || desiredPosition < 0) {
             return null;
         }
 
         return this.events.get(desiredPosition);
+    }
+    
+    public MonitoringEvent lookback(int amount) {
+        return this.lookahead(-amount);
     }
 
     public void consume() {

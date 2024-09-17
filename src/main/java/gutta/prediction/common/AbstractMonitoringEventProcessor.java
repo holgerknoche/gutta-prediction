@@ -66,5 +66,9 @@ public abstract class AbstractMonitoringEventProcessor implements MonitoringEven
     protected MonitoringEvent lookahead(int amount) {
         return this.events.lookahead(amount);
     }
+    
+    protected MonitoringEvent lookback(int amount) {
+        return this.events.lookback(amount);
+    }
                 
 }

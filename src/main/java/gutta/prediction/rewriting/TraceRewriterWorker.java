@@ -31,6 +31,8 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     
     private final Map<String, ServiceCandidate> nameToCandidate;
     
+    private long syntheticLocationIdCount;
+    
     private Deque<StackEntry> stack = new ArrayDeque<>();
 
     private ServiceCandidate currentServiceCandidate;
@@ -39,7 +41,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
 
     private Location currentLocation;
     
-    private List<MonitoringEvent> rewrittenEvents;
+    private List<MonitoringEvent> rewrittenEvents;        
 
     protected TraceRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> methodAllocation,
             ComponentConnections connections) {
@@ -82,13 +84,9 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     protected void addRewrittenEvent(MonitoringEvent event) {
         this.rewrittenEvents.add(event);
     }
-        
-    protected void copyUnchanged(MonitoringEvent event) {
-        this.addRewrittenEvent(event);
-    }
-    
+            
     protected SyntheticLocation createSyntheticLocation() {
-        return new SyntheticLocation();
+        return new SyntheticLocation(this.syntheticLocationIdCount++);
     }
         
     private void assertExpectedLocation(MonitoringEvent event) {
@@ -100,7 +98,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         }
     }
     
-    private ServiceCandidate resolveCandidate(String name) {
+    protected ServiceCandidate resolveCandidate(String name) {
         var candidate = this.nameToCandidate.get(name);
         if (candidate == null) {
             throw new IllegalArgumentException("No service candidate with name '" + name + "'.");
@@ -117,8 +115,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onEntityReadEvent(EntityReadEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(EntityReadEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else {
+            this.addRewrittenEvent(new EntityReadEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.entityType(), event.entityIdentifier()));
+        }
     }
     
     @Override
@@ -129,8 +135,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onEntityWriteEvent(EntityWriteEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(EntityWriteEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else {
+            this.addRewrittenEvent(new EntityWriteEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.entityType(), event.entityIdentifier()));
+        }
     }
     
     @Override
@@ -141,8 +155,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(ServiceCandidateEntryEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new ServiceCandidateEntryEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
         
     @Override
@@ -166,8 +188,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(ServiceCandidateExitEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new ServiceCandidateExitEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
     
     protected void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
@@ -195,8 +225,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(ServiceCandidateInvocationEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new ServiceCandidateInvocationEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
     
     private void performComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
@@ -254,8 +292,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
         
     protected void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);        
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(ServiceCandidateReturnEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new ServiceCandidateReturnEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
     
     @Override
@@ -266,8 +312,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onTransactionAbortEvent(TransactionAbortEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);        
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(TransactionAbortEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new TransactionAbortEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.transactionId(), event.cause()));
+        }
     }
     
     @Override
@@ -278,8 +332,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onTransactionCommitEvent(TransactionCommitEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(TransactionCommitEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new TransactionCommitEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.transactionId()));
+        }
     }
     
     @Override
@@ -290,8 +352,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onTransactionStartEvent(TransactionStartEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(TransactionStartEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new TransactionStartEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.transactionId(), event.demarcation()));
+        }
     }
     
     @Override
@@ -310,8 +380,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onUseCaseStartEvent(UseCaseStartEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);        
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(UseCaseStartEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new UseCaseStartEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
     
     @Override
@@ -327,8 +405,16 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
     
     protected void onUseCaseEndEvent(UseCaseEndEvent event) {
-        // By default, copy the event without making any changes 
-        this.copyUnchanged(event);        
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event);
+    }
+    
+    protected void adjustLocationAndAdd(UseCaseEndEvent event) {
+        if (this.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new UseCaseEndEvent(event.traceId(), event.timestamp(), this.currentLocation(), event.name()));
+        }
     }
     
     private record StackEntry(ServiceCandidate serviceCandidate, Component component, Location location) {}
