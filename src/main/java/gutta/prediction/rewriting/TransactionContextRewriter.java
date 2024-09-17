@@ -16,6 +16,8 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,12 +53,12 @@ public class TransactionContextRewriter implements TraceRewriter {
         
         private Set<String> removedTransactionIds;
         
+        private Deque<PropagatedTransaction> transactionPropagationStack;
+        
         private int syntheticTransactionIdCount;
         
         private Transaction currentTransaction;
-        
-        private PropagatedTransaction propagatedTransaction;
-        
+                
         public TransactionContextRewriterWorker(List<MonitoringEvent> events, List<ServiceCandidate> serviceCandidates, Map<String, Component> useCaseAllocation, Map<ServiceCandidate, Component> candidateAllocation,
                 ComponentConnections connections) {
             
@@ -67,34 +69,15 @@ public class TransactionContextRewriter implements TraceRewriter {
         protected void onStartOfRewrite() {
             this.transactionAtLocation = new HashMap<>();
             this.removedTransactionIds = new HashSet<>();
+            this.transactionPropagationStack = new ArrayDeque<>();
             this.syntheticTransactionIdCount = 0;
             this.currentTransaction = null;
-            this.propagatedTransaction = null;
         }
 
         @Override
         protected void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
-            switch (connection.transactionPropagation()) {
-            case IDENTICAL:
-                // For identical propagation, we simply keep the current transaction
-                this.propagatedTransaction = null;
-                break;
-                
-            case SUBORDINATE:
-                // For subordinate propagation, a new local transaction must be created
-                this.propagatedTransaction = new PropagatedTransaction(this.currentTransaction, connection.transactionPropagation());
-                this.currentTransaction = null;
-                break;
-                
-            case NONE:
-                // If no propagation occurs, remove the current and propagated transactions
-                this.propagatedTransaction = null;
-                this.currentTransaction = null;
-                break;
-
-            default:
-                throw new UnsupportedOperationException("Unsupported propagation mode '" + connection.transactionPropagation() + "'.");
-            }
+            var propagatedTransaction = new PropagatedTransaction(this.currentTransaction, connection.transactionPropagation());
+            this.transactionPropagationStack.push(propagatedTransaction);
         }
         
         private Transaction buildLocalTransactionFor(PropagatedTransaction propagatedTransaction, Location location) {
@@ -117,6 +100,10 @@ public class TransactionContextRewriter implements TraceRewriter {
                 
         @Override
         protected void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
+            var propagatedTransaction = this.transactionPropagationStack.pop();
+            
+            // Restore the current transaction
+            this.currentTransaction = propagatedTransaction.transaction();
         }
         
         // TODO Affinities (potentially same transaction on revisit)
@@ -132,10 +119,12 @@ public class TransactionContextRewriter implements TraceRewriter {
             
             // Then, we have to determine if we need to add / remove a transaction start event
             var serviceCandidate = this.resolveCandidate(event.name());
+            var propagatedTransaction = this.transactionPropagationStack.peek();
             
             var transactionStartEventPresent = (this.lookahead(1) instanceof TransactionStartEvent);
-            var transactionAvailable = (this.currentTransaction != null);
-            var transactionStartEventRequired = this.isTransactionStartRequiredOn(serviceCandidate, transactionAvailable);
+            // We only have a readily usable transaction if it is propagated identically, otherwise we may need to create a local branch first 
+            var usableTransactionAvailable = (propagatedTransaction.transaction() != null && propagatedTransaction.propagationType() == TransactionPropagation.IDENTICAL);
+            var transactionStartEventRequired = this.isTransactionStartRequiredOn(serviceCandidate, usableTransactionAvailable);
               
             // We must only change something when the actual state does not fit the expectation
             if (transactionStartEventPresent && !transactionStartEventRequired) {
@@ -145,18 +134,17 @@ public class TransactionContextRewriter implements TraceRewriter {
 
                 // Create a synthetic transaction
                 Transaction syntheticTransaction;
-                if (this.propagatedTransaction != null) {
+                if (propagatedTransaction.transaction() != null) {
                     syntheticTransaction = this.buildLocalTransactionFor(propagatedTransaction, event.location());
-                    this.propagatedTransaction = null;
                 } else {
                     syntheticTransaction = new TopLevelTransaction(this.createSyntheticTransactionId(), this.currentLocation(), true);
                 }
-                this.registerTransactionAndSetAsCurrent(syntheticTransaction);
+                this.registerTransactionAndSetAsCurrent(syntheticTransaction);                
                 
                 // Insert a synthetic transaction start event
                 var syntheticStartEvent = new TransactionStartEvent(event.traceId(), event.timestamp(), this.currentLocation(), syntheticTransaction.id(), Demarcation.IMPLICIT);                
                 this.addRewrittenEvent(syntheticStartEvent);                
-            }             
+            }
         }
         
         private boolean isTransactionStartRequiredOn(ServiceCandidate serviceCandidate, boolean transactionAvailable) {
@@ -185,14 +173,15 @@ public class TransactionContextRewriter implements TraceRewriter {
         
         @Override
         protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
+            var propagatedTransaction = this.transactionPropagationStack.peek();
+            
             var previousEvent = this.lookback(1);
             var transactionEndEventExists = (previousEvent instanceof TransactionCommitEvent || previousEvent instanceof TransactionAbortEvent);
-            var transactionEndRequired = (this.currentTransaction != null);
+            // We have to insert a transaction end event if the transaction changed on the transition, i.e., if it is different from the propagated transaction  
+            var transactionEndRequired = (this.currentTransaction != null && !this.currentTransaction.equals(propagatedTransaction.transaction()));
             
-            // We only need to make changes if an event is missing, surplus events have been removed earlier             
-            if (!transactionEndEventExists && transactionEndRequired && this.currentTransaction.isSynthetic()) {
-                // TODO Maybe better use a stack to associate synthetic transactions with commits
-                // If a synthetic transaction was created (i.e., a synthetic start event was inserted), we must also insert a synthetic end event
+            // We only need to make changes if an event is missing, superfluous commit events are removed as they are encountered             
+            if (!transactionEndEventExists && transactionEndRequired) {
                 var syntheticCommitEvent = new TransactionCommitEvent(event.traceId(), event.timestamp(), this.currentLocation(), this.currentTransaction.id());
                 this.addRewrittenEvent(syntheticCommitEvent);
             }
@@ -326,7 +315,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
     }
-    
+        
     private record PropagatedTransaction(Transaction transaction, TransactionPropagation propagationType) {}
             
 }
