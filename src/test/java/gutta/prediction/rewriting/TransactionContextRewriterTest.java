@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,15 +104,24 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         
         var connectionC1C2 = new RemoteComponentConnection(component1, component2, true, 0, TransactionPropagation.SUBORDINATE, true);
         
-        var rewrittenTrace = new TransactionContextRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2)).rewriteTrace(inputEvents);
+        var rewriter = new TransactionContextRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2));
+        var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
+
+        var syntheticLocation = new SyntheticLocation(0);
+        var expectedTrace = Arrays.<MonitoringEvent> asList(
+                new UseCaseStartEvent(traceId, 0, location, "uc1"),
+                new TransactionStartEvent(traceId, 50, location, "tx1", Demarcation.EXPLICIT),
+                new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation, "sc1"),
+                new TransactionStartEvent(traceId, 110, syntheticLocation, "synthetic-0", Demarcation.IMPLICIT),
+                new TransactionCommitEvent(traceId, 120, syntheticLocation, "synthetic-0"),
+                new ServiceCandidateExitEvent(traceId, 120, syntheticLocation, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 130, location, "sc1"),
+                new TransactionCommitEvent(traceId, 150, location, "tx1"),
+                new UseCaseEndEvent(traceId, 200, location, "uc1")
+                );
         
-        printTrace(rewrittenTrace);
+        assertEquals(expectedTrace, rewrittenTrace);
     }
     
-    private static void printTrace(List<MonitoringEvent> trace) {
-        for (var event : trace) {
-            System.out.println(event);
-        }
-    }
-
 }
