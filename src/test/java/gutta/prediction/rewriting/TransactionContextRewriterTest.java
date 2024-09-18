@@ -2,7 +2,6 @@ package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
-import gutta.prediction.domain.LocalComponentConnection;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
@@ -18,12 +17,9 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -210,7 +206,6 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
      * Test case: If a subordinate-propagation-capable transition is replaced by a local transition, the start and commit events are removed.   
      */
     @Test
-    @Disabled
     void internalizeSubordinatePropagationFromExplicitTransaction() {
         final var traceId = 1234L;
         final var location1 = new ProcessLocation("test", 1234, 1);
@@ -233,19 +228,25 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var useCase = new UseCase("uc1");
         
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
-                
-        var useCaseAllocation = Collections.singletonMap("uc1", component1);
-        var candidateAllocation = Map.of(candidate, component2);        
-        var connectionC1C2 = new LocalComponentConnection(component1, component2, true);
+
+        var originalDeploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component1)
+                .assignServiceCandidate(candidate, component2)
+                .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.SUBORDINATE)
+                .build();
         
-        //var rewriter = new TransactionContextRewriter(Collections.singletonList(candidate), useCaseAllocation, candidateAllocation, new ComponentConnections(connectionC1C2));
-        //var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
+        var modifiedDeploymentModel = originalDeploymentModel.applyModifications()
+                .addLocalConnection(component1, component2)
+                .build();
+                
+        var rewriter = new TransactionContextRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
 
-        //var expectedTrace = Arrays.<MonitoringEvent> asList(
-                //);
+        var expectedTrace = Arrays.<MonitoringEvent> asList(
+                );
 
-        //rewrittenTrace.forEach(event -> System.out.println(event));
-        //assertEquals(expectedTrace, rewrittenTrace);
+        rewrittenTrace.forEach(event -> System.out.println(event));
+        assertEquals(expectedTrace, rewrittenTrace);
     }
     
 }

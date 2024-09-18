@@ -82,6 +82,7 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
     }
         
     private void assertExpectedLocation(MonitoringEvent event) {
+        // TODO Check the location against the expected location from the original deployment model 
         if (this.currentLocation == null || this.currentLocation.isSynthetic()) {
             return;
         } else if (!this.currentLocation.equals(event.location())) {
@@ -230,10 +231,15 @@ abstract class TraceRewriterWorker extends AbstractMonitoringEventProcessor {
         var sourceLocation = invocationEvent.location();
         var targetLocation = entryEvent.location();
         
-        if (connection.isRemote() && connection.isSynthetic() && !targetLocation.isSynthetic()) {
-            // For transitions along synthetic remote connections, a synthetic target location is required.
-            // If the target location is not already synthetic (for instance, due to a previous rewrite), it is created.
-            targetLocation = this.createSyntheticLocation();            
+        if (connection.isSynthetic()) {
+            if (connection.isRemote() && !targetLocation.isSynthetic()) {
+                // For transitions along synthetic remote connections, a synthetic target location is required.
+                // If the target location is not already synthetic (for instance, due to a previous rewrite), it is created.
+                targetLocation = this.createSyntheticLocation();
+            } else if (!connection.isRemote()) {
+                // If the connection is not remote, keep the current location
+                targetLocation = this.currentLocation;
+            }
         }
 
         // Ensure that the transition is valid
