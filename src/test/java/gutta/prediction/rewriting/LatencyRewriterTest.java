@@ -34,7 +34,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var fixture = this.createIdentityTraceFixture();
         
         var inputTrace = fixture.trace();
-        var rewrittenTrace = new LatencyRewriter(fixture.originalDeploymentModel(), fixture.modifiedDeploymentModel()).rewriteTrace(inputTrace);
+        var rewrittenTrace = new LatencyRewriter(fixture.deploymentModel()).rewriteTrace(inputTrace);
 
         assertEquals(inputTrace, rewrittenTrace);
     }
@@ -72,7 +72,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 .addLocalConnection(component1, component2)
                 .build();
 
-        var rewriter = new LatencyRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewriter = new LatencyRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var expectedTrace = Arrays.<MonitoringEvent>asList(
@@ -122,7 +122,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 .addSymmetricRemoteConnection(component1, component2, 50, TransactionPropagation.NONE)
                 .build();                
         
-        var rewriter = new LatencyRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewriter = new LatencyRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var artificialLocation = new SyntheticLocation(0);

@@ -40,7 +40,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var fixture = this.createIdentityTraceFixture();
         
         var inputTrace = fixture.trace();
-        var rewrittenTrace = new TransactionContextRewriter(fixture.originalDeploymentModel(), fixture.modifiedDeploymentModel()).rewriteTrace(inputTrace);
+        var rewrittenTrace = new TransactionContextRewriter(fixture.deploymentModel()).rewriteTrace(inputTrace);
 
         assertEquals(inputTrace, rewrittenTrace);
     }
@@ -74,7 +74,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .assignServiceCandidate(candidate, component)
                 .build();
                        
-        var rewriter = new TransactionContextRewriter(deploymentModel, deploymentModel); 
+        var rewriter = new TransactionContextRewriter(deploymentModel); 
         var exception = assertThrows(TraceRewriteException.class, () -> rewriter.rewriteTrace(inputEvents));
         
         // Make sure that the exception has the expected message and occurs at the expected event
@@ -118,7 +118,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
                 .build();
                 
-        var rewriter = new TransactionContextRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
 
         var syntheticLocation = new SyntheticLocation(0);
@@ -178,7 +178,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
                 .build();
                 
-        var rewriter = new TransactionContextRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
 
         var syntheticLocation1 = new SyntheticLocation(0);
@@ -242,7 +242,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .addLocalConnection(component1, component2)
                 .build();
                 
-        var rewriter = new TransactionContextRewriter(originalDeploymentModel, modifiedDeploymentModel);
+        var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
 
         var expectedTrace = Arrays.<MonitoringEvent> asList(

@@ -11,23 +11,20 @@ import java.util.Deque;
 
 public class EventProcessingContext {
 
-    private final DeploymentModel originalDeploymentModel;
-    
-    private final DeploymentModel modifiedDeploymentModel;
-    
+    private final DeploymentModel deploymentModel;
+        
     private final EventStream eventStream;
     
     private Deque<StackEntry> stack = new ArrayDeque<>();
 
     private ServiceCandidate currentServiceCandidate;
-
-    private Component currentComponent;
-
+    
+    private Component currentComponent;        
+    
     private Location currentLocation;
     
-    EventProcessingContext(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel, EventStream eventStream) {
-        this.originalDeploymentModel = originalDeploymentModel;
-        this.modifiedDeploymentModel = modifiedDeploymentModel;
+    EventProcessingContext(DeploymentModel deploymentModel, EventStream eventStream) {
+        this.deploymentModel = deploymentModel;
         this.eventStream = eventStream;
     }
     
@@ -54,15 +51,11 @@ public class EventProcessingContext {
     void currentLocation(Location location) {
         this.currentLocation = location;
     }
-    
-    public DeploymentModel originalDeploymentModel() {
-        return this.originalDeploymentModel;
+           
+    public DeploymentModel deploymentModel() {
+        return this.deploymentModel;
     }
-    
-    public DeploymentModel modifiedDeploymentModel() {
-        return this.modifiedDeploymentModel;
-    }
-    
+        
     public MonitoringEvent lookahead(int amount) {
         return this.eventStream.lookahead(amount);
     }

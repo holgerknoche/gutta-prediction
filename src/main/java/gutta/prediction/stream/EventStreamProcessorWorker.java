@@ -1,5 +1,6 @@
 package gutta.prediction.stream;
 
+import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.UseCase;
@@ -26,21 +27,17 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     private final EventStream events;
 
-    private final DeploymentModel originalDeploymentModel;
-
-    private final DeploymentModel modifiedDeploymentModel;
+    private final DeploymentModel deploymentModel;
 
     private final EventProcessingContext context;
 
     private int syntheticLocationIdCount = 0;
 
-    public EventStreamProcessorWorker(List<EventStreamProcessorListener> listeners, List<MonitoringEvent> events, DeploymentModel originalDeploymentModel,
-            DeploymentModel modifiedDeploymentModel) {
+    public EventStreamProcessorWorker(List<EventStreamProcessorListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
         this.listeners = listeners;
         this.events = new EventStream(events);
-        this.originalDeploymentModel = originalDeploymentModel;
-        this.modifiedDeploymentModel = modifiedDeploymentModel;
-        this.context = new EventProcessingContext(originalDeploymentModel, modifiedDeploymentModel, this.events);
+        this.deploymentModel = deploymentModel;
+        this.context = new EventProcessingContext(deploymentModel, this.events);
     }
 
     public void processEvents() {
@@ -75,44 +72,26 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
         return new SyntheticLocation(this.syntheticLocationIdCount++);
     }
 
-    private void assertExpectedLocation(MonitoringEvent event) {
-        // TODO Check the location against the expected location from the original deployment model
-//      if (this.currentLocation == null || this.currentLocation.isSynthetic()) {
-//      return;
-//  } else if (!this.currentLocation.equals(event.location())) {
-//      throw new IllegalStateException(
-//              "Unexpected location at event '" + event + "': Expected '" + this.currentLocation + ", but found '" + event.location() + "'.");    
-//  }
-    }
-
     @Override
     public Void handleEntityReadEvent(EntityReadEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onEntityReadEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleEntityWriteEvent(EntityWriteEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onEntityWriteEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onServiceCandidateEntryEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onServiceCandidateExitEvent(event, this.context));
 
         var nextEvent = this.events.lookahead(1);
@@ -120,7 +99,7 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
             var sourceComponent = this.context.currentComponent();
             // Determine the component to return to from the top of the stack
             var targetComponent = this.context.peek().component();
-            var connection = this.modifiedDeploymentModel.getConnection(sourceComponent, targetComponent)
+            var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent)
                     .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
 
             this.listeners.forEach(listener -> listener.onComponentReturn(event, returnEvent, connection, this.context));
@@ -133,22 +112,15 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     @Override
     public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onServiceCandidateInvocationEvent(event, context));
 
         var nextEvent = this.events.lookahead(1);
         if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
-            var sourceComponent = this.context.currentComponent();
-
             var invokedCandidateName = entryEvent.name();
-            var invokedCandidate = this.modifiedDeploymentModel.resolveServiceCandidateByName(invokedCandidateName)
-                    .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + invokedCandidateName + "' does not exist."));
-            var targetComponent = this.modifiedDeploymentModel.getComponentForServiceCandidate(invokedCandidate)
-                    .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + invokedCandidate + "' is not assigned to a component."));
-            var connection = this.modifiedDeploymentModel.getConnection(sourceComponent, targetComponent)
-                    .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
-
+            
+            var sourceComponent = this.context.currentComponent();
+            var connection = this.findConnectionForCandidateEntry(invokedCandidateName, sourceComponent, event);
+            
             this.performComponentTransition(event, entryEvent, connection);
         } else {
             throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
@@ -156,9 +128,17 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
         return null;
     }
-
-    private void performComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent,
-            ComponentConnection connection) {
+    
+    private ComponentConnection findConnectionForCandidateEntry(String candidateName, Component sourceComponent, MonitoringEvent event) {
+        var invokedCandidate = this.deploymentModel.resolveServiceCandidateByName(candidateName)
+                .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + candidateName + "' does not exist."));
+        var targetComponent = this.deploymentModel.getComponentForServiceCandidate(invokedCandidate)
+                .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + invokedCandidate + "' is not assigned to a component."));
+        return this.deploymentModel.getConnection(sourceComponent, targetComponent)
+                .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
+    }
+    
+    private void performComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
         this.listeners.forEach(listener -> listener.onComponentTransition(invocationEvent, entryEvent, connection, this.context));
 
         // Save the current state on the stack before making changes
@@ -178,14 +158,14 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
                 targetLocation = this.context.currentLocation();
             }
         }
-
+        
         // Ensure that the transition is valid
         this.ensureValidLocationTransition(sourceLocation, targetLocation, connection, entryEvent);
-
+        
         var enteredCandidateName = entryEvent.name();
-        var enteredServiceCandidate = this.modifiedDeploymentModel.resolveServiceCandidateByName(entryEvent.name())
+        var enteredServiceCandidate = this.deploymentModel.resolveServiceCandidateByName(entryEvent.name())
                 .orElseThrow(() -> new TraceProcessingException(entryEvent, "Service candidate '" + enteredCandidateName + "' does not exist."));
-
+        
         this.context.currentServiceCandidate(enteredServiceCandidate);
         this.context.currentComponent(targetComponent);
         this.context.currentLocation(targetLocation);
@@ -205,8 +185,6 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     @Override
     public Void handleServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
-        this.assertExpectedLocation(event);
-
         this.context.popCurrentState();
 
         this.listeners.forEach(listener -> listener.onServiceCandidateReturnEvent(event, this.context));
@@ -216,36 +194,30 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     @Override
     public Void handleTransactionAbortEvent(TransactionAbortEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onTransactionAbortEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleTransactionCommitEvent(TransactionCommitEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onTransactionCommitEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleTransactionStartEvent(TransactionStartEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));
         return null;
     }
 
     @Override
     public Void handleUseCaseStartEvent(UseCaseStartEvent event) {
-        this.assertExpectedLocation(event);
-
         // Determine the component providing the given use case
         var useCase = new UseCase(event.name());
-        var component = this.modifiedDeploymentModel.getComponentForUseCase(useCase)
+        
+        var component = this.deploymentModel.getComponentForUseCase(useCase)
                 .orElseThrow(() -> new TraceProcessingException(event, "Use case '" + useCase + "' is not assigned to a component."));
+        
 
         this.context.currentComponent(component);
         this.context.currentLocation(event.location());
@@ -256,8 +228,6 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     @Override
     public Void handleUseCaseEndEvent(UseCaseEndEvent event) {
-        this.assertExpectedLocation(event);
-
         this.listeners.forEach(listener -> listener.onUseCaseEndEvent(event, this.context));
 
         this.context.currentServiceCandidate(null);

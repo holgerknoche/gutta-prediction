@@ -24,18 +24,15 @@ import java.util.List;
  */
 public class LatencyRewriter implements TraceRewriter {
 
-    private final DeploymentModel originalDeploymentModel;
+    private final DeploymentModel deploymentModel;
     
-    private final DeploymentModel modifiedDeploymentModel;
-
-    public LatencyRewriter(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        this.originalDeploymentModel = originalDeploymentModel;
-        this.modifiedDeploymentModel = modifiedDeploymentModel;
+    public LatencyRewriter(DeploymentModel deploymentModel) {
+        this.deploymentModel = deploymentModel;
     }
 
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace) {
-        return new LatencyRewriterWorker().rewriteTrace(trace, this.originalDeploymentModel, this.modifiedDeploymentModel);        
+        return new LatencyRewriterWorker().rewriteTrace(trace, this.deploymentModel);        
     }
     
     private static class LatencyRewriterWorker extends TraceRewriterWorker {        

@@ -35,8 +35,8 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
         this.onEndOfRewrite();
     }
     
-    public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        new EventStreamProcessor(originalDeploymentModel, modifiedDeploymentModel)
+    public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {
+        new EventStreamProcessor(deploymentModel)
             .addListener(this)
             .processEvents(trace);
         

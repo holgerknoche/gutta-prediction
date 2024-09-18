@@ -50,14 +50,14 @@ abstract class TraceRewriterTestTemplate {
         var useCase = new UseCase("uc1");
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
-        var originalDeploymentModel = new DeploymentModel.Builder()
+        var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCase(useCase, component)
                 .assignServiceCandidate(candidate, component)
                 .build();        
         
-        return new TraceFixture(inputTrace, originalDeploymentModel, originalDeploymentModel);
+        return new TraceFixture(inputTrace, deploymentModel);
     }
     
-    protected record TraceFixture(List<MonitoringEvent> trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {}
+    protected record TraceFixture(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {}
 
 }

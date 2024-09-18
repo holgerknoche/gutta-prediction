@@ -28,18 +28,15 @@ import java.util.function.Consumer;
 
 public class TransactionContextRewriter implements TraceRewriter {
 
-    private final DeploymentModel originalDeploymentModel;
-    
-    private final DeploymentModel modifiedDeploymentModel;
-    
-    public TransactionContextRewriter(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        this.originalDeploymentModel = originalDeploymentModel;
-        this.modifiedDeploymentModel = modifiedDeploymentModel;
+    private final DeploymentModel deploymentModel;
+        
+    public TransactionContextRewriter(DeploymentModel deploymentModel) {
+        this.deploymentModel = deploymentModel;
     }        
     
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> inputTrace) {
-        return new TransactionContextRewriterWorker().rewriteTrace(inputTrace, this.originalDeploymentModel, this.modifiedDeploymentModel);
+        return new TransactionContextRewriterWorker().rewriteTrace(inputTrace, this.deploymentModel);
     }
     
     private static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
@@ -108,7 +105,7 @@ public class TransactionContextRewriter implements TraceRewriter {
             
             // Then, we have to determine if we need to add / remove a transaction start event
             var serviceCandidateName = event.name();
-            var serviceCandidate = context.modifiedDeploymentModel().resolveServiceCandidateByName(serviceCandidateName).orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + serviceCandidateName + "' does not exist."));
+            var serviceCandidate = context.deploymentModel().resolveServiceCandidateByName(serviceCandidateName).orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + serviceCandidateName + "' does not exist."));
             var propagatedTransaction = this.transactionPropagationStack.peek();
             
             var transactionStartEventPresent = (context.lookahead(1) instanceof TransactionStartEvent);

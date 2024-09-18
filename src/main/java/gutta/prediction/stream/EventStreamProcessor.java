@@ -10,13 +10,10 @@ public class EventStreamProcessor {
     
     private final List<EventStreamProcessorListener> listeners;
     
-    private final DeploymentModel originalDeploymentModel;
-    
-    private final DeploymentModel modifiedDeploymentModel;
-    
-    public EventStreamProcessor(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        this.originalDeploymentModel = originalDeploymentModel;
-        this.modifiedDeploymentModel = modifiedDeploymentModel;
+    private final DeploymentModel deploymentModel;
+        
+    public EventStreamProcessor(DeploymentModel deploymentModel) {
+        this.deploymentModel = deploymentModel;
         this.listeners = new ArrayList<>();
     }
     
@@ -26,7 +23,7 @@ public class EventStreamProcessor {
     }
     
     public void processEvents(List<MonitoringEvent> events) {
-        new EventStreamProcessorWorker(List.copyOf(this.listeners), events, this.originalDeploymentModel, this.modifiedDeploymentModel).processEvents();
+        new EventStreamProcessorWorker(List.copyOf(this.listeners), events, this.deploymentModel).processEvents();
     }
     
 }
