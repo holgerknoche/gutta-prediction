@@ -15,10 +15,9 @@ import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
-import gutta.prediction.stream.SyntheticLocation;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import org.junit.jupiter.api.Disabled;
+import gutta.prediction.stream.SyntheticLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -208,7 +207,6 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
      * Test case: If a subordinate-propagation-capable transition is replaced by a local transition, the start and commit events are removed.   
      */
     @Test
-    @Disabled
     void internalizeSubordinatePropagationFromExplicitTransaction() {
         final var traceId = 1234L;
         final var location1 = new ProcessLocation("test", 1234, 1);
@@ -219,6 +217,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 new TransactionStartEvent(traceId, 50, location1, "tx1", Demarcation.EXPLICIT),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 110, location2, "sc1"),
+                new TransactionStartEvent(traceId, 110, location2, "tx2", Demarcation.IMPLICIT),
+                new TransactionCommitEvent(traceId, 120, location2, "tx2"),
                 new ServiceCandidateExitEvent(traceId, 120, location2, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
                 new TransactionCommitEvent(traceId, 150, location1, "tx1"),
@@ -246,9 +246,16 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
 
         var expectedTrace = Arrays.<MonitoringEvent> asList(
+                new UseCaseStartEvent(traceId, 0, location1, "uc1"),
+                new TransactionStartEvent(traceId, 50, location1, "tx1", Demarcation.EXPLICIT),
+                new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, location1, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 120, location1, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
+                new TransactionCommitEvent(traceId, 150, location1, "tx1"),
+                new UseCaseEndEvent(traceId, 200, location1, "uc1")                
                 );
 
-        rewrittenTrace.forEach(event -> System.out.println(event));
         assertEquals(expectedTrace, rewrittenTrace);
     }
     

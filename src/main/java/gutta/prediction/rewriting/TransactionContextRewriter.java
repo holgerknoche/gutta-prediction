@@ -216,7 +216,10 @@ public class TransactionContextRewriter implements TraceRewriter {
                 transactionsToRemove.forEach(transaction -> this.transactionAtLocation.remove(transaction.location()));
                 this.currentTransaction = null;
                 
-                this.addRewrittenEvent(event);
+                if (!this.removedTransactionIds.contains(event.transactionId())) {
+                    // Add the event if the transaction has not been deleted
+                    this.addRewrittenEvent(event);
+                }
             }            
         }                
                 
