@@ -14,6 +14,8 @@ import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.TransactionStartEvent.Demarcation;
+import gutta.prediction.stream.EventProcessingContext;
+import gutta.prediction.stream.TraceProcessingException;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -37,8 +39,7 @@ public class TransactionContextRewriter implements TraceRewriter {
     
     @Override
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> inputTrace) {
-        var worker = new TransactionContextRewriterWorker(inputTrace, this.originalDeploymentModel, this.modifiedDeploymentModel);
-        return worker.rewriteTrace();
+        return new TransactionContextRewriterWorker().rewriteTrace(inputTrace, this.originalDeploymentModel, this.modifiedDeploymentModel);
     }
     
     private static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
@@ -52,11 +53,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         private int syntheticTransactionIdCount;
         
         private Transaction currentTransaction;
-                
-        public TransactionContextRewriterWorker(List<MonitoringEvent> events, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {            
-            super(events, originalDeploymentModel, modifiedDeploymentModel);
-        }
-                
+                                
         @Override
         protected void onStartOfRewrite() {
             this.transactionAtLocation = new HashMap<>();
@@ -67,7 +64,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
 
         @Override
-        protected void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
+        public void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, EventProcessingContext context) {
             var propagatedTransaction = new PropagatedTransaction(this.currentTransaction, connection.transactionPropagation());
             this.transactionPropagationStack.push(propagatedTransaction);
         }
@@ -91,7 +88,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
                 
         @Override
-        protected void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
+        public void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection, EventProcessingContext context) {
             var propagatedTransaction = this.transactionPropagationStack.pop();
             
             // Restore the current transaction
@@ -105,15 +102,16 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
         @Override
-        protected void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
+        public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, EventProcessingContext context) {
             // In any case, the entry event is copied / adjusted
-            this.adjustLocationAndAdd(event);
+            this.adjustLocationAndAdd(event, context);
             
             // Then, we have to determine if we need to add / remove a transaction start event
-            var serviceCandidate = this.resolveModifiedServiceCandidate(event.name());
+            var serviceCandidateName = event.name();
+            var serviceCandidate = context.modifiedDeploymentModel().resolveServiceCandidateByName(serviceCandidateName).orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + serviceCandidateName + "' does not exist."));
             var propagatedTransaction = this.transactionPropagationStack.peek();
             
-            var transactionStartEventPresent = (this.lookahead(1) instanceof TransactionStartEvent);
+            var transactionStartEventPresent = (context.lookahead(1) instanceof TransactionStartEvent);
             // We only have a readily usable transaction if it is propagated identically, otherwise we may need to create a local branch first 
             var usableTransactionAvailable = (propagatedTransaction.transaction() != null && propagatedTransaction.propagationType() == TransactionPropagation.IDENTICAL);
             var transactionStartEventRequired = this.isTransactionStartRequiredOn(serviceCandidate, usableTransactionAvailable);
@@ -121,7 +119,7 @@ public class TransactionContextRewriter implements TraceRewriter {
             // We must only change something when the actual state does not fit the expectation
             if (transactionStartEventPresent && !transactionStartEventRequired) {
                 // If a transaction start event is present, but is no longer required, mark the respective transaction ID for removal
-                var transactionStartEvent = (TransactionStartEvent) this.lookahead(1);
+                var transactionStartEvent = (TransactionStartEvent) context.lookahead(1);
                 this.removedTransactionIds.add(transactionStartEvent.transactionId());
             } else if (!transactionStartEventPresent && transactionStartEventRequired) {
                 // If a transaction start event is missing although it is required, insert a synthetic transaction
@@ -129,12 +127,12 @@ public class TransactionContextRewriter implements TraceRewriter {
                 if (propagatedTransaction.transaction() != null) {
                     syntheticTransaction = this.buildLocalTransactionFor(propagatedTransaction, event.location());
                 } else {
-                    syntheticTransaction = new TopLevelTransaction(this.createSyntheticTransactionId(), this.currentLocation());
+                    syntheticTransaction = new TopLevelTransaction(this.createSyntheticTransactionId(), context.currentLocation());
                 }
-                this.registerTransactionAndSetAsCurrent(syntheticTransaction);                
+                this.registerTransactionAndSetAsCurrent(syntheticTransaction, context);                
                 
                 // Insert a synthetic transaction start event for the transaction
-                var syntheticStartEvent = new TransactionStartEvent(event.traceId(), event.timestamp(), this.currentLocation(), syntheticTransaction.id(), Demarcation.IMPLICIT);                
+                var syntheticStartEvent = new TransactionStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), syntheticTransaction.id(), Demarcation.IMPLICIT);                
                 this.addRewrittenEvent(syntheticStartEvent);                
             }
         }
@@ -164,48 +162,48 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
         @Override
-        protected void onServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
+        public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, EventProcessingContext context) {
             var propagatedTransaction = this.transactionPropagationStack.peek();
             
-            var previousEvent = this.lookback(1);
+            var previousEvent = context.lookback(1);
             var transactionEndEventExists = (previousEvent instanceof TransactionCommitEvent || previousEvent instanceof TransactionAbortEvent);
             // We have to insert a transaction end event if the transaction changed on the transition, i.e., if it is different from the propagated transaction  
             var transactionEndRequired = (this.currentTransaction != null && !this.currentTransaction.equals(propagatedTransaction.transaction()));
             
             // We only need to make changes if an event is missing, superfluous commit events are removed as they are encountered             
             if (!transactionEndEventExists && transactionEndRequired) {
-                var syntheticCommitEvent = new TransactionCommitEvent(event.traceId(), event.timestamp(), this.currentLocation(), this.currentTransaction.id());
+                var syntheticCommitEvent = new TransactionCommitEvent(event.traceId(), event.timestamp(), context.currentLocation(), this.currentTransaction.id());
                 this.addRewrittenEvent(syntheticCommitEvent);
             }
             
-            this.adjustLocationAndAdd(event);
+            this.adjustLocationAndAdd(event, context);
         }
         
         @Override
-        protected void onTransactionStartEvent(TransactionStartEvent event) {
+        public void onTransactionStartEvent(TransactionStartEvent event, EventProcessingContext context) {
             // TODO Question: Do we keep this event or do we remove it?
             
             if (event.demarcation() == Demarcation.EXPLICIT) {
-                this.startExplicitlyDemarcatedTransaction(event);     
+                this.startExplicitlyDemarcatedTransaction(event, context);     
             } else {
                 this.startImplicitlyDemarcatedTransaction(event);
             }                        
         }
         
-        private void startExplicitlyDemarcatedTransaction(TransactionStartEvent event) {
+        private void startExplicitlyDemarcatedTransaction(TransactionStartEvent event, EventProcessingContext context) {
             if (this.currentTransaction != null) {
                 throw new TraceRewriteException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
             }
             
             var newTransaction = new TopLevelTransaction(event.transactionId(), event.location());
-            this.registerTransactionAndSetAsCurrent(newTransaction);
+            this.registerTransactionAndSetAsCurrent(newTransaction, context);
             
             // Explicitly demarcated transaction start events are always kept
             this.addRewrittenEvent(event);
         }
         
-        private void registerTransactionAndSetAsCurrent(Transaction transaction) {
-            this.transactionAtLocation.put(this.currentLocation(), transaction);
+        private void registerTransactionAndSetAsCurrent(Transaction transaction, EventProcessingContext context) {
+            this.transactionAtLocation.put(context.currentLocation(), transaction);
             this.currentTransaction = transaction;
         }
                 
@@ -214,7 +212,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         }
         
         @Override
-        protected void onTransactionCommitEvent(TransactionCommitEvent event) {
+        public void onTransactionCommitEvent(TransactionCommitEvent event, EventProcessingContext context) {
             if (this.currentTransaction != null) {
                 // If a transaction is active, remove it and all its subordinates and keep the commit event
                 var transactionsToRemove = this.currentTransaction.getThisAndAllSubordinates();

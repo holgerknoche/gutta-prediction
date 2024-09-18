@@ -14,6 +14,7 @@ import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.stream.SyntheticLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

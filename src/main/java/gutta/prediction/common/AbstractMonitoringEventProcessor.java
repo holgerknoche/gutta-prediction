@@ -7,7 +7,7 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
-import gutta.prediction.util.EventStream;
+import gutta.prediction.stream.EventStream;
 
 import java.util.List;
 
