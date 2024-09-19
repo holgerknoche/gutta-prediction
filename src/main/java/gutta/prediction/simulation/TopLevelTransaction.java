@@ -29,4 +29,9 @@ class TopLevelTransaction extends Transaction {
         return super.equalsInternal(that);
     }
     
+    @Override
+    public String toString() {
+        return "Top level transaction " + this.id() + " at location " + this.location();
+    }
+    
 }

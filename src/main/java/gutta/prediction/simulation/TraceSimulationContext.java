@@ -79,7 +79,7 @@ public class TraceSimulationContext {
     }
     
     void pushCurrentState() {
-        this.stack.push(new StackEntry(this.currentServiceCandidate, this.currentComponent, this.currentLocation));
+        this.stack.push(new StackEntry(this.currentServiceCandidate, this.currentComponent, this.currentLocation, this.currentTransaction));
     }
     
     StackEntry popCurrentState() {
@@ -88,6 +88,7 @@ public class TraceSimulationContext {
         this.currentServiceCandidate = entry.serviceCandidate();
         this.currentComponent = entry.component();
         this.currentLocation = entry.location();
+        this.currentTransaction = entry.transaction();
         
         return entry;
     }

@@ -27,8 +27,7 @@ class SubordinateTransaction extends Transaction {
     
     @Override
     public int hashCode() {
-        // TODO Auto-generated method stub
-        return super.hashCode();
+        return super.hashCode() + Objects.hashCode(this.parent);
     }
     
     @Override
@@ -42,6 +41,11 @@ class SubordinateTransaction extends Transaction {
         }
         
         return Objects.equals(this.parent, that.parent);
+    }
+    
+    @Override
+    public String toString() {
+        return "Subordinate transaction " + this.id() + " at location " + this.location();
     }
     
 }

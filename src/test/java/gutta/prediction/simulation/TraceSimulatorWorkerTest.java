@@ -22,7 +22,6 @@ import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,10 +35,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TraceSimulatorWorkerTest {
     
     /**
-     * Test case: A fully local trace does not introduce any synthetic locations.
+     * Test case: Transaction creation for a trace with explicit transactiond demarcation. 
      */
     @Test
-    void fullyLocalTrace() {
+    void explicitTransaction() {
+        // Define the individual events
         var traceId = 1234L;
         var location = new ProcessLocation("test", 1234, 1);
         
@@ -102,6 +102,70 @@ class TraceSimulatorWorkerTest {
         
         var assumedStates = listener.assumedStates();
         
+        assertEquals(expectedStates, assumedStates);
+    }
+    
+    /**
+     * Test case: Transaction creation for a trace with implicit transaction demarcation.
+     */
+    @Test
+    void implicitTransaction() {
+        // Define the individual events
+        var traceId = 1234L;
+        var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
+        var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
+        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
+        
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                candidateInvocationEvent,
+                candidateEntryEvent,
+                entityReadEvent,
+                entityWriteEvent,
+                candidateExitEvent,
+                candidateReturnEvent,
+                useCaseEndEvent
+                );
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(candidate, component)
+                .build();
+        
+        // Perform the simulation
+        var listener = new StateMonitoringListener();
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the expected states match the actually assumed states
+        var transaction = new TopLevelTransaction("synthetic-0", candidateEntryEvent, location);
+        
+        var expectedStates = List.<SimulationState> of(
+                new SimulationState(useCaseStartEvent, null, component, location, null),
+                new SimulationState(candidateInvocationEvent, null, component, location, null),
+                new SimulationState(candidateEntryEvent, candidate, component, location, transaction),
+                new SimulationState(entityReadEvent, candidate, component, location, transaction),
+                new SimulationState(entityWriteEvent, candidate, component, location, transaction),
+                new SimulationState(candidateExitEvent, candidate, component, location, transaction),
+                new SimulationState(candidateReturnEvent, null, component, location, null),
+                new SimulationState(useCaseEndEvent, null, component, location, null)
+                );
+        
+        var assumedStates = listener.assumedStates();               
         assertEquals(expectedStates, assumedStates);
     }
     
@@ -218,5 +282,5 @@ class TraceSimulatorWorkerTest {
     }
     
     private record SimulationState(MonitoringEvent event, ServiceCandidate candidate, Component component, Location location, Transaction transaction) {}
-
+    
 }

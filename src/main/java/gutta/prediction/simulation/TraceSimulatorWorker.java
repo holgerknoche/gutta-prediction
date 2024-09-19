@@ -126,14 +126,28 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
             var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent)
                     .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
 
-            this.listeners.forEach(listener -> listener.onComponentReturn(event, returnEvent, connection, this.context));
+            this.performComponentReturn(event, returnEvent, connection);
         } else {
             throw new IllegalStateException("A service candidate exit event is not followed by a service candidate return event.");
         }
 
         return null;
     }
-
+    
+    private void performComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
+        this.listeners.forEach(listener -> listener.onComponentReturn(exitEvent, returnEvent, connection, this.context));
+        
+        var transaction = this.currentTransaction();
+        var stackEntry = this.context.peek();
+        
+        if (transaction != null && !transaction.equals(stackEntry.transaction())) {
+            // TODO Commit / abort the transaction
+        }
+        
+        // Restore the state from the stack (including location, etc.)
+        this.context.popCurrentState();
+    }
+            
     @Override
     public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateInvocationEvent(event, context));
@@ -306,10 +320,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
 
     @Override
     public Void handleServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
-        this.context.popCurrentState();
-
         this.listeners.forEach(listener -> listener.onServiceCandidateReturnEvent(event, this.context));
-
         return null;
     }
 

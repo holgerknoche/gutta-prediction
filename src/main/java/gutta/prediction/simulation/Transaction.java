@@ -70,7 +70,7 @@ public abstract class Transaction {
     }
     
     protected boolean equalsInternal(Transaction that) {
-        return (this.id == that.id) &&
+        return Objects.equals(this.id, that.id) &&
                Objects.equals(this.startEvent, that.startEvent) &&
                Objects.equals(this.location, that.location) &&
                Objects.equals(this.subordinates, that.subordinates);
