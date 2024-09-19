@@ -20,14 +20,19 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
  * Test cases for the class {@link TraceSimulatorWorker}.
@@ -169,6 +174,104 @@ class TraceSimulatorWorkerTest {
         assertEquals(expectedStates, assumedStates);
     }
     
+    static Stream<Arguments> activeTransactionArguments() {
+        return Stream.of(
+                arguments(TransactionBehavior.MANDATORY, ExpectedOutcome.SAME_TRANSACTION, null),
+                arguments(TransactionBehavior.NEVER, ExpectedOutcome.ERROR, "Active transaction found for"),
+                arguments(TransactionBehavior.NOT_SUPPORTED, ExpectedOutcome.NO_TRANSACTION, null),
+                arguments(TransactionBehavior.REQUIRED, ExpectedOutcome.SAME_TRANSACTION, null),
+                arguments(TransactionBehavior.REQUIRES_NEW, ExpectedOutcome.NEW_TRANSACTION, null),
+                arguments(TransactionBehavior.SUPPORTED, ExpectedOutcome.SAME_TRANSACTION, null)
+                );
+    }
+        
+    /**
+     * Test cases: Different transaction behaviors (see {@link TransactionBehavior}) when a transaction is active. 
+     */
+    @ParameterizedTest
+    @MethodSource("activeTransactionArguments")
+    void behaviorWithActiveTransaction(TransactionBehavior behavior, ExpectedOutcome expectedOutcome, String expectedErrorMessageFragment) {
+        // Define the individual events
+        var traceId = 1234L;
+        var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var transactionStartEvent = new TransactionStartEvent(traceId, 1, location, "tx1");
+        var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
+        var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
+        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
+        var transactionCommitEvent = new TransactionCommitEvent(traceId, 8, location, "tx1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
+        
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                transactionStartEvent,
+                candidateInvocationEvent,
+                candidateEntryEvent,
+                entityReadEvent,
+                entityWriteEvent,
+                candidateExitEvent,
+                candidateReturnEvent,
+                transactionCommitEvent,
+                useCaseEndEvent
+                );
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+        var candidate = new ServiceCandidate("sc1", behavior);
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(candidate, component)
+                .build();
+        
+        // Perform the simulation
+        var listener = new StateMonitoringListener();
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        
+        if (expectedOutcome == ExpectedOutcome.ERROR) {
+            // If an error is expected, ensure that it occurs
+            var exception = assertThrows(TraceProcessingException.class, worker::processEvents);
+            assertTrue(exception.getMessage().contains(expectedErrorMessageFragment));            
+        } else {
+            // Otherwise, process the events and inspect the result
+            worker.processEvents();
+
+            // Create the transactions to match against
+            var surroundingTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location);
+
+            var expectedTransaction = switch (expectedOutcome) {
+            case NO_TRANSACTION -> null;
+            case SAME_TRANSACTION -> surroundingTransaction;
+            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location);
+            case SUBORDINATE_TRANSACTION -> null;
+            case ERROR -> null;
+            };
+            
+            var expectedStates = List.<SimulationState> of(
+                    new SimulationState(useCaseStartEvent, null, component, location, null),
+                    new SimulationState(transactionStartEvent, null, component, location, surroundingTransaction),
+                    new SimulationState(candidateInvocationEvent, null, component, location, surroundingTransaction),
+                    new SimulationState(candidateEntryEvent, candidate, component, location, expectedTransaction),
+                    new SimulationState(entityReadEvent, candidate, component, location, expectedTransaction),
+                    new SimulationState(entityWriteEvent, candidate, component, location, expectedTransaction),
+                    new SimulationState(candidateExitEvent, candidate, component, location, expectedTransaction),
+                    new SimulationState(candidateReturnEvent, null, component, location, surroundingTransaction),
+                    new SimulationState(transactionCommitEvent, null, component, location, surroundingTransaction),
+                    new SimulationState(useCaseEndEvent, null, component, location, null)
+                    );
+
+            var assumedStates = listener.assumedStates();        
+            assertEquals(expectedStates, assumedStates);
+        }
+    }
+        
     /**
      * Test case: An error occurs when a transaction is already active when an explicitly demarcated transaction is started. 
      */
@@ -282,5 +385,13 @@ class TraceSimulatorWorkerTest {
     }
     
     private record SimulationState(MonitoringEvent event, ServiceCandidate candidate, Component component, Location location, Transaction transaction) {}
+    
+    private enum ExpectedOutcome {
+        NO_TRANSACTION,
+        SAME_TRANSACTION,
+        SUBORDINATE_TRANSACTION,
+        NEW_TRANSACTION,
+        ERROR
+    }
     
 }

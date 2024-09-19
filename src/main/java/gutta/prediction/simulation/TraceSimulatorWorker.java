@@ -265,14 +265,14 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         switch (transactionBehavior) {
         case MANDATORY:
             if (!transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "No active transaction found for candidate '" + "' with behavior " + transactionBehavior + "'.");
+                throw new TraceProcessingException(contextEvent, "No active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
             }
             
             return TransactionAction.KEEP; 
             
         case NEVER:
             if (transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "Active transaction found for candidate '" + "' with behavior " + transactionBehavior + "'.");
+                throw new TraceProcessingException(contextEvent, "Active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
             }
             
             return TransactionAction.KEEP;
