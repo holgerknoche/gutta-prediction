@@ -1,10 +1,10 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.event.MonitoringEvent;
 
 import java.util.List;
 
-public class EventStream implements EventStreamView {
+public class EventStream {
 
     private final List<MonitoringEvent> events;
 
@@ -21,7 +21,6 @@ public class EventStream implements EventStreamView {
         return this.events.size();
     }
 
-    @Override
     public MonitoringEvent lookahead(int amount) {        
         var desiredPosition = (this.currentPosition + amount);
         if (desiredPosition > this.maxPosition || desiredPosition < 0) {
@@ -31,7 +30,6 @@ public class EventStream implements EventStreamView {
         return this.events.get(desiredPosition);
     }
     
-    @Override
     public MonitoringEvent lookback(int amount) {
         return this.lookahead(-amount);
     }

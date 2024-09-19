@@ -13,14 +13,14 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.stream.EventProcessingContext;
-import gutta.prediction.stream.EventStreamProcessor;
-import gutta.prediction.stream.EventStreamProcessorListener;
+import gutta.prediction.simulation.TraceSimulationContext;
+import gutta.prediction.simulation.TraceSimulator;
+import gutta.prediction.simulation.TraceSimulationListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class TraceRewriterWorker implements EventStreamProcessorListener {
+abstract class TraceRewriterWorker implements TraceSimulationListener {
            
     private List<MonitoringEvent> rewrittenEvents;        
 
@@ -36,7 +36,7 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
     
     public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {
-        new EventStreamProcessor(deploymentModel)
+        new TraceSimulator(deploymentModel)
             .addListener(this)
             .processEvents(trace);
         
@@ -56,12 +56,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
                     
     @Override
-    public void onEntityReadEvent(EntityReadEvent event, EventProcessingContext context) {
+    public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(EntityReadEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(EntityReadEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else {
@@ -70,12 +70,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
         
     @Override
-    public void onEntityWriteEvent(EntityWriteEvent event, EventProcessingContext context) {
+    public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(EntityWriteEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(EntityWriteEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else {
@@ -84,12 +84,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
         
     @Override    
-    public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, EventProcessingContext context) {
+    public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateEntryEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -98,12 +98,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }       
     
     @Override
-    public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, EventProcessingContext context) {
+    public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateExitEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(ServiceCandidateExitEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -112,12 +112,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
     
     @Override
-    public void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, EventProcessingContext context) {
+    public void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateInvocationEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -126,12 +126,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }            
     
     @Override
-    public void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, EventProcessingContext context) {
+    public void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateReturnEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -140,12 +140,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
     
     @Override
-    public void onTransactionAbortEvent(TransactionAbortEvent event, EventProcessingContext context) {
+    public void onTransactionAbortEvent(TransactionAbortEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(TransactionAbortEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(TransactionAbortEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -154,12 +154,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
         
     @Override
-    public void onTransactionCommitEvent(TransactionCommitEvent event, EventProcessingContext context) {
+    public void onTransactionCommitEvent(TransactionCommitEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(TransactionCommitEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(TransactionCommitEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -168,12 +168,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
         
     @Override
-    public void onTransactionStartEvent(TransactionStartEvent event, EventProcessingContext context) {
+    public void onTransactionStartEvent(TransactionStartEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(TransactionStartEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(TransactionStartEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -182,12 +182,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
         
     @Override
-    public void onUseCaseStartEvent(UseCaseStartEvent event, EventProcessingContext context) {
+    public void onUseCaseStartEvent(UseCaseStartEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(UseCaseStartEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(UseCaseStartEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
@@ -196,12 +196,12 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
     }
     
     @Override
-    public void onUseCaseEndEvent(UseCaseEndEvent event, EventProcessingContext context) {
+    public void onUseCaseEndEvent(UseCaseEndEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(UseCaseEndEvent event, EventProcessingContext context) {
+    protected void adjustLocationAndAdd(UseCaseEndEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 

@@ -1,4 +1,4 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
@@ -9,7 +9,7 @@ import gutta.prediction.event.MonitoringEvent;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class EventProcessingContext {
+public class TraceSimulationContext {
 
     private final DeploymentModel deploymentModel;
         
@@ -25,7 +25,7 @@ public class EventProcessingContext {
     
     private Transaction currentTransaction;
     
-    EventProcessingContext(DeploymentModel deploymentModel, EventStream eventStream) {
+    TraceSimulationContext(DeploymentModel deploymentModel, EventStream eventStream) {
         this.deploymentModel = deploymentModel;
         this.eventStream = eventStream;
     }

@@ -1,4 +1,4 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.MonitoringEvent;
@@ -6,24 +6,24 @@ import gutta.prediction.event.MonitoringEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EventStreamProcessor {
+public class TraceSimulator {
     
-    private final List<EventStreamProcessorListener> listeners;
+    private final List<TraceSimulationListener> listeners;
     
     private final DeploymentModel deploymentModel;
         
-    public EventStreamProcessor(DeploymentModel deploymentModel) {
+    public TraceSimulator(DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
         this.listeners = new ArrayList<>();
     }
     
-    public EventStreamProcessor addListener(EventStreamProcessorListener listener) {
+    public TraceSimulator addListener(TraceSimulationListener listener) {
         this.listeners.add(listener);
         return this;
     }
     
     public void processEvents(List<MonitoringEvent> events) {
-        new EventStreamProcessorWorker(List.copyOf(this.listeners), events, this.deploymentModel).processEvents();
+        new TraceSimulatorWorker(List.copyOf(this.listeners), events, this.deploymentModel).processEvents();
     }
     
 }

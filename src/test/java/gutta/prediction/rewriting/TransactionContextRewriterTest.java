@@ -16,7 +16,7 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.stream.SyntheticLocation;
+import gutta.prediction.simulation.SyntheticLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

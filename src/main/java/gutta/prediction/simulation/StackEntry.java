@@ -1,4 +1,4 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ServiceCandidate;

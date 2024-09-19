@@ -1,4 +1,4 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test cases for the class {@link EventStreamProcessorWorker}.
+ * Test cases for the class {@link TraceSimulatorWorker}.
  */
-class EventStreamProcessorWorkerTest {
+class TraceSimulatorWorkerTest {
     
     /**
      * Test case: An error occurs when a transaction is already active when an explicitly demarcated transaction is started. 
@@ -53,7 +53,7 @@ class EventStreamProcessorWorkerTest {
                 .assignServiceCandidate(candidate, component)
                 .build();
                        
-        var worker = new EventStreamProcessorWorker(Collections.emptyList(), inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(Collections.emptyList(), inputEvents, deploymentModel); 
         var exception = assertThrows(TraceProcessingException.class, () -> worker.processEvents());
         
         // Make sure that the exception has the expected message and occurs at the expected event

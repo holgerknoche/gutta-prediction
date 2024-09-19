@@ -3,7 +3,7 @@ package gutta.prediction.rewriting;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
-import gutta.prediction.stream.EventProcessingContext;
+import gutta.prediction.simulation.TraceSimulationContext;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class TransactionContextRewriter implements TraceRewriter {
         // TODO Affinities (potentially same transaction on revisit)           
     
         @Override
-        public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, EventProcessingContext context) {
+        public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
             var currentTransaction = context.currentTransaction();
             
             var transactionStartedByCurrentEvent = (currentTransaction != null && event.equals(currentTransaction.startEvent()));

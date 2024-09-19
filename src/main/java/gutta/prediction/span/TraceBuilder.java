@@ -4,7 +4,7 @@ import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.stream.EventStream;
+import gutta.prediction.simulation.EventStream;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

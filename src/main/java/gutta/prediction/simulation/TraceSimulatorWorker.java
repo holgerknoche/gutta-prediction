@@ -1,4 +1,4 @@
-package gutta.prediction.stream;
+package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
@@ -23,25 +23,25 @@ import gutta.prediction.event.UseCaseStartEvent;
 
 import java.util.List;
 
-class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
+class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
 
-    private final List<EventStreamProcessorListener> listeners;
+    private final List<TraceSimulationListener> listeners;
 
     private final EventStream events;
 
     private final DeploymentModel deploymentModel;
 
-    private final EventProcessingContext context;
+    private final TraceSimulationContext context;
         
     private int syntheticLocationIdCount = 0;
     
     private int syntheticTransactionIdCount = 0;
 
-    public EventStreamProcessorWorker(List<EventStreamProcessorListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
+    public TraceSimulatorWorker(List<TraceSimulationListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
         this.listeners = listeners;
         this.events = new EventStream(events);
         this.deploymentModel = deploymentModel;
-        this.context = new EventProcessingContext(deploymentModel, this.events);
+        this.context = new TraceSimulationContext(deploymentModel, this.events);
     }
 
     public void processEvents() {
@@ -52,7 +52,7 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     private void onStartOfProcessing() {
         // Notify listeners
-        this.listeners.forEach(EventStreamProcessorListener::onStartOfProcessing);
+        this.listeners.forEach(TraceSimulationListener::onStartOfProcessing);
     }
 
     private void processEventsInStream() {
@@ -69,7 +69,7 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
     private void onEndOfProcessing() {
         // Notify listeners
-        this.listeners.forEach(EventStreamProcessorListener::onEndOfProcessing);
+        this.listeners.forEach(TraceSimulationListener::onEndOfProcessing);
     }
 
     private SyntheticLocation createSyntheticLocation() {
