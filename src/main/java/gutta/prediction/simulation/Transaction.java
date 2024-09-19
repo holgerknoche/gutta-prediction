@@ -74,6 +74,6 @@ public abstract class Transaction {
                Objects.equals(this.startEvent, that.startEvent) &&
                Objects.equals(this.location, that.location) &&
                Objects.equals(this.subordinates, that.subordinates);
-    }
+    }        
     
 }

@@ -40,7 +40,8 @@ class SubordinateTransaction extends Transaction {
             return false;
         }
         
-        return Objects.equals(this.parent, that.parent);
+        // Only compare IDs to avoid cycles
+        return Objects.equals(this.parent.id(), that.parent.id());
     }
     
     @Override

@@ -232,7 +232,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         var propagationType = connection.transactionPropagation();
         
         // We only have a readily usable transaction if it is propagated identically, otherwise we may need to create a local branch first 
-        var usableTransactionAvailable = (currentTransaction != null && propagationType == TransactionPropagation.IDENTICAL);
+        var usableTransactionAvailable = (currentTransaction != null);
         var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
         
         Transaction newTransaction;
