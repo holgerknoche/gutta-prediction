@@ -93,7 +93,7 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
-            this.addRewrittenEvent(new ServiceCandidateEntryEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            this.addRewrittenEvent(new ServiceCandidateEntryEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name(), event.transactionStarted(), event.transactionId()));
         }
     }       
     
@@ -177,7 +177,7 @@ abstract class TraceRewriterWorker implements EventStreamProcessorListener {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
-            this.addRewrittenEvent(new TransactionStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId(), event.demarcation()));
+            this.addRewrittenEvent(new TransactionStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId()));
         }
     }
         

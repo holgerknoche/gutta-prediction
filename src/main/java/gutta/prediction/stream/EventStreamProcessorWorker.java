@@ -3,6 +3,8 @@ package gutta.prediction.stream;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.ServiceCandidate;
+import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
@@ -30,8 +32,10 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
     private final DeploymentModel deploymentModel;
 
     private final EventProcessingContext context;
-
+        
     private int syntheticLocationIdCount = 0;
+    
+    private int syntheticTransactionIdCount = 0;
 
     public EventStreamProcessorWorker(List<EventStreamProcessorListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
         this.listeners = listeners;
@@ -71,7 +75,23 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
     private SyntheticLocation createSyntheticLocation() {
         return new SyntheticLocation(this.syntheticLocationIdCount++);
     }
+    
+    private String createSyntheticTransactionId() {
+        return "synthetic-" + this.syntheticTransactionIdCount++;
+    }
 
+    private Component currentComponent() {
+        return this.context.currentComponent();
+    }
+    
+    private Transaction currentTransaction() {
+        return this.context.currentTransaction();
+    }
+    
+    private Location currentLocation() {
+        return this.context.currentLocation();
+    }
+    
     @Override
     public Void handleEntityReadEvent(EntityReadEvent event) {
         this.listeners.forEach(listener -> listener.onEntityReadEvent(event, this.context));
@@ -96,7 +116,7 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
 
         var nextEvent = this.events.lookahead(1);
         if (nextEvent instanceof ServiceCandidateReturnEvent returnEvent) {
-            var sourceComponent = this.context.currentComponent();
+            var sourceComponent = this.currentComponent();
             // Determine the component to return to from the top of the stack
             var targetComponent = this.context.peek().component();
             var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent)
@@ -114,11 +134,11 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
     public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateInvocationEvent(event, context));
 
-        var nextEvent = this.events.lookahead(1);
+        var nextEvent = this.events.lookahead(1);        
         if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
             var invokedCandidateName = entryEvent.name();
             
-            var sourceComponent = this.context.currentComponent();
+            var sourceComponent = this.currentComponent();
             var connection = this.findConnectionForCandidateEntry(invokedCandidateName, sourceComponent, event);
             
             this.performComponentTransition(event, entryEvent, connection);
@@ -144,6 +164,16 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
         // Save the current state on the stack before making changes
         this.context.pushCurrentState();
 
+        var enteredCandidateName = entryEvent.name();
+        var enteredServiceCandidate = this.deploymentModel.resolveServiceCandidateByName(entryEvent.name())
+                .orElseThrow(() -> new TraceProcessingException(entryEvent, "Service candidate '" + enteredCandidateName + "' does not exist."));
+
+        // Update the current location and transaction state
+        this.updateLocationOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
+        this.updateTransactionOnTransition(entryEvent, enteredServiceCandidate, connection);
+    }
+     
+    private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var targetComponent = connection.target();
         var sourceLocation = invocationEvent.location();
         var targetLocation = entryEvent.location();
@@ -155,22 +185,18 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
                 targetLocation = this.createSyntheticLocation();
             } else if (!connection.isRemote()) {
                 // If the connection is not remote, keep the current location
-                targetLocation = this.context.currentLocation();
+                targetLocation = this.currentLocation();
             }
         }
         
         // Ensure that the transition is valid
         this.ensureValidLocationTransition(sourceLocation, targetLocation, connection, entryEvent);
-        
-        var enteredCandidateName = entryEvent.name();
-        var enteredServiceCandidate = this.deploymentModel.resolveServiceCandidateByName(entryEvent.name())
-                .orElseThrow(() -> new TraceProcessingException(entryEvent, "Service candidate '" + enteredCandidateName + "' does not exist."));
-        
+
         this.context.currentServiceCandidate(enteredServiceCandidate);
         this.context.currentComponent(targetComponent);
         this.context.currentLocation(targetLocation);
     }
-
+    
     private void ensureValidLocationTransition(Location sourceLocation, Location targetLocation, ComponentConnection connection, MonitoringEvent event) {
         var locationChanged = !sourceLocation.equals(targetLocation);
 
@@ -181,6 +207,97 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
             // Location changes with non-remote connections are inadmissible
             throw new TraceProcessingException(event, "Change of location with non-remote invocation detected.");
         }
+    }
+        
+    private void updateTransactionOnTransition(ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+        var currentTransaction = this.currentTransaction();
+        var propagationType = connection.transactionPropagation();
+        
+        // We only have a readily usable transaction if it is propagated identically, otherwise we may need to create a local branch first 
+        var usableTransactionAvailable = (currentTransaction != null && propagationType == TransactionPropagation.IDENTICAL);
+        var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
+        
+        Transaction newTransaction;
+        switch (action) {
+        case CREATE_NEW: 
+            // Create a new top-level transaction if required by the action
+            var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId() : this.createSyntheticTransactionId();
+            newTransaction = new TopLevelTransaction(transactionId, entryEvent, entryEvent.location());
+            break;
+            
+        case KEEP:            
+            newTransaction = this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, entryEvent.location());        
+            break;
+            
+        case SUSPEND:
+            // If the current transaction is to be suspended, just clear the current transaction
+            newTransaction = null;
+            break;
+            
+        default:
+            throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
+        }
+                
+        this.registerTransactionAndSetAsCurrent(newTransaction);
+    }
+    
+    private TransactionAction determineTransactionActionFor(ServiceCandidate serviceCandidate, boolean transactionAvailable, MonitoringEvent contextEvent) {
+        var transactionBehavior = serviceCandidate.transactionBehavior();
+        
+        switch (transactionBehavior) {
+        case MANDATORY:
+            if (!transactionAvailable) {
+                throw new TraceProcessingException(contextEvent, "No active transaction found for candidate '" + "' with behavior " + transactionBehavior + "'.");
+            }
+            
+            return TransactionAction.KEEP; 
+            
+        case NEVER:
+            if (transactionAvailable) {
+                throw new TraceProcessingException(contextEvent, "Active transaction found for candidate '" + "' with behavior " + transactionBehavior + "'.");
+            }
+            
+            return TransactionAction.KEEP;
+            
+        case NOT_SUPPORTED:
+            return TransactionAction.SUSPEND;
+            
+        case SUPPORTED:
+            return TransactionAction.KEEP;
+            
+        case REQUIRED:
+            return (transactionAvailable) ? TransactionAction.KEEP : TransactionAction.CREATE_NEW;
+            
+        case REQUIRES_NEW:
+            return TransactionAction.CREATE_NEW;
+            
+        default:
+            throw new UnsupportedOperationException("Unsupported transaction behavior '" + transactionBehavior + "'.");
+        }            
+    }
+    
+    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event, Location location) {
+        if (propagatedTransaction == null) {
+            return null;
+        }
+        
+        switch (propagationType) {
+        case IDENTICAL:
+            return propagatedTransaction;
+            
+        case SUBORDINATE:
+            return new SubordinateTransaction(this.createSyntheticTransactionId(), event, location, propagatedTransaction);
+            
+        case NONE:                
+            return null;
+            
+        default:
+            throw new IllegalArgumentException("Unsupported propagation type '" + propagationType + "'.");
+        }
+    }
+    
+    private void registerTransactionAndSetAsCurrent(Transaction transaction) {
+        this.context.currentTransaction(transaction);
     }
 
     @Override
@@ -201,14 +318,30 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
     @Override
     public Void handleTransactionCommitEvent(TransactionCommitEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionCommitEvent(event, this.context));
+        
+        var currentTransaction = this.currentTransaction();
+        if (currentTransaction != null) {
+            // If a transaction is active, remove it and all its subordinates and keep the commit event
+            //var transactionsToRemove = currentTransaction.getThisAndAllSubordinates();
+            //transactionsToRemove.forEach(transaction -> this.transactionAtLocation.remove(transaction.location()));
+            this.context.currentTransaction(null);
+        }
+        
         return null;
     }
 
     @Override
     public Void handleTransactionStartEvent(TransactionStartEvent event) {
+        if (this.context.currentTransaction() != null) {
+            throw new TraceProcessingException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
+        }
+        
+        var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location());
+        this.registerTransactionAndSetAsCurrent(newTransaction);                        
+        
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));
         return null;
-    }
+    }    
 
     @Override
     public Void handleUseCaseStartEvent(UseCaseStartEvent event) {
@@ -235,6 +368,12 @@ class EventStreamProcessorWorker implements MonitoringEventVisitor<Void> {
         this.context.currentLocation(null);
 
         return null;
+    }
+    
+    private enum TransactionAction {
+        CREATE_NEW,
+        KEEP,
+        SUSPEND
     }
 
 }

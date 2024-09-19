@@ -50,7 +50,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 210, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 210, location, "sc1", true, "tx1"),
                 new ServiceCandidateExitEvent(traceId, 400, location, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 410, location, "sc1"),
                 new UseCaseEndEvent(traceId, 500, location, "uc1")
@@ -79,7 +79,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
                 // Remove latency from the input trace
-                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1"),
                 new ServiceCandidateExitEvent(traceId, 390, location, "sc1"),
                 // Again, latency is removed
                 new ServiceCandidateReturnEvent(traceId, 390, location, "sc1"),
@@ -100,7 +100,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1"),
                 new ServiceCandidateExitEvent(traceId, 400, location, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 400, location, "sc1"),
                 new UseCaseEndEvent(traceId, 500, location, "uc1")
@@ -129,7 +129,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var expectedTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 250, artificialLocation, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 250, artificialLocation, "sc1", true, "tx1"),
                 new ServiceCandidateExitEvent(traceId, 450, artificialLocation, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 500, location, "sc1"),
                 new UseCaseEndEvent(traceId, 600, location, "uc1")

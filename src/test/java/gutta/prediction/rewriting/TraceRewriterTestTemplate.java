@@ -16,7 +16,6 @@ import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
-import gutta.prediction.event.TransactionStartEvent.Demarcation;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
@@ -31,15 +30,15 @@ abstract class TraceRewriterTestTemplate {
 
         var inputTrace = Arrays.<MonitoringEvent>asList(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new TransactionStartEvent(traceId, 200, location, "tx1", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 200, location, "tx1"),
                 // Same timestamp for invocation and entry as to avoid latency adjustment
                 new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 300, location, "sc1", false, ""),
                 // Again, same timestamp for exit and return
                 new ServiceCandidateExitEvent(traceId, 400, location, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 400, location, "sc1"),
                 new TransactionCommitEvent(traceId, 500, location, "tx1"),
-                new TransactionStartEvent(traceId, 600, location, "tx2", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 600, location, "tx2"),
                 new EntityReadEvent(traceId, 700, location, "et1", "id1"),
                 new EntityWriteEvent(traceId, 800, location, "et1", "id1"),
                 new TransactionAbortEvent(traceId, 900, location, "tx2", "NullPointerException"),

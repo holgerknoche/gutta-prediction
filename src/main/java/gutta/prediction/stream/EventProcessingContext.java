@@ -23,6 +23,8 @@ public class EventProcessingContext {
     
     private Location currentLocation;
     
+    private Transaction currentTransaction;
+    
     EventProcessingContext(DeploymentModel deploymentModel, EventStream eventStream) {
         this.deploymentModel = deploymentModel;
         this.eventStream = eventStream;
@@ -50,6 +52,14 @@ public class EventProcessingContext {
     
     void currentLocation(Location location) {
         this.currentLocation = location;
+    }
+    
+    public Transaction currentTransaction() {
+        return this.currentTransaction;
+    }
+    
+    void currentTransaction(Transaction transaction) {
+        this.currentTransaction = transaction;
     }
            
     public DeploymentModel deploymentModel() {

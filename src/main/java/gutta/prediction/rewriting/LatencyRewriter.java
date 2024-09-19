@@ -67,7 +67,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, EventProcessingContext context) {
-            var rewrittenEvent = new ServiceCandidateEntryEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
+            var rewrittenEvent = new ServiceCandidateEntryEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name(), event.transactionStarted(), event.transactionId());
             this.addRewrittenEvent(rewrittenEvent);
         }
 
@@ -100,7 +100,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onTransactionStartEvent(TransactionStartEvent event, EventProcessingContext context) {
-            var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId(), event.demarcation());
+            var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId());
             this.addRewrittenEvent(rewrittenEvent);
         }
 

@@ -50,7 +50,7 @@ public interface EventStreamProcessorListener {
     default void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, EventProcessingContext context) {
         // Do nothing by default
     }
-    
+        
     default void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, EventProcessingContext context) {
         // Do nothing by default
     }

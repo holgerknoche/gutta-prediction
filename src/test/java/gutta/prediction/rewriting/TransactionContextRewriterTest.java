@@ -14,7 +14,6 @@ import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
-import gutta.prediction.event.TransactionStartEvent.Demarcation;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.stream.SyntheticLocation;
@@ -43,44 +42,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
 
         assertEquals(inputTrace, rewrittenTrace);
     }
-    
-    /**
-     * Test case: An error occurs when a transaction is already active when an explicitly demarcated transaction is started. 
-     */
-    @Test
-    void activeTransactionWhenExplicitTransactionIsStarted() {        
-        final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
-
-        // This event must have explicit transaction demarcation to trigger the error
-        final var offendingEvent = new TransactionStartEvent(traceId, 100, location, "tx2", Demarcation.EXPLICIT); 
-        
-        final var inputEvents = Arrays.<MonitoringEvent> asList(
-                new UseCaseStartEvent(traceId, 0, location, "uc1"),
-                new TransactionStartEvent(traceId, 50, location, "tx1", Demarcation.EXPLICIT),
-                offendingEvent,
-                new UseCaseEndEvent(traceId, 200, location, "uc1")
-                );
-        
-        var component = new Component("c1");
-        
-        var useCase = new UseCase("uc1");
-        
-        var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
-
-        var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
-                .build();
-                       
-        var rewriter = new TransactionContextRewriter(deploymentModel); 
-        var exception = assertThrows(TraceRewriteException.class, () -> rewriter.rewriteTrace(inputEvents));
-        
-        // Make sure that the exception has the expected message and occurs at the expected event
-        assertEquals(offendingEvent, exception.offendingEvent());
-        assertTrue(exception.getMessage().contains("A transaction was active"));
-    }   
-    
+          
     /**
      * Test case: If a subordinate-propagation-capable transition is added within an explicitly started transaction, synthetic start and commit events are added.  
      */
@@ -91,9 +53,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         
         final var inputEvents = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
-                new TransactionStartEvent(traceId, 50, location, "tx1", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 50, location, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, location, "sc1", false, null),
                 new ServiceCandidateExitEvent(traceId, 120, location, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 130, location, "sc1"),
                 new TransactionCommitEvent(traceId, 150, location, "tx1"),
@@ -123,11 +85,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var syntheticLocation = new SyntheticLocation(0);
         var expectedTrace = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
-                new TransactionStartEvent(traceId, 50, location, "tx1", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 50, location, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation, "sc1"),
-                new TransactionStartEvent(traceId, 110, syntheticLocation, "synthetic-0", Demarcation.IMPLICIT),
-                new TransactionCommitEvent(traceId, 120, syntheticLocation, "synthetic-0"),
+                new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation, "sc1", true, "synthetic-0"),
                 new ServiceCandidateExitEvent(traceId, 120, syntheticLocation, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 130, location, "sc1"),
                 new TransactionCommitEvent(traceId, 150, location, "tx1"),
@@ -148,9 +108,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         final var inputEvents = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, location, "sc1", true, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 120, location, "sc2"),
-                new ServiceCandidateEntryEvent(traceId, 130, location, "sc2"),
+                new ServiceCandidateEntryEvent(traceId, 130, location, "sc2", false, null),
                 new ServiceCandidateExitEvent(traceId, 140, location, "sc2"),
                 new ServiceCandidateReturnEvent(traceId, 150, location, "sc2"),
                 new ServiceCandidateExitEvent(traceId, 200, location, "sc2"),
@@ -186,15 +146,11 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var expectedTrace = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation1, "sc1"),
-                new TransactionStartEvent(traceId, 110, syntheticLocation1, "synthetic-0", Demarcation.IMPLICIT),
+                new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation1, "sc1", true, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 120, syntheticLocation1, "sc2"),
-                new ServiceCandidateEntryEvent(traceId, 130, syntheticLocation2, "sc2"),
-                new TransactionStartEvent(traceId, 130, syntheticLocation2, "synthetic-1", Demarcation.IMPLICIT),
-                new TransactionCommitEvent(traceId, 140, syntheticLocation2, "synthetic-1"),
+                new ServiceCandidateEntryEvent(traceId, 130, syntheticLocation2, "sc2", true, "synthetic-0"),
                 new ServiceCandidateExitEvent(traceId, 140, syntheticLocation2, "sc2"),
                 new ServiceCandidateReturnEvent(traceId, 150, syntheticLocation1, "sc2"),
-                new TransactionCommitEvent(traceId, 200, syntheticLocation1, "synthetic-0"),
                 new ServiceCandidateExitEvent(traceId, 200, syntheticLocation1, "sc2"),
                 new ServiceCandidateReturnEvent(traceId, 210, location, "sc2"),
                 new UseCaseEndEvent(traceId, 300, location, "uc1")
@@ -214,11 +170,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         
         final var inputEvents = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location1, "uc1"),
-                new TransactionStartEvent(traceId, 50, location1, "tx1", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, location2, "sc1"),
-                new TransactionStartEvent(traceId, 110, location2, "tx2", Demarcation.IMPLICIT),
-                new TransactionCommitEvent(traceId, 120, location2, "tx2"),
+                new ServiceCandidateEntryEvent(traceId, 110, location2, "sc1", true, "tx2"),
                 new ServiceCandidateExitEvent(traceId, 120, location2, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
                 new TransactionCommitEvent(traceId, 150, location1, "tx1"),
@@ -247,9 +201,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
 
         var expectedTrace = Arrays.<MonitoringEvent> asList(
                 new UseCaseStartEvent(traceId, 0, location1, "uc1"),
-                new TransactionStartEvent(traceId, 50, location1, "tx1", Demarcation.EXPLICIT),
+                new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 110, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 110, location1, "sc1", false, null),
                 new ServiceCandidateExitEvent(traceId, 120, location1, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
                 new TransactionCommitEvent(traceId, 150, location1, "tx1"),
