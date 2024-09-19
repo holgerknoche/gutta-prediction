@@ -37,6 +37,10 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     
     private int syntheticTransactionIdCount = 0;
 
+    public TraceSimulatorWorker(TraceSimulationListener listener, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
+        this(List.of(listener), events, deploymentModel);
+    }
+    
     public TraceSimulatorWorker(List<TraceSimulationListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
         this.listeners = listeners;
         this.events = new EventStream(events);

@@ -2,8 +2,10 @@ package gutta.prediction.simulation;
 
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.util.EqualityUtil;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -56,6 +58,22 @@ public abstract class Transaction {
         for (Transaction subordinate : this.subordinates) {
             subordinate.collectSubordinates(collector);
         }
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.id, this.startEvent, this.location);
+    }
+    
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    protected boolean equalsInternal(Transaction that) {
+        return (this.id == that.id) &&
+               Objects.equals(this.startEvent, that.startEvent) &&
+               Objects.equals(this.location, that.location) &&
+               Objects.equals(this.subordinates, that.subordinates);
     }
     
 }

@@ -2,6 +2,7 @@ package gutta.prediction.simulation;
 
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.util.EqualityUtil;
 
 class TopLevelTransaction extends Transaction {
 
@@ -12,6 +13,20 @@ class TopLevelTransaction extends Transaction {
     @Override
     public boolean isSubordinate() {
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    private boolean equalsInternal(TopLevelTransaction that) {
+        return super.equalsInternal(that);
     }
     
 }
