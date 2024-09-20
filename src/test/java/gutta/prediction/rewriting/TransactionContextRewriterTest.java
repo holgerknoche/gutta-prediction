@@ -6,6 +6,7 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
@@ -158,7 +159,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
     }
     
     /**
-     * Test case: If a subordinate-propagation-capable transition is replaced by a local transition, the start and commit events are removed.   
+     * Test case: If a subordinate-propagation-capable transition is replaced by a local transition, the transaction is removed from the entry event and the
+     * transaction ID is adjusted in implicit abort events.
      */
     @Test
     void internalizeSubordinatePropagationFromExplicitTransaction() {
@@ -171,9 +173,10 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 110, location2, "sc1", true, "tx2"),
-                new ServiceCandidateExitEvent(traceId, 120, location2, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
-                new TransactionCommitEvent(traceId, 150, location1, "tx1"),
+                new ImplicitTransactionAbortEvent(traceId, 120, location2, "tx2", "cause"),
+                new ServiceCandidateExitEvent(traceId, 140, location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 150, location1, "sc1"),
+                new TransactionCommitEvent(traceId, 160, location1, "tx1"),
                 new UseCaseEndEvent(traceId, 200, location1, "uc1")
                 );
         
@@ -202,9 +205,10 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 110, location1, "sc1", false, null),
-                new ServiceCandidateExitEvent(traceId, 120, location1, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 130, location1, "sc1"),
-                new TransactionCommitEvent(traceId, 150, location1, "tx1"),
+                new ImplicitTransactionAbortEvent(traceId, 120, location1, "tx1", "cause"),
+                new ServiceCandidateExitEvent(traceId, 140, location1, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 150, location1, "sc1"),
+                new TransactionCommitEvent(traceId, 160, location1, "tx1"),
                 new UseCaseEndEvent(traceId, 200, location1, "uc1")                
                 );
 

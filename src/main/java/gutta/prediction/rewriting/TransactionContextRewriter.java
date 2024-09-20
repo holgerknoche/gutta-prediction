@@ -1,6 +1,7 @@
 package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
@@ -50,7 +51,28 @@ public class TransactionContextRewriter implements TraceRewriter {
             this.adjustLocationAndAdd(rewrittenEvent, context);
         }
         
-        // TODO Rewrite transaction id for implicit abort events
+        @Override
+        public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+            var currentTransaction = context.currentTransaction();
+            
+            ImplicitTransactionAbortEvent rewrittenEvent;            
+            if (currentTransaction != null) {
+                var requiredTransactionId = currentTransaction.id();
+                
+                if (!requiredTransactionId.equals(event.transactionId())) {
+                    // If the event's transaction ID does not match the one of the current transaction, we need to rewrite it
+                    rewrittenEvent = new ImplicitTransactionAbortEvent(event.traceId(), event.timestamp(), event.location(), requiredTransactionId, event.cause());
+                } else {
+                    // Otherwise, we can keep the event
+                    rewrittenEvent = event;
+                }
+            } else {
+                throw new TraceRewriteException(event, "No active transaction was available.");
+            }
+            
+            // Adjust the location, if necessary
+            this.adjustLocationAndAdd(rewrittenEvent, context);
+        }
         
     }            
     
