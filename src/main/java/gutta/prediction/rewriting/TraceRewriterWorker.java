@@ -42,7 +42,7 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
             .addListener(this)
             .processEvents(trace);
         
-        return new EventTrace(this.rewrittenEvents);
+        return EventTrace.of(this.rewrittenEvents);
     }
     
     protected void onStartOfRewrite() {

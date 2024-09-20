@@ -15,7 +15,11 @@ public class EventTrace {
         return new EventTrace(List.of(events));
     }
     
-    public EventTrace(List<MonitoringEvent> events) {
+    public static EventTrace of(List<MonitoringEvent> events) {
+        return new EventTrace(List.copyOf(events));
+    }
+    
+    private EventTrace(List<MonitoringEvent> events) {
         this.events = requireNonNull(events);
     }
     
