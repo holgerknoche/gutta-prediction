@@ -6,8 +6,8 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
-import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -19,8 +19,6 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.SyntheticLocation;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,7 +48,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
         
-        final var inputEvents = Arrays.<MonitoringEvent> asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new TransactionStartEvent(traceId, 50, location, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
@@ -79,10 +77,10 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .build();
                 
         var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
-        var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
+        var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var syntheticLocation = new SyntheticLocation(0);
-        var expectedTrace = Arrays.<MonitoringEvent> asList(
+        var expectedTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new TransactionStartEvent(traceId, 50, location, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
@@ -104,7 +102,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
         
-        final var inputEvents = Arrays.<MonitoringEvent> asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 110, location, "sc1", true, "tx1"),
@@ -137,12 +135,12 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .build();
                 
         var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
-        var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
+        var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var syntheticLocation1 = new SyntheticLocation(0);
         var syntheticLocation2 = new SyntheticLocation(1);
         
-        var expectedTrace = Arrays.<MonitoringEvent> asList(
+        var expectedTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 110, syntheticLocation1, "sc1", true, "tx1"),
@@ -168,7 +166,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         final var location1 = new ProcessLocation("test", 1234, 1);
         final var location2 = new ProcessLocation("test", 5678, 1);
         
-        final var inputEvents = Arrays.<MonitoringEvent> asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location1, "uc1"),
                 new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
@@ -198,9 +196,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
                 .build();
                 
         var rewriter = new TransactionContextRewriter(modifiedDeploymentModel);
-        var rewrittenTrace = rewriter.rewriteTrace(inputEvents);
+        var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
-        var expectedTrace = Arrays.<MonitoringEvent> asList(
+        var expectedTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location1, "uc1"),
                 new TransactionStartEvent(traceId, 50, location1, "tx1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),

@@ -8,6 +8,7 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
@@ -65,7 +66,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
         
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 candidateInvocationEvent,
@@ -90,7 +91,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
@@ -134,7 +135,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
         
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 candidateInvocationEvent,
                 candidateEntryEvent,
@@ -157,7 +158,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
@@ -212,7 +213,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
         
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 candidateInvocationEvent,
@@ -237,7 +238,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -308,7 +309,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
         
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 candidateInvocationEvent,
                 candidateEntryEvent,
@@ -331,7 +332,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -401,7 +402,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location1, "uc1");
         
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 candidateInvocationEvent,
@@ -428,7 +429,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -483,7 +484,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
         
         // Build the input trace
-        final var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 offendingEvent,
@@ -499,7 +500,7 @@ class TraceSimulatorWorkerTest {
                 .build();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(Collections.emptyList(), inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(Collections.emptyList(), inputTrace, deploymentModel); 
         var exception = assertThrows(TraceProcessingException.class, () -> worker.processEvents());
         
         // Make sure that the exception has the expected message and occurs at the expected event
@@ -522,7 +523,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 transactionCommitEvent,
@@ -541,7 +542,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -569,7 +570,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 transactionAbortHint,
@@ -589,7 +590,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -615,7 +616,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent,
                 transactionAbortEvent,
@@ -634,7 +635,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -662,7 +663,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 candidateInvocationEvent,
                 candidateEntryEvent,
@@ -685,7 +686,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -714,7 +715,7 @@ class TraceSimulatorWorkerTest {
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
-        var inputEvents = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 candidateInvocationEvent,
                 candidateEntryEvent,
@@ -738,7 +739,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event

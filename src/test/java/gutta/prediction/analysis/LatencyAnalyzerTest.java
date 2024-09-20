@@ -5,7 +5,7 @@ import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
-import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -14,8 +14,6 @@ import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,13 +27,12 @@ class LatencyAnalyzerTest {
      */
     @Test
     void emptyTrace() {
-        var events = List.<MonitoringEvent> of(                
-                );
+        var inputTrace = EventTrace.of();
         
         var deploymentModel = new DeploymentModel.Builder()
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(events, deploymentModel);
+        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
         var expectedResult = new LatencyAnalyzer.Result(0, 0, 0);
         assertEquals(expectedResult, result);
@@ -49,7 +46,7 @@ class LatencyAnalyzerTest {
         var traceId = 1234;
         var location = new ProcessLocation("test", 1234, 0);
         
-        var events = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 100, location, "sc1"),
@@ -67,7 +64,7 @@ class LatencyAnalyzerTest {
                 .assignServiceCandidate(serviceCandidate, component)
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(events, deploymentModel);
+        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
         var expectedResult = new LatencyAnalyzer.Result(500, 0, 0);
         assertEquals(expectedResult, result);               
@@ -81,7 +78,7 @@ class LatencyAnalyzerTest {
         var traceId = 1234;
         var location = new ProcessLocation("test", 1234, 0);
         
-        var events = List.<MonitoringEvent> of(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 200, location, "sc1"),
@@ -99,7 +96,7 @@ class LatencyAnalyzerTest {
                 .assignServiceCandidate(serviceCandidate, component)
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(events, deploymentModel);
+        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
         var expectedResult = new LatencyAnalyzer.Result(1000, 250, 0.25f);
         assertEquals(expectedResult, result);               

@@ -4,6 +4,7 @@ import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -16,8 +17,6 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
-
-import java.util.List;
 
 /**
  * This rewriter adjusts the latencies within a given trace, i.e., the difference between the timestamps of service canidate invocation/entry events as well as
@@ -32,7 +31,7 @@ public class LatencyRewriter implements TraceRewriter {
     }
 
     @Override
-    public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace) {
+    public EventTrace rewriteTrace(EventTrace trace) {
         return new LatencyRewriterWorker().rewriteTrace(trace, this.deploymentModel);        
     }
     

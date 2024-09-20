@@ -3,6 +3,7 @@ package gutta.prediction.rewriting;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
@@ -36,12 +37,12 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
         this.onEndOfRewrite();
     }
     
-    public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {
+    public EventTrace rewriteTrace(EventTrace trace, DeploymentModel deploymentModel) {
         new TraceSimulator(deploymentModel)
             .addListener(this)
             .processEvents(trace);
         
-        return this.rewrittenEvents;
+        return new EventTrace(this.rewrittenEvents);
     }
     
     protected void onStartOfRewrite() {

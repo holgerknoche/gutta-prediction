@@ -6,7 +6,7 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
-import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -16,8 +16,6 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.SyntheticLocation;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -47,7 +45,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
-        var inputTrace = Arrays.<MonitoringEvent>asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 210, location, "sc1", true, "tx1"),
@@ -75,7 +73,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var rewriter = new LatencyRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
-        var expectedTrace = Arrays.<MonitoringEvent>asList(
+        var expectedTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
                 // Remove latency from the input trace
@@ -97,7 +95,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
-        var inputTrace = Arrays.<MonitoringEvent>asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1"),
@@ -126,7 +124,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var artificialLocation = new SyntheticLocation(0);
-        var expectedTrace = Arrays.<MonitoringEvent>asList(
+        var expectedTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 250, artificialLocation, "sc1", true, "tx1"),

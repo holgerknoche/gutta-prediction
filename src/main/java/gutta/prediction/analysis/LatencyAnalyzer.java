@@ -2,6 +2,7 @@ package gutta.prediction.analysis;
 
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -13,8 +14,6 @@ import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulator;
 
-import java.util.List;
-
 class LatencyAnalyzer implements TraceSimulationListener {
     
     private long startTime = 0;
@@ -23,7 +22,7 @@ class LatencyAnalyzer implements TraceSimulationListener {
     
     private long totalLatency = 0;
     
-    public Result analyzeTrace(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {
+    public Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         new TraceSimulator(deploymentModel)
             .addListener(this)
             .processEvents(trace);

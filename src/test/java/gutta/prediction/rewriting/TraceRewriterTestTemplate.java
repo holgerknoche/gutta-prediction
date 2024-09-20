@@ -7,8 +7,8 @@ import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
-import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -19,16 +19,13 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
-import java.util.Arrays;
-import java.util.List;
-
 abstract class TraceRewriterTestTemplate {
     
     protected TraceFixture createIdentityTraceFixture() {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
-        var inputTrace = Arrays.<MonitoringEvent>asList(
+        var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc1"),
                 new TransactionStartEvent(traceId, 200, location, "tx1"),
                 // Same timestamp for invocation and entry as to avoid latency adjustment
@@ -57,6 +54,6 @@ abstract class TraceRewriterTestTemplate {
         return new TraceFixture(inputTrace, deploymentModel);
     }
     
-    protected record TraceFixture(List<MonitoringEvent> trace, DeploymentModel deploymentModel) {}
+    protected record TraceFixture(EventTrace trace, DeploymentModel deploymentModel) {}
 
 }

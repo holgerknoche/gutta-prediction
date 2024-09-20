@@ -1,12 +1,10 @@
 package gutta.prediction.rewriting;
 
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
-import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
-
-import java.util.List;
 
 public class TransactionContextRewriter implements TraceRewriter {
 
@@ -17,7 +15,7 @@ public class TransactionContextRewriter implements TraceRewriter {
     }        
     
     @Override
-    public List<MonitoringEvent> rewriteTrace(List<MonitoringEvent> inputTrace) {
+    public EventTrace rewriteTrace(EventTrace inputTrace) {
         return new TransactionContextRewriterWorker().rewriteTrace(inputTrace, this.deploymentModel);
     }
     

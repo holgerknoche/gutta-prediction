@@ -8,6 +8,7 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
@@ -40,13 +41,13 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     
     private int syntheticTransactionIdCount = 0;
 
-    public TraceSimulatorWorker(TraceSimulationListener listener, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
-        this(List.of(listener), events, deploymentModel);
+    public TraceSimulatorWorker(TraceSimulationListener listener, EventTrace trace, DeploymentModel deploymentModel) {
+        this(List.of(listener), trace, deploymentModel);
     }
     
-    public TraceSimulatorWorker(List<TraceSimulationListener> listeners, List<MonitoringEvent> events, DeploymentModel deploymentModel) {
+    public TraceSimulatorWorker(List<TraceSimulationListener> listeners, EventTrace trace, DeploymentModel deploymentModel) {
         this.listeners = listeners;
-        this.events = new EventStream(events);
+        this.events = new EventStream(trace.events());
         this.deploymentModel = deploymentModel;
         this.context = new TraceSimulationContext(deploymentModel, this.events);
     }

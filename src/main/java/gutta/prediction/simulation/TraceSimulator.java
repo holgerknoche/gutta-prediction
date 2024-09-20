@@ -1,7 +1,7 @@
 package gutta.prediction.simulation;
 
 import gutta.prediction.domain.DeploymentModel;
-import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.event.EventTrace;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +22,8 @@ public class TraceSimulator {
         return this;
     }
     
-    public void processEvents(List<MonitoringEvent> events) {
-        new TraceSimulatorWorker(List.copyOf(this.listeners), events, this.deploymentModel).processEvents();
+    public void processEvents(EventTrace trace) {
+        new TraceSimulatorWorker(List.copyOf(this.listeners), trace, this.deploymentModel).processEvents();
     }
     
 }
