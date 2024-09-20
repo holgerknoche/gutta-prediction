@@ -3,19 +3,20 @@ package gutta.prediction.rewriting;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
-import gutta.prediction.simulation.TraceSimulator;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,16 +141,30 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
     }
     
     @Override
-    public void onTransactionAbortEvent(TransactionAbortEvent event, TraceSimulationContext context) {
+    public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
         this.adjustLocationAndAdd(event, context);
     }
     
-    protected void adjustLocationAndAdd(TransactionAbortEvent event, TraceSimulationContext context) {
+    protected void adjustLocationAndAdd(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else { 
-            this.addRewrittenEvent(new TransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId(), event.cause()));
+            this.addRewrittenEvent(new ImplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId(), event.cause()));
+        }
+    }
+    
+    @Override
+    public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
+        // By default, copy the event just adjusting the location if necessary
+        this.adjustLocationAndAdd(event, context);
+    }
+    
+    protected void adjustLocationAndAdd(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
+        if (context.currentLocation().equals(event.location())) {
+            this.addRewrittenEvent(event);
+        } else { 
+            this.addRewrittenEvent(new ExplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId()));
         }
     }
         

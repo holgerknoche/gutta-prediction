@@ -26,7 +26,11 @@ public interface MonitoringEventVisitor<R> {
         return null;
     }
 
-    default R handleTransactionAbortEvent(TransactionAbortEvent event) {
+    default R handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
+        return null;
+    }
+    
+    default R handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
         return null;
     }
 

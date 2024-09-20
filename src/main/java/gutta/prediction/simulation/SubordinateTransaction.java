@@ -21,8 +21,23 @@ class SubordinateTransaction extends Transaction {
     }
     
     @Override
-    public boolean isSubordinate() {
-        return true;
+    public boolean isTopLevel() {
+        return false;
+    }
+    
+    @Override
+    public Demarcation demarcation() {
+        return Demarcation.IMPLICIT;
+    }
+    
+    @Override
+    Outcome commit() {
+        throw new IllegalStateException("Attempt to commit subordinate transaction + '" + this.id() + "'.");
+    }
+    
+    @Override
+    Outcome abort() {
+        throw new IllegalStateException("Attempt to commit subordinate transaction + '" + this.id() + "'.");
     }
     
     @Override

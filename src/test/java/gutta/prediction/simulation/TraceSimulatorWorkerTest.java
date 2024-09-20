@@ -8,6 +8,8 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
@@ -15,11 +17,11 @@ import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.simulation.Transaction.Demarcation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -91,7 +93,7 @@ class TraceSimulatorWorkerTest {
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
-        var transaction = new TopLevelTransaction("tx1", transactionStartEvent, location);
+        var transaction = new TopLevelTransaction("tx1", transactionStartEvent, location, Demarcation.EXPLICIT);
         
         var expectedStates = List.<SimulationState> of(
                 new SimulationState(useCaseStartEvent, null, component, location, null),
@@ -158,7 +160,7 @@ class TraceSimulatorWorkerTest {
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
-        var transaction = new TopLevelTransaction("synthetic-0", candidateEntryEvent, location);
+        var transaction = new TopLevelTransaction("synthetic-0", candidateEntryEvent, location, Demarcation.IMPLICIT);
         
         var expectedStates = List.<SimulationState> of(
                 new SimulationState(useCaseStartEvent, null, component, location, null),
@@ -245,12 +247,12 @@ class TraceSimulatorWorkerTest {
             worker.processEvents();
 
             // Create the transactions to match against
-            var surroundingTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location);
+            var surroundingTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location, Demarcation.EXPLICIT);
 
             var expectedTransaction = switch (expectedOutcome) {
             case NO_TRANSACTION -> null;
             case SAME_TRANSACTION -> surroundingTransaction;
-            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location);
+            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location, Demarcation.IMPLICIT);
             case SUBORDINATE_TRANSACTION -> null;
             case ERROR -> null;
             };
@@ -342,7 +344,7 @@ class TraceSimulatorWorkerTest {
             var expectedTransaction = switch (expectedOutcome) {
             case NO_TRANSACTION -> null;
             case SAME_TRANSACTION -> null;
-            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location);
+            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location, Demarcation.IMPLICIT);
             case SUBORDINATE_TRANSACTION -> null;
             case ERROR -> null;
             };
@@ -436,12 +438,12 @@ class TraceSimulatorWorkerTest {
             worker.processEvents();
 
             // Create the transactions to match against
-            var surroundingTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location1);
+            var surroundingTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location1, Demarcation.EXPLICIT);
 
             var expectedTransaction = switch (expectedOutcome) {
             case NO_TRANSACTION -> null;
             case SAME_TRANSACTION -> surroundingTransaction;
-            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location2);
+            case NEW_TRANSACTION -> new TopLevelTransaction("synthetic-0", candidateEntryEvent, location2, Demarcation.IMPLICIT);
             case SUBORDINATE_TRANSACTION -> new SubordinateTransaction("synthetic-0", candidateEntryEvent, location2, surroundingTransaction);
             case ERROR -> null;
             };
@@ -541,7 +543,12 @@ class TraceSimulatorWorkerTest {
         }
         
         @Override
-        public void onTransactionAbortEvent(TransactionAbortEvent event, TraceSimulationContext context) {
+        public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+            this.recordState(event, context);
+        }
+        
+        @Override
+        public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
             this.recordState(event, context);
         }
         

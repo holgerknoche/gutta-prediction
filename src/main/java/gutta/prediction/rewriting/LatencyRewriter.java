@@ -4,12 +4,13 @@ import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
@@ -105,8 +106,14 @@ public class LatencyRewriter implements TraceRewriter {
         }
 
         @Override
-        public void onTransactionAbortEvent(TransactionAbortEvent event, TraceSimulationContext context) {
-            var rewrittenEvent = new TransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId(), event.cause());
+        public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+            var rewrittenEvent = new ImplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId(), event.cause());
+            this.addRewrittenEvent(rewrittenEvent);
+        }
+        
+        @Override
+        public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
+            var rewrittenEvent = new ExplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId());
             this.addRewrittenEvent(rewrittenEvent);
         }
 

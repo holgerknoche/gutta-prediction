@@ -7,13 +7,13 @@ import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
@@ -41,7 +41,7 @@ abstract class TraceRewriterTestTemplate {
                 new TransactionStartEvent(traceId, 600, location, "tx2"),
                 new EntityReadEvent(traceId, 700, location, "et1", "id1"),
                 new EntityWriteEvent(traceId, 800, location, "et1", "id1"),
-                new TransactionAbortEvent(traceId, 900, location, "tx2", "NullPointerException"),
+                new ExplicitTransactionAbortEvent(traceId, 900, location, "tx2"),
                 new UseCaseEndEvent(traceId, 1000, location, "uc1")
                 );
 

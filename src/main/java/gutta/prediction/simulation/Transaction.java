@@ -1,5 +1,6 @@
 package gutta.prediction.simulation;
 
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.util.EqualityUtil;
@@ -7,7 +8,8 @@ import gutta.prediction.util.EqualityUtil;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract class Transaction {
 
@@ -16,14 +18,21 @@ public abstract class Transaction {
     private final MonitoringEvent startEvent;
     
     private final Location location;
-            
+                
     private final Set<SubordinateTransaction> subordinates;
+        
+    private Outcome outcome;
+    
+    private boolean abortOnly;
     
     protected Transaction(String id, MonitoringEvent startEvent, Location location) {
-        this.id = id;
-        this.startEvent = startEvent;
-        this.location = location;
+        this.id = requireNonNull(id);
+        this.startEvent = requireNonNull(startEvent);
+        this.location = requireNonNull(location);
+        
         this.subordinates = new HashSet<>();
+        this.outcome = null;
+        this.abortOnly = false;
     }
     
     public String id() {
@@ -38,27 +47,50 @@ public abstract class Transaction {
         return this.location;
     }
     
+    public abstract Demarcation demarcation();
+    
+    abstract Outcome commit();
+        
+    void setAbortOnly() {
+        this.abortOnly = true;
+    }
+    
+    void registerImplicitAbort(ImplicitTransactionAbortEvent causingEvent) {
+        this.setAbortOnly();
+        // TODO Register the causing event
+    }
+    
+    abstract Outcome abort();
+    
+       
+    boolean prepare() {
+        if (this.abortOnly) {
+            return false;
+        }
+        
+        boolean successful = true;
+        for (var subordinate : this.subordinates) {
+            var subordinateSuccessful = subordinate.prepare();
+            successful = successful && subordinateSuccessful;
+        }
+        
+        return successful;
+    }
+    
+    void complete(Outcome outcome) {
+        if (this.outcome != null && this.outcome != outcome) {
+            throw new IllegalStateException("Attempt to change outcome of transaction '" + this.id() + "' from " + this.outcome + " to " + outcome + ".");
+        }
+        
+        this.outcome = outcome;        
+        this.subordinates.forEach(subordinate -> subordinate.complete(outcome));
+    }
+            
     protected void registerSubordinate(SubordinateTransaction subordinate) {
         this.subordinates.add(subordinate);
     }
     
-    public abstract boolean isSubordinate();
-            
-    public Set<Transaction> getThisAndAllSubordinates() {
-        var allSubordinates = new HashSet<Transaction>();
-        
-        this.collectSubordinates(allSubordinates::add);
-        
-        return allSubordinates;
-    }
-    
-    private void collectSubordinates(Consumer<Transaction> collector) {
-        collector.accept(this);
-        
-        for (Transaction subordinate : this.subordinates) {
-            subordinate.collectSubordinates(collector);
-        }
-    }
+    public abstract boolean isTopLevel();                    
     
     @Override
     public int hashCode() {
@@ -76,4 +108,14 @@ public abstract class Transaction {
                Objects.equals(this.subordinates, that.subordinates);
     }        
     
+    public enum Outcome {
+        COMMITTED,
+        ABORTED
+    }
+    
+    public enum Demarcation {
+        EXPLICIT,
+        IMPLICIT
+    }
+        
 }

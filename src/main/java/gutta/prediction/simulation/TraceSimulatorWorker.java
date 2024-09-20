@@ -8,6 +8,8 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
@@ -15,11 +17,12 @@ import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.simulation.Transaction.Demarcation;
+import gutta.prediction.simulation.Transaction.Outcome;
 
 import java.util.List;
 
@@ -140,12 +143,24 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         var transaction = this.currentTransaction();
         var stackEntry = this.context.peek();
         
-        if (transaction != null && !transaction.equals(stackEntry.transaction())) {
-            // TODO Commit / abort the transaction
+        var implicitTopLevelTransactionAvailable = (transaction != null && transaction.demarcation() == Demarcation.IMPLICIT && transaction.isTopLevel());        
+        if (implicitTopLevelTransactionAvailable && !transaction.equals(stackEntry.transaction())) {
+            // If a top-level transaction was implicitly created on entry, we need to complete it
+            this.completeTransactionAndNotifyListeners(exitEvent, transaction);
         }
         
         // Restore the state from the stack (including location, etc.)
         this.context.popCurrentState();
+    }
+    
+    private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
+        var outcome = transaction.commit();
+        
+        if (outcome == Outcome.COMMITTED) {
+            this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
+        } else {
+            this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
+        }
     }
             
     @Override
@@ -240,7 +255,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         case CREATE_NEW: 
             // Create a new top-level transaction if required by the action
             var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId() : this.createSyntheticTransactionId();
-            newTransaction = new TopLevelTransaction(transactionId, entryEvent, entryEvent.location());
+            newTransaction = new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
             break;
             
         case KEEP:            
@@ -325,8 +340,14 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
 
     @Override
-    public Void handleTransactionAbortEvent(TransactionAbortEvent event) {
-        this.listeners.forEach(listener -> listener.onTransactionAbortEvent(event, this.context));
+    public Void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
+        this.listeners.forEach(listener -> listener.onImplicitTransactionAbortEvent(event, this.context));
+        return null;
+    }
+    
+    @Override
+    public Void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
+        this.listeners.forEach(listener -> listener.onExplicitTransactionAbortEvent(event, this.context));
         return null;
     }
 
@@ -334,11 +355,15 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     public Void handleTransactionCommitEvent(TransactionCommitEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionCommitEvent(event, this.context));
         
-        var currentTransaction = this.currentTransaction();
-        if (currentTransaction != null) {
-            // If a transaction is active, remove it and all its subordinates and keep the commit event
-            //var transactionsToRemove = currentTransaction.getThisAndAllSubordinates();
-            //transactionsToRemove.forEach(transaction -> this.transactionAtLocation.remove(transaction.location()));
+        var transaction = this.currentTransaction();                
+        if (transaction != null) {
+            // If a transaction is present, it must be a top-level transaction with explicit demarcation
+            if (transaction.isTopLevel() && transaction.demarcation() == Demarcation.EXPLICIT) {
+                this.completeTransactionAndNotifyListeners(event, transaction);
+            } else {
+                throw new IllegalStateException("An invalid transaction '" + transaction + "' was found for explicit commit.");
+            }            
+            
             this.context.currentTransaction(null);
         }
         
@@ -351,7 +376,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
             throw new TraceProcessingException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
         }
         
-        var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location());
+        var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location(), Demarcation.EXPLICIT);
         this.registerTransactionAndSetAsCurrent(newTransaction);                        
         
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));

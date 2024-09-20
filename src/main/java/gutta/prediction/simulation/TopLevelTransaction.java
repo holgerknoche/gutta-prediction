@@ -5,14 +5,41 @@ import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.util.EqualityUtil;
 
 class TopLevelTransaction extends Transaction {
+    
+    private final Demarcation demarcation;
 
-    public TopLevelTransaction(String id, MonitoringEvent startEvent, Location location) {
+    public TopLevelTransaction(String id, MonitoringEvent startEvent, Location location, Demarcation demarcation) {
         super(id, startEvent, location);
+        
+        this.demarcation = demarcation;
     }                
     
     @Override
-    public boolean isSubordinate() {
-        return false;
+    public boolean isTopLevel() {
+        return true;
+    }
+    
+    @Override
+    public Demarcation demarcation() {
+        return this.demarcation;
+    }
+        
+    @Override
+    Outcome commit() {
+        var successfullyPrepared = this.prepare();        
+        
+        var outcome = (successfullyPrepared) ? Outcome.COMMITTED : Outcome.ABORTED;
+        this.complete(outcome);
+        
+        return outcome;
+    }
+    
+    @Override
+    Outcome abort() {
+        var outcome = Outcome.ABORTED;
+        this.complete(outcome);
+        
+        return outcome;
     }
     
     @Override

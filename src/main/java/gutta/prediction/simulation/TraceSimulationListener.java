@@ -3,11 +3,13 @@ package gutta.prediction.simulation;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
+import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
-import gutta.prediction.event.TransactionAbortEvent;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
@@ -50,12 +52,24 @@ public interface TraceSimulationListener {
     default void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, TraceSimulationContext context) {
         // Do nothing by default
     }
+    
+    default void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+     // Do nothing by default
+    }
+    
+    default void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        // Do nothing by default
+    }     
         
     default void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
     
-    default void onTransactionAbortEvent(TransactionAbortEvent event, TraceSimulationContext context) {
+    default void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+        // Do nothing by default
+    }
+    
+    default void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
     
