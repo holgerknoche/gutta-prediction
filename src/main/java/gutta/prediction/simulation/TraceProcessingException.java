@@ -4,6 +4,8 @@ import gutta.prediction.event.MonitoringEvent;
 
 public class TraceProcessingException extends RuntimeException {
 
+    private static final long serialVersionUID = 7472961941172322418L;
+ 
     private final MonitoringEvent offendingEvent;
     
     private static String formatMessage(MonitoringEvent offendingEvent, String message) {
