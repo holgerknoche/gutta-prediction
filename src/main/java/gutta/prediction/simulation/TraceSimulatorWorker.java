@@ -342,12 +342,26 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     @Override
     public Void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onImplicitTransactionAbortEvent(event, this.context));
+        
+        var transaction = this.currentTransaction();
+        if (transaction != null) {
+            transaction.registerImplicitAbort(event);
+        }
+        
         return null;
     }
     
     @Override
     public Void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onExplicitTransactionAbortEvent(event, this.context));
+        
+        var transaction = this.currentTransaction();
+        if (transaction != null) {
+            transaction.abort();
+            
+            this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
+        }
+        
         return null;
     }
 

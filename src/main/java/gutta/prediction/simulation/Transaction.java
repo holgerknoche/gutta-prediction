@@ -20,7 +20,7 @@ public abstract class Transaction {
     private final Location location;
                 
     private final Set<SubordinateTransaction> subordinates;
-        
+            
     private Outcome outcome;
     
     private boolean abortOnly;
@@ -57,7 +57,6 @@ public abstract class Transaction {
     
     void registerImplicitAbort(ImplicitTransactionAbortEvent causingEvent) {
         this.setAbortOnly();
-        // TODO Register the causing event
     }
     
     abstract Outcome abort();

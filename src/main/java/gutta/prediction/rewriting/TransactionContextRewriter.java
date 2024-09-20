@@ -50,6 +50,8 @@ public class TransactionContextRewriter implements TraceRewriter {
             this.adjustLocationAndAdd(rewrittenEvent, context);
         }
         
+        // TODO Rewrite transaction id for implicit abort events
+        
     }            
     
 }

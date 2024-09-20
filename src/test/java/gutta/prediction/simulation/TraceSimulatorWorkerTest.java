@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -492,11 +493,9 @@ class TraceSimulatorWorkerTest {
         // Build the corresponding deployment model
         var component = new Component("c1");        
         var useCase = new UseCase("uc1");        
-        var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
 
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
                 .build();
         
         // Perform the simulation
@@ -506,6 +505,248 @@ class TraceSimulatorWorkerTest {
         // Make sure that the exception has the expected message and occurs at the expected event
         assertEquals(offendingEvent, exception.offendingEvent());
         assertTrue(exception.getMessage().contains("A transaction was active"));
+    }
+    
+    /**
+     * Test case: A successful commit of an explicit transaction is communicated to the listener.
+     */
+    @Test
+    void successfulCommitOfExplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var transactionStartEvent = new TransactionStartEvent(traceId, 50, location, "tx1");
+        var transactionCommitEvent = new TransactionCommitEvent(traceId, 100, location, "tx1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
+
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                transactionStartEvent,
+                transactionCommitEvent,
+                useCaseEndEvent
+                );        
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .build();
+        
+        // Build a listener to inspect the commit
+        var listener = new TransactionEventListener();
+        
+        // Perform the simulation
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the transaction was committed at the expected event
+        var expectedTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location, Demarcation.EXPLICIT);
+        
+        assertEquals(transactionCommitEvent, listener.event);
+        assertEquals(expectedTransaction, listener.committedTransaction);
+        assertNull(listener.abortedTransaction);
+    }
+    
+    /**
+     * Test case: A failed commit of an explicit transaction is communicated to the listener.
+     */
+    @Test
+    void failedCommitOfExplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var transactionStartEvent = new TransactionStartEvent(traceId, 50, location, "tx1");
+        // Implicit abort events are also allowed in explicit top-level transactions, since they may occur when "internalizing" an implicit transaction
+        var transactionAbortHint = new ImplicitTransactionAbortEvent(traceId, 90, location, "tx1", "cause");
+        var transactionCommitEvent = new TransactionCommitEvent(traceId, 100, location, "tx1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
+
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                transactionStartEvent,
+                transactionAbortHint,
+                transactionCommitEvent,
+                useCaseEndEvent
+                );        
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .build();
+        
+        // Build a listener to inspect the commit
+        var listener = new TransactionEventListener();
+        
+        // Perform the simulation
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the transaction was committed at the expected event
+        var expectedTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location, Demarcation.EXPLICIT);
+        
+        assertEquals(transactionCommitEvent, listener.event);
+        assertNull(listener.committedTransaction);
+        assertEquals(expectedTransaction, listener.abortedTransaction);        
+    }
+    
+    /**
+     * Test case: An explicit abort of an explicit transaction is communicated to the listener.
+     */
+    @Test
+    void abortOfExplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var transactionStartEvent = new TransactionStartEvent(traceId, 50, location, "tx1");
+        var transactionAbortEvent = new ExplicitTransactionAbortEvent(traceId, 100, location, "tx1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
+
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                transactionStartEvent,
+                transactionAbortEvent,
+                useCaseEndEvent
+                );        
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .build();
+        
+        // Build a listener to inspect the commit
+        var listener = new TransactionEventListener();
+        
+        // Perform the simulation
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the transaction was committed at the expected event
+        var expectedTransaction = new TopLevelTransaction("tx1", transactionStartEvent, location, Demarcation.EXPLICIT);
+        
+        assertEquals(transactionAbortEvent, listener.event);
+        assertNull(listener.committedTransaction);
+        assertEquals(expectedTransaction, listener.abortedTransaction);        
+    }
+    
+    /**
+     * Test case: A successful commit of an implicit transaction is communicated to the listener.
+     */
+    @Test
+    void successfulCommitOfImplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 50, location, "sc1");
+        var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 50, location, "sc1");
+        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 50, location, "sc1");
+        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 50, location, "sc1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
+
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                candidateInvocationEvent,
+                candidateEntryEvent,
+                candidateExitEvent,
+                candidateReturnEvent,
+                useCaseEndEvent
+                );        
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(candidate, component)
+                .build();
+        
+        // Build a listener to inspect the commit
+        var listener = new TransactionEventListener();
+        
+        // Perform the simulation
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the transaction was committed at the expected event
+        var expectedTransaction = new TopLevelTransaction("synthetic-0", candidateEntryEvent, location, Demarcation.IMPLICIT);
+        
+        assertEquals(candidateExitEvent, listener.event);
+        assertEquals(expectedTransaction, listener.committedTransaction);
+        assertNull(listener.abortedTransaction);
+    }
+    
+    /**
+     * Test case: A failed commit of an implicit transaction is communicated to the listener.
+     */
+    @Test
+    void failedCommitOfImplicitTransaction() {
+        final var traceId = 1234L;
+        final var location = new ProcessLocation("test", 1234, 1);
+        
+        // Define the individual events
+        var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
+        var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 50, location, "sc1");
+        var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 50, location, "sc1");
+        var abortEvent = new ImplicitTransactionAbortEvent(traceId, 60, location, "synthetic-0", "cause");
+        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 50, location, "sc1");
+        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 50, location, "sc1");
+        var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
+
+        // Build the input trace
+        var inputEvents = List.<MonitoringEvent> of(
+                useCaseStartEvent,
+                candidateInvocationEvent,
+                candidateEntryEvent,
+                abortEvent,
+                candidateExitEvent,
+                candidateReturnEvent,
+                useCaseEndEvent
+                );        
+        
+        // Build the corresponding deployment model
+        var component = new Component("c1");        
+        var useCase = new UseCase("uc1");        
+        var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(candidate, component)
+                .build();
+        
+        // Build a listener to inspect the commit
+        var listener = new TransactionEventListener();
+        
+        // Perform the simulation
+        var worker = new TraceSimulatorWorker(listener, inputEvents, deploymentModel); 
+        worker.processEvents();
+                
+        // Ensure that the transaction was committed at the expected event
+        var expectedTransaction = new TopLevelTransaction("synthetic-0", candidateEntryEvent, location, Demarcation.IMPLICIT);
+                
+        assertEquals(candidateExitEvent, listener.event);
+        assertNull(listener.committedTransaction);
+        assertEquals(expectedTransaction, listener.abortedTransaction);        
     }
     
     private static class StateMonitoringListener implements TraceSimulationListener {
@@ -591,6 +832,30 @@ class TraceSimulatorWorkerTest {
         SUBORDINATE_TRANSACTION,
         NEW_TRANSACTION,
         ERROR
+    }
+    
+    private static class TransactionEventListener implements TraceSimulationListener {
+        
+        public MonitoringEvent event = null;
+        
+        public Transaction committedTransaction = null;
+        
+        public Transaction abortedTransaction = null;
+        
+        @Override
+        public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+            this.event = event;
+            this.committedTransaction = transaction;
+            this.abortedTransaction = null;
+        }
+        
+        @Override
+        public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+            this.event = event;
+            this.committedTransaction = null;
+            this.abortedTransaction = transaction;
+        }        
+        
     }
     
 }
