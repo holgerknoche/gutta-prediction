@@ -12,6 +12,7 @@ import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -189,6 +190,54 @@ class ConsistencyIssuesAnalyzerTest {
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedResult = new ConsistencyAnalyzerResult(List.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: If a nested, but unrelated transaction is committed and the surrounding transaction is aborted, the appropriate changes are returned.
+     */
+    @Test
+    void nestedCommitAndOuterAbort() {
+        var traceId = 1234;
+        var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity1 = new Entity(entityType, "e1");
+        var entity2 = new Entity(entityType, "e2");
+        
+        var abortedEvent = new EntityWriteEvent(traceId, 250, location, entity1);
+        var committedEvent = new EntityWriteEvent(traceId, 500, location, entity2); 
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location, "uc"),
+                new TransactionStartEvent(traceId, 200, location, "tx1"),
+                abortedEvent,                
+                new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
+                new TransactionStartEvent(traceId, 400, location, "tx2"),
+                committedEvent,
+                new TransactionCommitEvent(traceId, 700, location, "tx2"),
+                new ServiceCandidateExitEvent(traceId, 800, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 800, location, "sc1"),
+                new ExplicitTransactionAbortEvent(traceId, 900, location, "tx1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        
+        var component = new Component("c1");       
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(committedEvent), Set.of(abortedEvent));
         
         assertEquals(expectedResult, result);
     }
