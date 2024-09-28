@@ -2,6 +2,7 @@ package gutta.prediction.analysis.consistency;
 
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
+import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
@@ -32,7 +33,11 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private final Set<EntityWriteEvent> abortedWrites = new HashSet<>();
     
-    public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {        
+    private DeploymentModel deploymentModel;
+    
+    public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
+        this.deploymentModel = deploymentModel;
+        
         new TraceSimulator(deploymentModel)
         .addListener(this)
         .processEvents(trace);
@@ -73,10 +78,17 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         }
         
         var entity = event.entity();
+        var dataStore = this.deploymentModel.getDataStoreForEntityType(entity.type()).orElseThrow(() -> new IllegalStateException("Entity type '" + entity.type() + "' is not assigned to a data store."));
 
         if (this.hasConflict(entity, currentTransaction)) {
-            // TODO If the database uses read locks, we might want to create a "potential deadlock" issue
-            var issue = new StaleReadIssue(entity, event);
+
+            ConsistencyIssue<EntityReadEvent> issue;            
+            if (dataStore.readWriteConflictBehavior() == ReadWriteConflictBehavior.STALE_READ) {
+                issue = new StaleReadIssue(entity, event);
+            } else {
+                issue = new PotentialDeadlockIssue(entity, event);
+            }
+            
             this.foundIssues.add(issue);
         }
     }

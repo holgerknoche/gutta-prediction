@@ -1,9 +1,11 @@
 package gutta.prediction.analysis.consistency;
 
 import gutta.prediction.domain.Component;
+import gutta.prediction.domain.DataStore;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.EntityType;
+import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
@@ -50,7 +52,7 @@ class ConsistencyIssuesAnalyzerTest {
     }
     
     /**
-     * Test case: If an entity is changed in an uncommitted transaction, and the same entity is read in a nested transaction, a "stale read" issue is created.
+     * Test case: If an entity is changed in an uncommitted transaction, and the same entity is read in a nested transaction, a "stale read" issue is created given the corresponding behavior of the data store.
      */
     @Test
     void staleRead() {
@@ -79,18 +81,68 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        var dataStore = new DataStore(ReadWriteConflictBehavior.STALE_READ);
         
         var component = new Component("c1");       
         
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCase(useCase, component)
                 .assignServiceCandidate(serviceCandidate, component)
+                .assignEntityType(entityType, dataStore)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedResult = new ConsistencyAnalyzerResult(List.of(new StaleReadIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: If an entity is changed in an uncommitted transaction, and the same entity is read in a nested transaction, a "potential deadlock" issue is created given the corresponding behavior of the data store.
+     */
+    @Test
+    void potentialDeadlockOnRead() {
+        var traceId = 1234;
+        var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
+        
+        var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
+        var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location, "uc"),
+                new TransactionStartEvent(traceId, 200, location, "tx1"),
+                committedEvent,                
+                new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
+                new TransactionStartEvent(traceId, 400, location, "tx2"),
+                conflictCausingEvent,
+                new TransactionCommitEvent(traceId, 700, location, "tx2"),
+                new ServiceCandidateExitEvent(traceId, 800, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 800, location, "sc1"),
+                new TransactionCommitEvent(traceId, 900, location, "tx1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        var dataStore = new DataStore(ReadWriteConflictBehavior.BLOCK);
+        
+        var component = new Component("c1");       
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .assignEntityType(entityType, dataStore)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(new PotentialDeadlockIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
         
         assertEquals(expectedResult, result);
     }
