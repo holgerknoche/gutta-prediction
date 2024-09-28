@@ -10,8 +10,6 @@ public class ConsistencyIssuesAnalysis {
         
         // TODO
         return null;
-    }
-    
-    public record ConsistencyIssue() {}
+    }        
 
 }
