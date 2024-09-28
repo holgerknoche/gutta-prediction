@@ -1,4 +1,4 @@
-package gutta.prediction.analysis;
+package gutta.prediction.analysis.latency;
 
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
