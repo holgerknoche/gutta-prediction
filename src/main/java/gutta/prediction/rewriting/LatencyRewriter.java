@@ -124,13 +124,13 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-            var rewrittenEvent = new EntityReadEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entityType(), event.entityIdentifier());
+            var rewrittenEvent = new EntityReadEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
             this.addRewrittenEvent(rewrittenEvent);
         }
 
         @Override
         public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-            var rewrittenEvent = new EntityWriteEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entityType(), event.entityIdentifier());
+            var rewrittenEvent = new EntityWriteEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
             this.addRewrittenEvent(rewrittenEvent);
         }
 

@@ -22,6 +22,7 @@ import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -41,9 +42,11 @@ class ConsistencyIssuesAnalyzerTest {
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
-        var foundIssues = analyzer.findConsistencyIssues(trace, deploymentModel);
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        assertEquals(List.of(), foundIssues);
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(), Set.of());
+        
+        assertEquals(expectedResult, result);
     }
     
     /**
@@ -53,13 +56,16 @@ class ConsistencyIssuesAnalyzerTest {
     void staleRead() {
         var traceId = 1234;
         var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
-        var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, "et1", "e1");
+        var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
+        var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc"),
                 new TransactionStartEvent(traceId, 200, location, "tx1"),
-                new EntityWriteEvent(traceId, 250, location, "et1", "e1"),                
+                committedEvent,                
                 new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
                 new TransactionStartEvent(traceId, 400, location, "tx2"),
@@ -82,9 +88,11 @@ class ConsistencyIssuesAnalyzerTest {
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
-        var foundIssues = analyzer.findConsistencyIssues(trace, deploymentModel);
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        assertEquals(List.of(new StaleReadIssue(new Entity(new EntityType("et1"), "e1"), conflictCausingEvent)), foundIssues);
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(new StaleReadIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
     }
     
     /**
@@ -94,13 +102,16 @@ class ConsistencyIssuesAnalyzerTest {
     void writeConflict() {
         var traceId = 1234;
         var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
-        var conflictCausingEvent = new EntityWriteEvent(traceId, 500, location, "et1", "e1"); 
+        var committedEvent = new EntityWriteEvent(traceId, 250, location, entity);
+        var conflictCausingEvent = new EntityWriteEvent(traceId, 500, location, entity); 
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location, "uc"),
                 new TransactionStartEvent(traceId, 200, location, "tx1"),
-                new EntityWriteEvent(traceId, 250, location, "et1", "e1"),                
+                committedEvent,                
                 new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
                 new TransactionStartEvent(traceId, 400, location, "tx2"),
@@ -123,9 +134,11 @@ class ConsistencyIssuesAnalyzerTest {
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
-        var foundIssues = analyzer.findConsistencyIssues(trace, deploymentModel);
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        assertEquals(List.of(new WriteConflictIssue(new Entity(new EntityType("et1"), "e1"), conflictCausingEvent)), foundIssues);
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
     }
 
 }

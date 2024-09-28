@@ -2,6 +2,8 @@ package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.Entity;
+import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
@@ -52,14 +54,16 @@ class TraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ProcessLocation("test", 1234, 1);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var transactionStartEvent = new TransactionStartEvent(traceId, 1, location, "tx1");
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
-        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
-        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, entity);
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, entity);
         var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
         var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
         var transactionCommitEvent = new TransactionCommitEvent(traceId, 8, location, "tx1");
@@ -123,13 +127,15 @@ class TraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ProcessLocation("test", 1234, 1);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
-        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
-        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, entity);
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, entity);
         var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
         var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
@@ -199,14 +205,16 @@ class TraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ProcessLocation("test", 1234, 1);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var transactionStartEvent = new TransactionStartEvent(traceId, 1, location, "tx1");
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
-        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
-        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, entity);
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, entity);
         var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
         var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
         var transactionCommitEvent = new TransactionCommitEvent(traceId, 8, location, "tx1");
@@ -297,13 +305,15 @@ class TraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ProcessLocation("test", 1234, 1);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location, "sc1");
-        var entityReadEvent = new EntityReadEvent(traceId, 4, location, "et1", "1");
-        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, "et1", "1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location, entity);
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location, entity);
         var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location, "sc1");
         var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location, "sc1");
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 9, location, "uc1");
@@ -388,14 +398,16 @@ class TraceSimulatorWorkerTest {
         var traceId = 1234L;
         var location1 = new ProcessLocation("test", 1234, 1);
         var location2 = new ProcessLocation("test", 2345, 1);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location1, "uc1");
         var transactionStartEvent = new TransactionStartEvent(traceId, 1, location1, "tx1");
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 2, location1, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 3, location2, "sc1");
-        var entityReadEvent = new EntityReadEvent(traceId, 4, location2, "et1", "1");
-        var entityWriteEvent = new EntityReadEvent(traceId, 5, location2, "et1", "1");
+        var entityReadEvent = new EntityReadEvent(traceId, 4, location2, entity);
+        var entityWriteEvent = new EntityReadEvent(traceId, 5, location2, entity);
         var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 6, location2, "sc1");
         var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 7, location1, "sc1");
         var transactionCommitEvent = new TransactionCommitEvent(traceId, 8, location1, "tx1");

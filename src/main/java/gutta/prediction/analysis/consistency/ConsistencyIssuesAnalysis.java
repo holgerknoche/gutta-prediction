@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ConsistencyIssuesAnalysis {
     
-    public List<ConsistencyIssue> findIssues(EventTrace trace) {
+    public List<ConsistencyIssue<?>> findIssues(EventTrace trace) {
         
         // TODO
         return null;

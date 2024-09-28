@@ -2,7 +2,6 @@ package gutta.prediction.analysis.consistency;
 
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
@@ -18,39 +17,52 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
-    private final Map<Transaction, Set<Entity>> pendingChangesPerTransaction = new HashMap<>();
+    private final Map<Transaction, Set<EntityWriteEvent>> pendingWritesPerTransaction = new HashMap<>();
     
     private final Map<Entity, Transaction> pendingEntitiesToTransaction = new HashMap<>(); 
     
     private final List<ConsistencyIssue<?>> foundIssues = new ArrayList<>();
     
-    public List<ConsistencyIssue<?>> findConsistencyIssues(EventTrace trace, DeploymentModel deploymentModel) {        
+    private final Set<EntityWriteEvent> committedWrites = new HashSet<>();
+    
+    private final Set<EntityWriteEvent> abortedWrites = new HashSet<>();
+    
+    public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {        
         new TraceSimulator(deploymentModel)
         .addListener(this)
         .processEvents(trace);
         
-        return this.foundIssues;
+        return new ConsistencyAnalyzerResult(this.foundIssues, this.committedWrites, this.abortedWrites);
     }
         
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        System.out.println("Commit TX " + context.currentTransaction());
-        
-        // TODO Handle pending changes
-        
-        // TODO Auto-generated method stub
+        this.handleCompletionOfTransaction(transaction, this.committedWrites::addAll);
     }
     
     @Override
     public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        System.out.println("Abort TX " + context.currentTransaction());
+        this.handleCompletionOfTransaction(transaction, this.abortedWrites::addAll);
+    }
+    
+    private void handleCompletionOfTransaction(Transaction transaction, Consumer<Set<EntityWriteEvent>> eventConsumer) {
+        // Send the pending write events to the given consumer and remove them from the map 
+        var pendingWrites = this.pendingWritesPerTransaction.get(transaction);
+        if (pendingWrites == null) {
+            return;
+        }
         
-        // TODO Handle pending changes
+        eventConsumer.accept(pendingWrites);
+        this.pendingWritesPerTransaction.remove(transaction);
         
-        // TODO Auto-generated method stub
+        // Remove the changed entities from the appropriate map
+        var changedEntities = pendingWrites.stream().map(EntityWriteEvent::entity).collect(Collectors.toSet());
+        changedEntities.forEach(this.pendingEntitiesToTransaction::remove);        
     }
     
     @Override
@@ -60,8 +72,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
             return;
         }
         
-        var entityType = new EntityType(event.entityType());
-        var entity = new Entity(entityType, event.entityIdentifier());
+        var entity = event.entity();
 
         if (this.hasConflict(entity, currentTransaction)) {
             // TODO If the database uses read locks, we might want to create a "potential deadlock" issue
@@ -82,15 +93,14 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
             return;
         }
         
-        var entityType = new EntityType(event.entityType());
-        var entity = new Entity(entityType, event.entityIdentifier());
+        var entity = event.entity();
 
         if (this.hasConflict(entity, currentTransaction)) {
             var issue = new WriteConflictIssue(entity, event);
             this.foundIssues.add(issue);
         } else {       
-            var changedEntitiesInTransaction = this.pendingChangesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<Entity>());
-            changedEntitiesInTransaction.add(entity);
+            var pendingWritesInTransaction = this.pendingWritesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<EntityWriteEvent>());
+            pendingWritesInTransaction.add(event);
         
             this.pendingEntitiesToTransaction.put(entity, currentTransaction);
         }

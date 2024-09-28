@@ -67,7 +67,7 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else {
-            this.addRewrittenEvent(new EntityReadEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entityType(), event.entityIdentifier()));
+            this.addRewrittenEvent(new EntityReadEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity()));
         }
     }
         
@@ -81,7 +81,7 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
         if (context.currentLocation().equals(event.location())) {
             this.addRewrittenEvent(event);
         } else {
-            this.addRewrittenEvent(new EntityWriteEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entityType(), event.entityIdentifier()));
+            this.addRewrittenEvent(new EntityWriteEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity()));
         }
     }
         
