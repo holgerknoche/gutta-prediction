@@ -25,9 +25,9 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private final Map<Entity, Transaction> pendingEntitiesToTransaction = new HashMap<>(); 
     
-    private final List<ConsistencyIssue> foundIssues = new ArrayList<>();
+    private final List<ConsistencyIssue<?>> foundIssues = new ArrayList<>();
     
-    public List<ConsistencyIssue> findConsistencyIssues(EventTrace trace, DeploymentModel deploymentModel) {        
+    public List<ConsistencyIssue<?>> findConsistencyIssues(EventTrace trace, DeploymentModel deploymentModel) {        
         new TraceSimulator(deploymentModel)
         .addListener(this)
         .processEvents(trace);
@@ -42,7 +42,6 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         // TODO Handle pending changes
         
         // TODO Auto-generated method stub
-        TraceSimulationListener.super.onTransactionCommit(event, transaction, context);
     }
     
     @Override
@@ -52,13 +51,10 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         // TODO Handle pending changes
         
         // TODO Auto-generated method stub
-        TraceSimulationListener.super.onTransactionAbort(event, transaction, context);
     }
     
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-        System.out.println("Read entity " + event.entityType() + "-" + event.entityIdentifier() + " in TX " + context.currentTransaction());
-        
         var currentTransaction = context.currentTransaction();
         if (currentTransaction == null) {
             return;
@@ -67,16 +63,20 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         var entityType = new EntityType(event.entityType());
         var entity = new Entity(entityType, event.entityIdentifier());
 
-        var changingTransaction = this.pendingEntitiesToTransaction.get(entity);
-        if (changingTransaction != null && !(changingTransaction.equals(currentTransaction))) {
-            System.out.println("Stale read of entity " + entity);
+        if (this.hasConflict(entity, currentTransaction)) {
+            // TODO If the database uses read locks, we might want to create a "potential deadlock" issue
+            var issue = new StaleReadIssue(entity, event);
+            this.foundIssues.add(issue);
         }
+    }
+    
+    private boolean hasConflict(Entity entity, Transaction currentTransaction) {
+        var changingTransaction = this.pendingEntitiesToTransaction.get(entity);
+        return (changingTransaction != null && !(changingTransaction.equals(currentTransaction)));     
     }
     
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-        System.out.println("Write entity " + event.entityType() + "-" + event.entityIdentifier() + " in TX " + context.currentTransaction());
-
         var currentTransaction = context.currentTransaction();
         if (currentTransaction == null) {
             return;
@@ -85,13 +85,15 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         var entityType = new EntityType(event.entityType());
         var entity = new Entity(entityType, event.entityIdentifier());
 
-        // TODO Check for write-write conflicts
+        if (this.hasConflict(entity, currentTransaction)) {
+            var issue = new WriteConflictIssue(entity, event);
+            this.foundIssues.add(issue);
+        } else {       
+            var changedEntitiesInTransaction = this.pendingChangesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<Entity>());
+            changedEntitiesInTransaction.add(entity);
         
-        
-        var changedEntitiesInTransaction = this.pendingChangesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<Entity>());
-        changedEntitiesInTransaction.add(entity);
-        
-        this.pendingEntitiesToTransaction.put(entity, currentTransaction);
+            this.pendingEntitiesToTransaction.put(entity, currentTransaction);
+        }
     }         
 
 }

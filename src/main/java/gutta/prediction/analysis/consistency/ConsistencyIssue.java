@@ -1,5 +1,9 @@
 package gutta.prediction.analysis.consistency;
 
-public class ConsistencyIssue {
+import gutta.prediction.event.MonitoringEvent;
+
+public interface ConsistencyIssue<T extends MonitoringEvent> {
+    
+    T event();
 
 }
