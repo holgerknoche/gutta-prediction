@@ -19,7 +19,7 @@ public class EventTrace {
         return new EventTrace(List.copyOf(events));
     }
     
-    private EventTrace(List<MonitoringEvent> events) {
+    protected EventTrace(List<MonitoringEvent> events) {
         this.events = requireNonNull(events);
     }
     

@@ -31,7 +31,7 @@ public class LatencyRewriter implements TraceRewriter {
     }
 
     @Override
-    public EventTrace rewriteTrace(EventTrace trace) {
+    public RewrittenEventTrace rewriteTrace(EventTrace trace) {
         return new LatencyRewriterWorker().rewriteTrace(trace, this.deploymentModel);        
     }
     
@@ -51,13 +51,13 @@ public class LatencyRewriter implements TraceRewriter {
         @Override
         public void onUseCaseStartEvent(UseCaseStartEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new UseCaseStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ServiceCandidateInvocationEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
@@ -68,13 +68,13 @@ public class LatencyRewriter implements TraceRewriter {
         @Override
         public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ServiceCandidateEntryEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name(), event.transactionStarted(), event.transactionId());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ServiceCandidateExitEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
@@ -95,49 +95,49 @@ public class LatencyRewriter implements TraceRewriter {
         @Override
         public void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ServiceCandidateReturnEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onTransactionStartEvent(TransactionStartEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ImplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId(), event.cause());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
         
         @Override
         public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new ExplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onTransactionCommitEvent(TransactionCommitEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new TransactionCommitEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.transactionId());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new EntityReadEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new EntityWriteEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
         @Override
         public void onUseCaseEndEvent(UseCaseEndEvent event, TraceSimulationContext context) {
             var rewrittenEvent = new UseCaseEndEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
-            this.addRewrittenEvent(rewrittenEvent);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
 
     }

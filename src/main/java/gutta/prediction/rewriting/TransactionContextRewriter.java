@@ -15,7 +15,7 @@ public class TransactionContextRewriter implements TraceRewriter {
     }        
     
     @Override
-    public EventTrace rewriteTrace(EventTrace inputTrace) {
+    public RewrittenEventTrace rewriteTrace(EventTrace inputTrace) {
         return new TransactionContextRewriterWorker().rewriteTrace(inputTrace, this.deploymentModel);
     }
     
@@ -46,7 +46,8 @@ public class TransactionContextRewriter implements TraceRewriter {
             }
             
             // Adjust the location, if necessary
-            this.adjustLocationAndAdd(rewrittenEvent, context);
+            rewrittenEvent = this.adjustLocation(rewrittenEvent, context);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
         
         @Override
@@ -69,7 +70,8 @@ public class TransactionContextRewriter implements TraceRewriter {
             }
             
             // Adjust the location, if necessary
-            this.adjustLocationAndAdd(rewrittenEvent, context);
+            rewrittenEvent = this.adjustLocation(rewrittenEvent, context);
+            this.addRewrittenEvent(rewrittenEvent, event);
         }
         
     }            

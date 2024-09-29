@@ -19,16 +19,12 @@ import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulator;
 
-import java.util.ArrayList;
-import java.util.List;
-
 abstract class TraceRewriterWorker implements TraceSimulationListener {
            
-    private List<MonitoringEvent> rewrittenEvents;        
+    private RewrittenEventCollector rewrittenEventCollector;
 
     @Override
     public final void onStartOfProcessing() {
-        this.rewrittenEvents = new ArrayList<>();
         this.onStartOfRewrite();
     }
     
@@ -37,12 +33,18 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
         this.onEndOfRewrite();
     }
     
-    public EventTrace rewriteTrace(EventTrace trace, DeploymentModel deploymentModel) {
+    public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel deploymentModel) {
+        if (trace instanceof RewrittenEventTrace rewrittenTrace) {
+            this.rewrittenEventCollector = new JoiningRewrittenEventCollector(rewrittenTrace::obtainOriginalEvent);
+        } else {
+            this.rewrittenEventCollector = new SimpleRewrittenEventCollector();
+        }
+        
         new TraceSimulator(deploymentModel)
             .addListener(this)
             .processEvents(trace);
         
-        return EventTrace.of(this.rewrittenEvents);
+        return this.rewrittenEventCollector.createTrace();
     }
     
     protected void onStartOfRewrite() {
@@ -53,176 +55,188 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
      // Do nothing by default
     }
         
-    protected void addRewrittenEvent(MonitoringEvent event) {
-        this.rewrittenEvents.add(event);
+    protected void addRewrittenEvent(MonitoringEvent rewrittenEvent, MonitoringEvent originalEvent) {
+        this.rewrittenEventCollector.addRewrittenEvent(rewrittenEvent, originalEvent);
     }
                     
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(EntityReadEvent event, TraceSimulationContext context) {
+    protected EntityReadEvent adjustLocation(EntityReadEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else {
-            this.addRewrittenEvent(new EntityReadEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity()));
+            return new EntityReadEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity());
         }
     }
         
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(EntityWriteEvent event, TraceSimulationContext context) {
+    protected EntityWriteEvent adjustLocation(EntityWriteEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else {
-            this.addRewrittenEvent(new EntityWriteEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity()));
+            return new EntityWriteEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.entity());
         }
     }
         
     @Override    
     public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
+    protected ServiceCandidateEntryEvent adjustLocation(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ServiceCandidateEntryEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name(), event.transactionStarted(), event.transactionId()));
+            return new ServiceCandidateEntryEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name(), event.transactionStarted(), event.transactionId());
         }
     }       
     
     @Override
     public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateExitEvent event, TraceSimulationContext context) {
+    protected ServiceCandidateExitEvent adjustLocation(ServiceCandidateExitEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ServiceCandidateExitEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            return new ServiceCandidateExitEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name());
         }
     }
     
     @Override
     public void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
+    protected ServiceCandidateInvocationEvent adjustLocation(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ServiceCandidateInvocationEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            return new ServiceCandidateInvocationEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name());
         }
     }            
     
     @Override
     public void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
+    protected ServiceCandidateReturnEvent adjustLocation(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ServiceCandidateReturnEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            return new ServiceCandidateReturnEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name());
         }
     }
     
     @Override
     public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+    protected ImplicitTransactionAbortEvent adjustLocation(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ImplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId(), event.cause()));
+            return new ImplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId(), event.cause());
         }
     }
     
     @Override
     public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
+    protected ExplicitTransactionAbortEvent adjustLocation(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new ExplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId()));
+            return new ExplicitTransactionAbortEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId());
         }
     }
         
     @Override
     public void onTransactionCommitEvent(TransactionCommitEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(TransactionCommitEvent event, TraceSimulationContext context) {
+    protected TransactionCommitEvent adjustLocation(TransactionCommitEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new TransactionCommitEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId()));
+            return new TransactionCommitEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId());
         }
     }
         
     @Override
     public void onTransactionStartEvent(TransactionStartEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(TransactionStartEvent event, TraceSimulationContext context) {
+    protected TransactionStartEvent adjustLocation(TransactionStartEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new TransactionStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId()));
+            return new TransactionStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.transactionId());
         }
     }
         
     @Override
     public void onUseCaseStartEvent(UseCaseStartEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(UseCaseStartEvent event, TraceSimulationContext context) {
+    protected UseCaseStartEvent adjustLocation(UseCaseStartEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new UseCaseStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            return new UseCaseStartEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name());
         }
     }
     
     @Override
     public void onUseCaseEndEvent(UseCaseEndEvent event, TraceSimulationContext context) {
         // By default, copy the event just adjusting the location if necessary
-        this.adjustLocationAndAdd(event, context);
+        var rewrittenEvent = this.adjustLocation(event, context);
+        this.addRewrittenEvent(rewrittenEvent, event);
     }
     
-    protected void adjustLocationAndAdd(UseCaseEndEvent event, TraceSimulationContext context) {
+    protected UseCaseEndEvent adjustLocation(UseCaseEndEvent event, TraceSimulationContext context) {
         if (context.currentLocation().equals(event.location())) {
-            this.addRewrittenEvent(event);
+            return event;
         } else { 
-            this.addRewrittenEvent(new UseCaseEndEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name()));
+            return new UseCaseEndEvent(event.traceId(), event.timestamp(), context.currentLocation(), event.name());
         }
-    }        
-
+    }
+    
 }

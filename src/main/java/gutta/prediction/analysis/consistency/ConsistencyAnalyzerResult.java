@@ -6,5 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 record ConsistencyAnalyzerResult(List<ConsistencyIssue<?>> issues, Set<EntityWriteEvent> committedWrites, Set<EntityWriteEvent> abortedWrites) {
+    
+    public void diff(ConsistencyAnalyzerResult other) {
+        // TODO
+    }
 
 }

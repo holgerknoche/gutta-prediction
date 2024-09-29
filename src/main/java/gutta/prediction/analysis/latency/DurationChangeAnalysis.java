@@ -33,7 +33,7 @@ public class DurationChangeAnalysis {
         var originalMean = StatUtils.mean(originalDurations);
         var modifiedMean = StatUtils.mean(modifiedDurations); 
         
-        return new Result((pValue < significanceLevel), pValue, originalMean, modifiedMean);
+        return new Result((pValue <= significanceLevel), pValue, originalMean, modifiedMean);
     }
     
     private static double[] toDoubleArray(List<Double> values) {

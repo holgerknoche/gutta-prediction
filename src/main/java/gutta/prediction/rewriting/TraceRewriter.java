@@ -4,6 +4,6 @@ import gutta.prediction.event.EventTrace;
 
 public interface TraceRewriter {
     
-    EventTrace rewriteTrace(EventTrace inputTrace);
+    RewrittenEventTrace rewriteTrace(EventTrace inputTrace);
 
 }

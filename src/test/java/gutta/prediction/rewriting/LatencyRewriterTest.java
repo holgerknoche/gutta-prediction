@@ -7,6 +7,7 @@ import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -16,6 +17,9 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.SyntheticLocation;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,7 +38,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var inputTrace = fixture.trace();
         var rewrittenTrace = new LatencyRewriter(fixture.deploymentModel()).rewriteTrace(inputTrace);
 
-        assertEquals(inputTrace, rewrittenTrace);
+        assertEquals(fixture.rewrittenTrace(), rewrittenTrace);
     }
 
     /**
@@ -45,13 +49,20 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
+        var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
+        var originalServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
+        var originalServiceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 210, location, "sc1", true, "tx1");
+        var originalServiceCandidateExitEvent = new ServiceCandidateExitEvent(traceId, 400, location, "sc1");
+        var originalServiceCandidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 410, location, "sc1");
+        var originalUseCaseEndEvent = new UseCaseEndEvent(traceId, 500, location, "uc1");
+        
         var inputTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 210, location, "sc1", true, "tx1"),
-                new ServiceCandidateExitEvent(traceId, 400, location, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 410, location, "sc1"),
-                new UseCaseEndEvent(traceId, 500, location, "uc1")
+                originalUseCaseStartEvent,
+                originalServiceCandidateInvocationEvent,
+                originalServiceCandidateEntryEvent,
+                originalServiceCandidateExitEvent,
+                originalServiceCandidateReturnEvent,
+                originalUseCaseEndEvent
                 );
         
         var component1 = new Component("comp1");
@@ -73,18 +84,36 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var rewriter = new LatencyRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
-        var expectedTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
+        var rewrittenUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
+        var rewrittenServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
+        // Remove latency from the input trace
+        var rewrittenServiceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1");
+        var rewrittenServiceCandidateExitEvent = new ServiceCandidateExitEvent(traceId, 390, location, "sc1");
+        // Again, latency is removed
+        var rewrittenServiceCandidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 390, location, "sc1");
+        var rewrittenUseCaseEndEvent = new UseCaseEndEvent(traceId, 480, location, "uc1");
+        
+        var expectedEvents = List.<MonitoringEvent> of(
+                rewrittenUseCaseStartEvent,
+                rewrittenServiceCandidateInvocationEvent,
                 // Remove latency from the input trace
-                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1"),
-                new ServiceCandidateExitEvent(traceId, 390, location, "sc1"),
+                rewrittenServiceCandidateEntryEvent,
+                rewrittenServiceCandidateExitEvent,
                 // Again, latency is removed
-                new ServiceCandidateReturnEvent(traceId, 390, location, "sc1"),
-                new UseCaseEndEvent(traceId, 480, location, "uc1")
+                rewrittenServiceCandidateReturnEvent,
+                rewrittenUseCaseEndEvent
                 );
+        
+        var expectedCorrespondence = Map.<MonitoringEvent, MonitoringEvent> of(
+                rewrittenUseCaseStartEvent, originalUseCaseStartEvent, //
+                rewrittenServiceCandidateInvocationEvent, originalServiceCandidateInvocationEvent, //
+                rewrittenServiceCandidateEntryEvent, originalServiceCandidateEntryEvent, //
+                rewrittenServiceCandidateExitEvent, originalServiceCandidateExitEvent, //
+                rewrittenServiceCandidateReturnEvent, originalServiceCandidateReturnEvent, //
+                rewrittenUseCaseEndEvent, originalUseCaseEndEvent
+                );                
 
-        assertEquals(expectedTrace, rewrittenTrace);
+        assertEquals(new RewrittenEventTrace(expectedEvents, expectedCorrespondence), rewrittenTrace);
     }
     
     /**
@@ -95,13 +124,20 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         final var traceId = 1234L;
         final var location = new ProcessLocation("test", 1234, 1);
 
+        var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
+        var originalServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
+        var originalServiceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1");
+        var originalServiceCandidateExitEvent = new ServiceCandidateExitEvent(traceId, 400, location, "sc1");
+        var originalServiceCandidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 400, location, "sc1");
+        var originalUseCaseEndEvent = new UseCaseEndEvent(traceId, 500, location, "uc1");
+        
         var inputTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1"),
-                new ServiceCandidateExitEvent(traceId, 400, location, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 400, location, "sc1"),
-                new UseCaseEndEvent(traceId, 500, location, "uc1")
+                originalUseCaseStartEvent,
+                originalServiceCandidateInvocationEvent,
+                originalServiceCandidateEntryEvent,
+                originalServiceCandidateExitEvent,
+                originalServiceCandidateReturnEvent,
+                originalUseCaseEndEvent
                 );
 
         var component1 = new Component("comp1");
@@ -124,16 +160,32 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var artificialLocation = new SyntheticLocation(0);
-        var expectedTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location, "uc1"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 250, artificialLocation, "sc1", true, "tx1"),
-                new ServiceCandidateExitEvent(traceId, 450, artificialLocation, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 500, location, "sc1"),
-                new UseCaseEndEvent(traceId, 600, location, "uc1")
+        var rewrittenUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
+        var rewrittenServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
+        var rewrittenServiceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 250, artificialLocation, "sc1", true, "tx1");
+        var rewrittenServiceCandidateExitEvent = new ServiceCandidateExitEvent(traceId, 450, artificialLocation, "sc1");
+        var rewrittenServiceCandidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 500, location, "sc1");
+        var rewrittenUseCaseEndEvent = new UseCaseEndEvent(traceId, 600, location, "uc1");
+        
+        var expectedEvents = List.<MonitoringEvent> of(
+                rewrittenUseCaseStartEvent,
+                rewrittenServiceCandidateInvocationEvent,
+                rewrittenServiceCandidateEntryEvent,
+                rewrittenServiceCandidateExitEvent,
+                rewrittenServiceCandidateReturnEvent,
+                rewrittenUseCaseEndEvent
+                );
+        
+        var expectedCorrespondence = Map.<MonitoringEvent, MonitoringEvent> of(
+                rewrittenUseCaseStartEvent, originalUseCaseStartEvent, //
+                rewrittenServiceCandidateInvocationEvent, originalServiceCandidateInvocationEvent, //
+                rewrittenServiceCandidateEntryEvent, originalServiceCandidateEntryEvent, //
+                rewrittenServiceCandidateExitEvent, originalServiceCandidateExitEvent, //
+                rewrittenServiceCandidateReturnEvent, originalServiceCandidateReturnEvent, //
+                rewrittenUseCaseEndEvent, originalUseCaseStartEvent //
                 );
 
-        assertEquals(expectedTrace, rewrittenTrace);
+        assertEquals(new RewrittenEventTrace(expectedEvents, expectedCorrespondence), rewrittenTrace);
     }
     
 
