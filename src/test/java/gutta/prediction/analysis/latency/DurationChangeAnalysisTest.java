@@ -1,6 +1,5 @@
 package gutta.prediction.analysis.latency;
 
-import gutta.prediction.analysis.latency.DurationChangeAnalysis;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
