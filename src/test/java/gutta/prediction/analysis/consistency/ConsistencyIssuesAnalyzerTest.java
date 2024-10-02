@@ -13,6 +13,7 @@ import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -238,6 +239,89 @@ class ConsistencyIssuesAnalyzerTest {
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(committedEvent), Set.of(abortedEvent));
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: Commit of an implicitly demarcated transaction.
+     */
+    @Test
+    void commitOfImplicitTransaction() {
+        var traceId = 1234;
+        var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity1 = new Entity(entityType, "e1");
+        
+        var committedEvent = new EntityWriteEvent(traceId, 200, location, entity1);
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 100, location, "sc1", true, "tx1"),
+                committedEvent,
+                new ServiceCandidateExitEvent(traceId, 900, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 900, location, "sc1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        
+        var component = new Component("c1");       
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: Abort of an implicitly demarcated transaction.
+     */
+    @Test
+    void abortOfImplicitTransaction() {
+        var traceId = 1234;
+        var location = new ProcessLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity1 = new Entity(entityType, "e1");
+        
+        var abortedEvent = new EntityWriteEvent(traceId, 200, location, entity1);
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 100, location, "sc1", true, "tx1"),
+                abortedEvent,
+                new ImplicitTransactionAbortEvent(traceId, 400, location, "tx1", "cause"),
+                new ServiceCandidateExitEvent(traceId, 900, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 900, location, "sc1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        
+        var component = new Component("c1");       
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(), Set.of(abortedEvent));
         
         assertEquals(expectedResult, result);
     }
