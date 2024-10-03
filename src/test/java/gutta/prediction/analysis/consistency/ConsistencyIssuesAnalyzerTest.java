@@ -323,7 +323,9 @@ class ConsistencyIssuesAnalyzerTest {
         
         var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(), Set.of(abortedEvent));
         
-        assertEquals(expectedResult, result);
+        assertEquals(expectedResult, result);   
     }
+    
+    // TODO Test case for subordinate transactions
 
 }
