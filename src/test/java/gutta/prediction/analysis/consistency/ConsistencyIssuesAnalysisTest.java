@@ -19,9 +19,12 @@ import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.simulation.SyntheticLocation;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test cases for the class {@link ConsistencyIssuesAnalysis}.
@@ -74,8 +77,14 @@ class ConsistencyIssuesAnalysisTest {
         var analysis = new ConsistencyIssuesAnalysis();
         var result = analysis.analyzeTrace(inputTrace, deploymentModel, modifiedDeploymentModel);
         
-        // TODO
-        assertNotNull(result);        
+        var syntheticLocation = new SyntheticLocation(0);
+        
+        var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 400, syntheticLocation, entity2);
+        var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 500, syntheticLocation, entity3);
+
+        var expectedResult = new ConsistencyAnalysisResult(Set.of(), Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of());
+        
+        assertEquals(expectedResult, result);
     }
 
 }
