@@ -3,12 +3,31 @@ package gutta.prediction.analysis.consistency;
 import gutta.prediction.domain.Entity;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.MonitoringEvent;
+import gutta.prediction.util.EqualityUtil;
 
-public record WriteConflictIssue(Entity entity, EntityWriteEvent event) implements ConsistencyIssue<EntityWriteEvent> {
+public class WriteConflictIssue extends ConsistencyIssue<EntityWriteEvent> {
 
+    WriteConflictIssue(Entity entity, EntityWriteEvent event) {
+        super(entity, event);
+    }
+    
     @Override
-    public ConsistencyIssue<EntityWriteEvent> rewriteToEvent(MonitoringEvent event) {
+    ConsistencyIssue<EntityWriteEvent> rewriteToEvent(MonitoringEvent event) {
         return new WriteConflictIssue(this.entity(), (EntityWriteEvent) event);
+    }
+    
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    private boolean equalsInternal(WriteConflictIssue that) {
+        return super.equalsInternal(that);
     }
 
 }
