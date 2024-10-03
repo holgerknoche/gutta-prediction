@@ -21,6 +21,8 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 /**
  * Test cases for the class {@link ConsistencyIssuesAnalysis}.
  */
@@ -72,7 +74,8 @@ class ConsistencyIssuesAnalysisTest {
         var analysis = new ConsistencyIssuesAnalysis();
         var result = analysis.analyzeTrace(inputTrace, deploymentModel, modifiedDeploymentModel);
         
-        System.out.println(result);        
+        // TODO
+        assertNotNull(result);        
     }
 
 }
