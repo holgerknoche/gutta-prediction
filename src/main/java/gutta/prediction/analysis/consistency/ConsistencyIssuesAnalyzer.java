@@ -56,7 +56,12 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     }
     
     private void handleCompletionOfTransaction(Transaction transaction, Consumer<Set<EntityWriteEvent>> eventConsumer) {
-        // Send the pending write events to the given consumer and remove them from the map 
+        // Complete the transaction and all subordinates, if any
+        transaction.forEach(tx -> this.handleCompletionOfSingleTransaction(tx, eventConsumer));
+    }
+    
+    private void handleCompletionOfSingleTransaction(Transaction transaction, Consumer<Set<EntityWriteEvent>> eventConsumer) {
+        // Send the pending write events to the given consumer and remove them from the map
         var pendingWrites = this.pendingWritesPerTransaction.get(transaction);
         if (pendingWrites == null) {
             return;
@@ -68,7 +73,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         // Remove the changed entities from the appropriate map
         var changedEntities = pendingWrites.stream().map(EntityWriteEvent::entity).collect(Collectors.toSet());
         changedEntities.forEach(this.pendingEntitiesToTransaction::remove);        
-    }
+    }   
     
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
@@ -76,7 +81,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         if (currentTransaction == null) {
             return;
         }
-        
+                
         var entity = event.entity();
         var dataStore = this.deploymentModel.getDataStoreForEntityType(entity.type()).orElseThrow(() -> new IllegalStateException("Entity type '" + entity.type() + "' is not assigned to a data store."));
 
@@ -104,7 +109,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         if (currentTransaction == null) {
             return;
         }
-        
+                
         var entity = event.entity();
 
         if (this.hasConflict(entity, currentTransaction)) {

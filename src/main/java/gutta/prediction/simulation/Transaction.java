@@ -8,6 +8,7 @@ import gutta.prediction.util.EqualityUtil;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -89,6 +90,11 @@ public abstract class Transaction {
         this.subordinates.add(subordinate);
     }
     
+    public void forEach(Consumer<Transaction> action) {
+        action.accept(this);
+        this.subordinates.forEach(subordinate -> subordinate.forEach(action));
+    }
+        
     public abstract boolean isTopLevel();                    
     
     @Override
