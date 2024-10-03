@@ -25,7 +25,6 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,7 +47,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(), Set.of());
         
         assertEquals(expectedResult, result);
     }
@@ -96,7 +95,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(new StaleReadIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new StaleReadIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
         
         assertEquals(expectedResult, result);
     }
@@ -144,7 +143,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(new PotentialDeadlockIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new PotentialDeadlockIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
         
         assertEquals(expectedResult, result);
     }
@@ -190,7 +189,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
         
         assertEquals(expectedResult, result);
     }
@@ -238,7 +237,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(committedEvent), Set.of(abortedEvent));
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(committedEvent), Set.of(abortedEvent));
         
         assertEquals(expectedResult, result);
     }
@@ -279,7 +278,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(committedEvent), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(committedEvent), Set.of());
         
         assertEquals(expectedResult, result);
     }
@@ -321,7 +320,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(List.of(), Set.of(), Set.of(abortedEvent));
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(), Set.of(abortedEvent));
         
         assertEquals(expectedResult, result);   
     }

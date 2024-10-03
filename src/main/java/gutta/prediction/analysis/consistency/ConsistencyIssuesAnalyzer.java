@@ -12,10 +12,8 @@ import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulator;
 import gutta.prediction.simulation.Transaction;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -27,7 +25,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private final Map<Entity, Transaction> pendingEntitiesToTransaction = new HashMap<>(); 
     
-    private final List<ConsistencyIssue<?>> foundIssues = new ArrayList<>();
+    private final Set<ConsistencyIssue<?>> foundIssues = new HashSet<>();
     
     private final Set<EntityWriteEvent> committedWrites = new HashSet<>();
     

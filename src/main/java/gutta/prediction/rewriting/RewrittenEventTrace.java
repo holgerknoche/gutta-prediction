@@ -16,8 +16,9 @@ public class RewrittenEventTrace extends EventTrace {
         this.eventCorrespondence = eventCorrespondence;
     }
     
-    public MonitoringEvent obtainOriginalEvent(MonitoringEvent rewrittenEvent) {
-        return this.eventCorrespondence.get(rewrittenEvent);
+    @SuppressWarnings("unchecked")
+    public <T extends MonitoringEvent> T obtainOriginalEvent(T rewrittenEvent) {
+        return (T) this.eventCorrespondence.get(rewrittenEvent);
     }
 
 }

@@ -70,8 +70,9 @@ class ConsistencyIssuesAnalysisTest {
                 .build();
         
         var analysis = new ConsistencyIssuesAnalysis();
-        analysis.analyzeTrace(inputTrace, deploymentModel, modifiedDeploymentModel);
+        var result = analysis.analyzeTrace(inputTrace, deploymentModel, modifiedDeploymentModel);
         
+        System.out.println(result);        
     }
 
 }
