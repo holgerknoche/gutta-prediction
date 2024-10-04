@@ -59,17 +59,13 @@ class TraceBuilderWorker implements TraceSimulationListener {
     public void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
             TraceSimulationContext context) {
 
-        this.onComponentChange(invocationEvent, entryEvent, entryEvent.name());
-    }
-    
-    private void onComponentChange(MonitoringEvent sourceEvent, MonitoringEvent targetEvent, String targetName) {
-        if (locationChange(sourceEvent, targetEvent)) {
-            this.currentSpan = this.locationToSpan.computeIfAbsent(targetEvent.location(), location -> new Span(targetName, targetEvent.timestamp(), this.currentSpan));  
+        if (locationChange(invocationEvent, entryEvent)) {
+            this.currentSpan = this.locationToSpan.computeIfAbsent(entryEvent.location(), location -> new Span(entryEvent.name(), entryEvent.timestamp(), this.currentSpan));  
         }
         
-        this.addLatencyOverlayIfNecessary(sourceEvent, targetEvent);
+        this.addLatencyOverlayIfNecessary(invocationEvent, entryEvent);
     }
-    
+        
     private void addLatencyOverlayIfNecessary(MonitoringEvent startEvent, MonitoringEvent endEvent) {
         var latency = (endEvent.timestamp() - startEvent.timestamp());
         
@@ -83,7 +79,13 @@ class TraceBuilderWorker implements TraceSimulationListener {
     public void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
             TraceSimulationContext context) {
 
-        this.onComponentChange(exitEvent, returnEvent, exitEvent.name());
+        this.addLatencyOverlayIfNecessary(exitEvent, returnEvent);
+        
+        if (locationChange(exitEvent, returnEvent)) {
+            // Adjust the end timestamp of the current span
+            this.currentSpan.endTimestamp(exitEvent.timestamp());
+            this.currentSpan = this.locationToSpan.computeIfAbsent(returnEvent.location(), location -> new Span(returnEvent.name(), returnEvent.timestamp(), this.currentSpan));
+        }
     }
 
     @Override
