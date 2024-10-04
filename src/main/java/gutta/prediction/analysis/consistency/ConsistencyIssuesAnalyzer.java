@@ -9,7 +9,6 @@ import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
-import gutta.prediction.simulation.TraceSimulator;
 import gutta.prediction.simulation.Transaction;
 
 import java.util.HashMap;
@@ -18,6 +17,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
 class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
@@ -36,9 +37,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
         
-        new TraceSimulator(deploymentModel)
-        .addListener(this)
-        .processEvents(trace);
+        runSimulationOf(trace, deploymentModel, this);
         
         return new ConsistencyAnalyzerResult(this.foundIssues, this.committedWrites, this.abortedWrites);
     }

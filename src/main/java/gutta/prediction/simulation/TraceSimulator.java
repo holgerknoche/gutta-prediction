@@ -11,7 +11,13 @@ public class TraceSimulator {
     private final List<TraceSimulationListener> listeners;
     
     private final DeploymentModel deploymentModel;
-        
+
+    public static void runSimulationOf(EventTrace trace, DeploymentModel deploymentModel, TraceSimulationListener listener) {
+        new TraceSimulator(deploymentModel)
+            .addListener(listener)
+            .processEvents(trace);
+    }
+    
     public TraceSimulator(DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
         this.listeners = new ArrayList<>();

@@ -1,9 +1,9 @@
 package gutta.prediction.span;
 
-public class SpanOverlay extends Interval {
+public abstract class SpanOverlay extends Interval {
 
-    public SpanOverlay(long beginNs) {
-        super(beginNs);
+    protected SpanOverlay(long startTimestamp, long endTimestamp) {
+        super(startTimestamp, endTimestamp);
     }
 
 }

@@ -1,9 +1,15 @@
 package gutta.prediction.span;
 
-import java.time.Instant;
+public abstract class SpanEvent {
 
-public interface SpanEvent {
-
-    Instant timestamp();
+    private final long timestamp;
+    
+    protected SpanEvent(long timestamp) {
+        this.timestamp = timestamp;
+    }
+    
+    public long timestamp() {
+        return this.timestamp;
+    }
 
 }
