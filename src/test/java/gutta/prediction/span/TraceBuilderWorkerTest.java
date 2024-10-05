@@ -196,7 +196,7 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 800)));
+        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 300), new SuspendedTransactionOverlay(300, 700, false), new CleanTransactionOverlay(700, 800)));
         new Span("component2", 300, 700, expectedRootSpan, List.of(), List.of(new CleanTransactionOverlay(300, 500), new DirtyTransactionOverlay(500, 700), new SuspendedTransactionOverlay(700, 800, true)));
         
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);

@@ -171,6 +171,36 @@ class TraceBuilderWorker implements TraceSimulationListener {
     }
     
     @Override
+    public void onTransactionSuspend(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        if (this.currentTransactionOverlay == null) {
+            return;
+        }
+        
+        var currentTimestamp = event.timestamp();
+        this.currentTransactionOverlay.endTimestamp(currentTimestamp);
+        
+        var newOverlay = new SuspendedTransactionOverlay(currentTimestamp, this.currentTransactionOverlay.isDirty());
+        
+        this.currentSpan.addOverlay(newOverlay);
+        this.currentTransactionOverlay = newOverlay;        
+    }
+    
+    @Override
+    public void onTransactionResume(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        if (this.currentTransactionOverlay == null) {
+            return;
+        }
+        
+        var currentTimestamp = event.timestamp();
+        this.currentTransactionOverlay.endTimestamp(currentTimestamp);
+        
+        var newOverlay = (this.currentTransactionOverlay.isDirty()) ? new DirtyTransactionOverlay(currentTimestamp) : new CleanTransactionOverlay(currentTimestamp);
+        
+        this.currentSpan.addOverlay(newOverlay);
+        this.currentTransactionOverlay = newOverlay;
+    }
+    
+    @Override
     public void onUseCaseEndEvent(UseCaseEndEvent event, TraceSimulationContext context) {
         this.rootSpan.endTimestamp(event.timestamp());
     }
