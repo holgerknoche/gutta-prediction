@@ -1,17 +1,24 @@
 package gutta.prediction.span;
 
 import gutta.prediction.domain.Component;
+import gutta.prediction.domain.DataStore;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.Entity;
+import gutta.prediction.domain.EntityType;
+import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
+import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ProcessLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
+import gutta.prediction.event.TransactionCommitEvent;
+import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import org.junit.jupiter.api.Test;
@@ -35,21 +42,21 @@ class TraceBuilderWorkerTest {
         var traceId = 1234;
         
         var eventTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location, "uc"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc"),
-                new ServiceCandidateEntryEvent(traceId, 250, location, "sc"),
-                new ServiceCandidateExitEvent(traceId, 350, location, "sc"),
-                new ServiceCandidateReturnEvent(traceId, 400, location, "sc"),
-                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                new UseCaseStartEvent(traceId, 100, location, "uc"), //
+                new ServiceCandidateInvocationEvent(traceId, 200, location, "sc"), //
+                new ServiceCandidateEntryEvent(traceId, 250, location, "sc"), //
+                new ServiceCandidateExitEvent(traceId, 350, location, "sc"), //
+                new ServiceCandidateReturnEvent(traceId, 400, location, "sc"), //
+                new UseCaseEndEvent(traceId, 1000, location, "uc") //
                 );
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.SUPPORTED);
         var component = new Component("component");
         
-        var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(serviceCandidate, component)
+        var deploymentModel = new DeploymentModel.Builder() //
+                .assignUseCase(useCase, component) //
+                .assignServiceCandidate(serviceCandidate, component) //
                 .build();
         
         var worker = new TraceBuilderWorker();
@@ -71,16 +78,16 @@ class TraceBuilderWorkerTest {
         var traceId = 1234;
         
         var eventTrace = EventTrace.of(
-                new UseCaseStartEvent(traceId, 100, location1, "uc"),
-                new ServiceCandidateInvocationEvent(traceId, 200, location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, 250, location1, "sc1"),
-                new ServiceCandidateInvocationEvent(traceId, 300, location1, "sc2"),
-                new ServiceCandidateEntryEvent(traceId, 320, location2, "sc2"),
-                new ServiceCandidateExitEvent(traceId, 380, location2, "sc2"),
-                new ServiceCandidateReturnEvent(traceId, 400, location1, "sc2"),
-                new ServiceCandidateExitEvent(traceId, 450, location1, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, 500, location1, "sc1"),
-                new UseCaseEndEvent(traceId, 1000, location1, "uc")
+                new UseCaseStartEvent(traceId, 100, location1, "uc"), //
+                new ServiceCandidateInvocationEvent(traceId, 200, location1, "sc1"), //
+                new ServiceCandidateEntryEvent(traceId, 250, location1, "sc1"), //
+                new ServiceCandidateInvocationEvent(traceId, 300, location1, "sc2"), //
+                new ServiceCandidateEntryEvent(traceId, 320, location2, "sc2"), //
+                new ServiceCandidateExitEvent(traceId, 380, location2, "sc2"), //
+                new ServiceCandidateReturnEvent(traceId, 400, location1, "sc2"), //
+                new ServiceCandidateExitEvent(traceId, 450, location1, "sc1"), //
+                new ServiceCandidateReturnEvent(traceId, 500, location1, "sc1"), //
+                new UseCaseEndEvent(traceId, 1000, location1, "uc") //
                 );
         
         var useCase = new UseCase("uc");        
@@ -90,11 +97,11 @@ class TraceBuilderWorkerTest {
         var component1 = new Component("component1");
         var component2 = new Component("component2");
         
-        var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(serviceCandidate1, component1)
-                .assignServiceCandidate(serviceCandidate2, component2)
-                .addSymmetricRemoteConnection(component1, component2, 20, TransactionPropagation.NONE)
+        var deploymentModel = new DeploymentModel.Builder() //
+                .assignUseCase(useCase, component1) //
+                .assignServiceCandidate(serviceCandidate1, component1) //
+                .assignServiceCandidate(serviceCandidate2, component2) //
+                .addSymmetricRemoteConnection(component1, component2, 20, TransactionPropagation.NONE) //
                 .build();
         
         var worker = new TraceBuilderWorker();
@@ -107,7 +114,45 @@ class TraceBuilderWorkerTest {
         
         assertEquals(expectedTrace, spanTrace);
     }
+
+    // TODO Implicit transaction aborts
     
-    // TODO Implement transaction overlays
+    /**
+     * Test case: Appropriate transaction overlays are created for a trace with independent transactions.
+     */
+    @Test
+    void transactionOverlaysForIndependentTransactions() {
+        var location = new ProcessLocation("test", 1234, 0);
+        var traceId = 1234;
+        
+        var entityType = new EntityType("et");
+        var entity = new Entity(entityType, "e");
+        
+        var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
+        
+        var eventTrace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location, "uc"), //
+                new TransactionStartEvent(traceId, 200, location, "tx1"), //
+                new EntityWriteEvent(traceId, 500, location, entity), //
+                new TransactionCommitEvent(traceId, 800, location, "tx1"), //
+                new UseCaseEndEvent(traceId, 1000, location, "uc") //
+                );
+        
+        var useCase = new UseCase("uc");        
+        var component = new Component("component");
+        
+        var deploymentModel = new DeploymentModel.Builder() //
+                .assignUseCase(useCase, component) //
+                .assignEntityType(entityType, dataStore) //
+                .build();
+        
+        var worker = new TraceBuilderWorker();
+        var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
+        
+        var expectedRootSpan = new Span("component", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 500), new DirtyTransactionOverlay(500, 800)));
+        var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
+        
+        assertEquals(expectedTrace, spanTrace);
+    }
 
 }

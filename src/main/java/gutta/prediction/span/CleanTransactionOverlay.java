@@ -2,14 +2,19 @@ package gutta.prediction.span;
 
 import gutta.prediction.util.EqualityUtil;
 
-public abstract class SpanOverlay extends Interval {
+public final class CleanTransactionOverlay extends TransactionOverlay {
     
-    protected SpanOverlay(long startTimestamp) {
-        this(startTimestamp, 0);
+    CleanTransactionOverlay(long startTimestamp) {
+        super(startTimestamp);
     }
-
-    protected SpanOverlay(long startTimestamp, long endTimestamp) {
+    
+    CleanTransactionOverlay(long startTimestamp, long endTimestamp) {
         super(startTimestamp, endTimestamp);
+    }
+    
+    @Override
+    public boolean isDirty() {
+        return false;
     }
     
     @Override
@@ -17,12 +22,11 @@ public abstract class SpanOverlay extends Interval {
         return super.hashCode();
     }
     
-    @Override
     public boolean equals(Object that) {
         return EqualityUtil.equals(this, that, this::equalsInternal);
     }
     
-    protected boolean equalsInternal(SpanOverlay that) {
+    private boolean equalsInternal(CleanTransactionOverlay that) {
         return super.equalsInternal(that);
     }
 
