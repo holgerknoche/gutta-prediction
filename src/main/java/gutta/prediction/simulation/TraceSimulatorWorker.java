@@ -207,18 +207,31 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
     
     private void performComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection) {
-        this.listeners.forEach(listener -> listener.onComponentTransition(invocationEvent, entryEvent, connection, this.context));
-
-        // Save the current state on the stack before making changes
-        this.context.pushCurrentState();
-
         var enteredCandidateName = entryEvent.name();
         var enteredServiceCandidate = this.deploymentModel.resolveServiceCandidateByName(entryEvent.name())
                 .orElseThrow(() -> new TraceProcessingException(entryEvent, "Service candidate '" + enteredCandidateName + "' does not exist."));
 
+        var currentTransaction = this.context.currentTransaction();
+        var newTransaction = this.determineTransactionAfterTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
+
+        if (currentTransaction != null && newTransaction != currentTransaction) {
+            // If an existing transaction is suspended, notify the listeners (in the old state, and before notifying the listeners of the transition)
+            this.listeners.forEach(listener -> listener.onTransactionSuspend(invocationEvent, currentTransaction, this.context));
+        }
+
+        // Save the current state on the stack before making changes
+        this.context.pushCurrentState();
+        
+        this.listeners.forEach(listener -> listener.onComponentTransition(invocationEvent, entryEvent, connection, this.context));
+        
         // Update the current location and transaction state
         this.updateLocationOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
-        this.updateTransactionOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
+        this.registerTransactionAndSetAsCurrent(newTransaction);
+        
+        if (newTransaction != null && newTransaction != currentTransaction) {
+            // If a new transaction is created, notify the listeners (in the new state)
+            this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
+        }
     }
      
     private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
@@ -257,7 +270,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         }
     }
         
-    private void updateTransactionOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+    private Transaction determineTransactionAfterTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var currentTransaction = this.currentTransaction();
         var propagationType = connection.transactionPropagation();
         
@@ -265,41 +278,24 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         var usableTransactionAvailable = (currentTransaction != null && propagationType != TransactionPropagation.NONE);
         var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
         
-        Transaction newTransaction;
         switch (action) {
         case CREATE_NEW: 
             // Create a new top-level transaction if required by the action
             var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId() : this.createSyntheticTransactionId();
-            newTransaction = new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
-            break;
+            return new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
             
         case KEEP:            
-            newTransaction = this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, entryEvent.location());        
-            break;
+            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, entryEvent.location());        
             
         case SUSPEND:
             // If the current transaction is to be suspended, just clear the current transaction
-            newTransaction = null;
-            break;
+            return null;
             
         default:
             throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
-        }
-        
-        if (newTransaction != currentTransaction) {
-            if (currentTransaction != null) {
-                // Notify listeners if an existing transaction was suspended
-                this.listeners.forEach(listener -> listener.onTransactionSuspend(invocationEvent, currentTransaction, context));
-            }
-            if (newTransaction != null) {
-                // Notify listeners if a new transaction was started
-                this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));                
-            }
-        }
-                        
-        this.registerTransactionAndSetAsCurrent(newTransaction);
+        } 
     }
-    
+        
     private TransactionAction determineTransactionActionFor(ServiceCandidate serviceCandidate, boolean transactionAvailable, MonitoringEvent contextEvent) {
         var transactionBehavior = serviceCandidate.transactionBehavior();
         
