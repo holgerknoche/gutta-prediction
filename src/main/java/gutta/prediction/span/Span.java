@@ -69,5 +69,10 @@ public class Span extends Interval {
                 Objects.equals(this.spanOverlays, that.spanOverlays) &&
                 Objects.equals(this.children, that.children);
     }
+    
+    @Override
+    public String toString() {
+        return "Span '" + this.name + "', [" + this.startTimestamp() + " -- " + this.endTimestamp() + "]";
+    }
 
 }

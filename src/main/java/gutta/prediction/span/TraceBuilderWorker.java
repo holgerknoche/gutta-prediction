@@ -44,7 +44,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
         this.traceId = event.traceId();
         this.traceName = event.name();
         
-        var newSpan = new Span(event.name(), event.timestamp(), null);        
+        var newSpan = new Span(context.currentComponent().name(), event.timestamp(), null);        
         
         this.rootSpan = newSpan;
         this.currentSpan = newSpan;
@@ -60,7 +60,8 @@ class TraceBuilderWorker implements TraceSimulationListener {
             TraceSimulationContext context) {
 
         if (locationChange(invocationEvent, entryEvent)) {
-            this.currentSpan = this.locationToSpan.computeIfAbsent(entryEvent.location(), location -> new Span(entryEvent.name(), entryEvent.timestamp(), this.currentSpan));  
+            var spanName = connection.target().name();
+            this.currentSpan = this.locationToSpan.computeIfAbsent(entryEvent.location(), location -> new Span(spanName, entryEvent.timestamp(), this.currentSpan));  
         }
         
         this.addLatencyOverlayIfNecessary(invocationEvent, entryEvent);
@@ -82,9 +83,10 @@ class TraceBuilderWorker implements TraceSimulationListener {
         this.addLatencyOverlayIfNecessary(exitEvent, returnEvent);
         
         if (locationChange(exitEvent, returnEvent)) {
+            var spanName = connection.target().name();
             // Adjust the end timestamp of the current span
             this.currentSpan.endTimestamp(exitEvent.timestamp());
-            this.currentSpan = this.locationToSpan.computeIfAbsent(returnEvent.location(), location -> new Span(returnEvent.name(), returnEvent.timestamp(), this.currentSpan));
+            this.currentSpan = this.locationToSpan.computeIfAbsent(returnEvent.location(), location -> new Span(spanName, returnEvent.timestamp(), this.currentSpan));
         }
     }
 

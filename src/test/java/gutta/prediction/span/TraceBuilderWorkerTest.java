@@ -55,7 +55,7 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("uc", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(350, 400)));
+        var expectedRootSpan = new Span("component", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(350, 400)));
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
         
         assertEquals(expectedTrace, spanTrace);
@@ -100,12 +100,14 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("uc", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(450, 500)));
-        new Span("sc2", 320, 380, expectedRootSpan, List.of(), List.of(new LatencyOverlay(300, 320), new LatencyOverlay(380, 400)));
+        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(450, 500)));
+        new Span("component2", 320, 380, expectedRootSpan, List.of(), List.of(new LatencyOverlay(300, 320), new LatencyOverlay(380, 400)));
         
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
         
         assertEquals(expectedTrace, spanTrace);
     }
+    
+    // TODO Implement transaction overlays
 
 }
