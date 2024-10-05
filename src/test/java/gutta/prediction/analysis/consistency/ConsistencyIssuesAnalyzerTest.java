@@ -82,7 +82,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
-        var dataStore = new DataStore(ReadWriteConflictBehavior.STALE_READ);
+        var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
         
         var component = new Component("c1");       
         
@@ -130,7 +130,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
-        var dataStore = new DataStore(ReadWriteConflictBehavior.BLOCK);
+        var dataStore = new DataStore("ds", ReadWriteConflictBehavior.BLOCK);
         
         var component = new Component("c1");       
         
