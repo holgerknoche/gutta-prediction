@@ -12,9 +12,20 @@ public final class SuspendedTransactionOverlay extends TransactionOverlay {
         this.dirty = dirty;
     }
     
+    public SuspendedTransactionOverlay(long startTimestamp, long endTimestamp, boolean dirty) {
+        super(startTimestamp, endTimestamp);
+        
+        this.dirty = dirty;
+    }
+    
     @Override
     public boolean isDirty() {
         return this.dirty;
+    }
+    
+    @Override
+    public boolean isSuspended() {
+        return true;
     }
     
     @Override

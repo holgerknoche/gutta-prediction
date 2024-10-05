@@ -154,5 +154,54 @@ class TraceBuilderWorkerTest {
         
         assertEquals(expectedTrace, spanTrace);
     }
+    
+    /**
+     * Test case: Appropriate transaction overlays are created for a trace with subordinate transactions, especially a suspension overlay until the end of the top-level transaction.
+     */
+    @Test
+    void transactionOverlaysForSubordinateTransactions() {
+        var location1 = new ProcessLocation("test", 1234, 0);
+        var location2 = new ProcessLocation("test", 1234, 1);
+        var traceId = 1234;
+        
+        var entityType = new EntityType("et");
+        var entity = new Entity(entityType, "e");
+        
+        var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
+        
+        var eventTrace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location1, "uc"), //
+                new TransactionStartEvent(traceId, 200, location1, "tx1"), //
+                new ServiceCandidateInvocationEvent(traceId, 300, location1, "sc"), //
+                new ServiceCandidateEntryEvent(traceId, 300, location2, "sc"), //
+                new EntityWriteEvent(traceId, 500, location2, entity), //
+                new ServiceCandidateExitEvent(traceId, 700, location2, "sc"), //
+                new ServiceCandidateReturnEvent(traceId, 700, location1, "sc"), //                
+                new TransactionCommitEvent(traceId, 800, location1, "tx1"), //
+                new UseCaseEndEvent(traceId, 1000, location1, "uc") //
+                );
+        
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.SUPPORTED);
+        var component1 = new Component("component1");
+        var component2 = new Component("component2");
+        
+        var deploymentModel = new DeploymentModel.Builder() //
+                .assignUseCase(useCase, component1) //
+                .assignServiceCandidate(serviceCandidate, component2) //
+                .assignEntityType(entityType, dataStore) //
+                .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE) //
+                .build();
+        
+        var worker = new TraceBuilderWorker();
+        var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
+        
+        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 800)));
+        new Span("component2", 300, 700, expectedRootSpan, List.of(), List.of(new CleanTransactionOverlay(300, 500), new DirtyTransactionOverlay(500, 700), new SuspendedTransactionOverlay(700, 800, true)));
+        
+        var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
+        
+        assertEquals(expectedTrace, spanTrace);
+    }
 
 }

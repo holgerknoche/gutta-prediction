@@ -18,6 +18,8 @@ import gutta.prediction.simulation.Transaction;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
@@ -25,7 +27,9 @@ import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 class TraceBuilderWorker implements TraceSimulationListener {
 
     private final Deque<SpanState> stack = new ArrayDeque<>();
-
+    
+    private final Map<Transaction, SuspendedTransactionOverlay> pendingSuspendedOverlays = new HashMap<>();
+       
     private long traceId;
     
     private String traceName;
@@ -95,6 +99,18 @@ class TraceBuilderWorker implements TraceSimulationListener {
             // Adjust the end timestamp of the current span
             this.currentSpan.endTimestamp(exitEvent.timestamp());
             
+            var currentTransaction = context.currentTransaction();
+            if (currentTransaction != null && currentTransaction.isSubordinate()) {
+                var currentTimestamp = exitEvent.timestamp();
+                
+                // If a subordinate transaction is active, we need to end the current overlay (there should be one) and add a suspension overlay
+                this.currentTransactionOverlay.endTimestamp(currentTimestamp);
+                var newOverlay = new SuspendedTransactionOverlay(currentTimestamp, this.currentTransactionOverlay.isDirty());
+                
+                this.currentSpan.addOverlay(newOverlay);
+                this.pendingSuspendedOverlays.put(currentTransaction, newOverlay);
+            }
+            
             // Restore the state from the stack
             var newState = this.stack.pop();
             this.currentSpan = newState.span();
@@ -113,22 +129,29 @@ class TraceBuilderWorker implements TraceSimulationListener {
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
         // TODO Add successful commit marker
-        this.completeTransactionOverlay(event);
+        this.completeTransactionOverlay(event, transaction);
     }
     
-    private void completeTransactionOverlay(MonitoringEvent event) {
+    private void completeTransactionOverlay(MonitoringEvent event, Transaction transaction) {
         var currentTimestamp = event.timestamp();
         
         if (this.currentTransactionOverlay != null) {
-            // TODO Close all subordinate overlays as well
+            // If an overlay is active, adjust the end timestamp and remove it so it is not touched again
             this.currentTransactionOverlay.endTimestamp(currentTimestamp);
+            this.currentTransactionOverlay = null;
+        }
+
+        // If a suspended overlay is attached to the transaction, complete it 
+        var suspendedOverlay = this.pendingSuspendedOverlays.remove(transaction);
+        if (suspendedOverlay != null) {
+            suspendedOverlay.endTimestamp(event.timestamp());
         }
     }
-    
+        
     @Override
     public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
         // TODO Add abort marker
-        this.completeTransactionOverlay(event);
+        this.completeTransactionOverlay(event, transaction);
     }
     
     @Override

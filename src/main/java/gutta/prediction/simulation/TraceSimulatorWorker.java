@@ -158,10 +158,18 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         var outcome = transaction.commit();
         
         if (outcome == Outcome.COMMITTED) {
-            this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
+            transaction.forEach(tx -> this.notifyListenersOfCommitOf(tx, event));
         } else {
-            this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
+            transaction.forEach(tx -> this.notifyListenersOfAbortOf(tx, event));
         }
+    }
+    
+    private void notifyListenersOfCommitOf(Transaction transaction, MonitoringEvent event) {
+        this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
+    }
+    
+    private void notifyListenersOfAbortOf(Transaction transaction, MonitoringEvent event) {
+        this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
     }
             
     @Override

@@ -95,7 +95,11 @@ public abstract class Transaction {
         this.subordinates.forEach(subordinate -> subordinate.forEach(action));
     }
         
-    public abstract boolean isTopLevel();                    
+    public abstract boolean isTopLevel();
+    
+    public boolean isSubordinate() {
+        return !this.isTopLevel();
+    }
     
     @Override
     public int hashCode() {

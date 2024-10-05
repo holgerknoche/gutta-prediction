@@ -11,5 +11,9 @@ abstract sealed class TransactionOverlay extends SpanOverlay permits CleanTransa
     }
     
     public abstract boolean isDirty();
+    
+    public boolean isSuspended() {
+        return false;
+    }
 
 }
