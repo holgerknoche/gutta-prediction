@@ -825,8 +825,8 @@ class TraceSimulatorWorkerTest {
         var candidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 50, location, "sc1");
         var candidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 50, location, "sc1");
         var abortEvent = new ImplicitTransactionAbortEvent(traceId, 60, location, "synthetic-0", "cause");
-        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 50, location, "sc1");
-        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 50, location, "sc1");
+        var candidateExitEvent = new ServiceCandidateExitEvent(traceId, 80, location, "sc1");
+        var candidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 80, location, "sc1");
         var useCaseEndEvent = new UseCaseEndEvent(traceId, 200, location, "uc1");
 
         // Build the input trace
