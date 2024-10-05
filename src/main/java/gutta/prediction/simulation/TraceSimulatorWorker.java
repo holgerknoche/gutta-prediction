@@ -271,6 +271,11 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         default:
             throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
         }
+        
+        if (newTransaction != null && newTransaction != currentTransaction) {
+            // Notify listeners if a new transaction was started
+            this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
+        }
                 
         this.registerTransactionAndSetAsCurrent(newTransaction);
     }
@@ -392,9 +397,12 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         }
         
         var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location(), Demarcation.EXPLICIT);
+        this.listeners.forEach(listener -> listener.onTransactionStart(event, newTransaction, this.context));
+        
         this.registerTransactionAndSetAsCurrent(newTransaction);                        
         
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));
+        
         return null;
     }    
 
