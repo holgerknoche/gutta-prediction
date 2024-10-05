@@ -58,6 +58,14 @@ public interface TraceSimulationListener {
     default void onTransactionStart(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
         // Do nothing by default
     }
+    
+    default void onTransactionSuspend(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        // Do nothing by default
+    }
+    
+    default void onTransactionResume(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        // Do nothing by default
+    }
 
     default void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
         // Do nothing by default

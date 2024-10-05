@@ -152,6 +152,12 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         
         // Restore the state from the stack (including location, etc.)
         this.context.popCurrentState();
+
+        // If we return to a different transaction, notify the listeners that it is resumed
+        var restoredTransaction = this.context.currentTransaction();
+        if (restoredTransaction != null && restoredTransaction != transaction) {
+            this.listeners.forEach(listener -> listener.onTransactionResume(returnEvent, restoredTransaction, this.context));
+        }
     }
     
     private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
@@ -212,7 +218,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
 
         // Update the current location and transaction state
         this.updateLocationOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
-        this.updateTransactionOnTransition(entryEvent, enteredServiceCandidate, connection);
+        this.updateTransactionOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
     }
      
     private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
@@ -251,7 +257,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         }
     }
         
-    private void updateTransactionOnTransition(ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+    private void updateTransactionOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var currentTransaction = this.currentTransaction();
         var propagationType = connection.transactionPropagation();
         
@@ -280,11 +286,17 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
             throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
         }
         
-        if (newTransaction != null && newTransaction != currentTransaction) {
-            // Notify listeners if a new transaction was started
-            this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
+        if (newTransaction != currentTransaction) {
+            if (currentTransaction != null) {
+                // Notify listeners if an existing transaction was suspended
+                this.listeners.forEach(listener -> listener.onTransactionSuspend(invocationEvent, currentTransaction, context));
+            }
+            if (newTransaction != null) {
+                // Notify listeners if a new transaction was started
+                this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));                
+            }
         }
-                
+                        
         this.registerTransactionAndSetAsCurrent(newTransaction);
     }
     
