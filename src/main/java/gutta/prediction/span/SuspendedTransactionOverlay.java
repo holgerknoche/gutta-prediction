@@ -29,6 +29,11 @@ public final class SuspendedTransactionOverlay extends TransactionOverlay {
     }
     
     @Override
+    public <R> R accept(TraceElementVisitor<R> visitor) {
+        return visitor.handleSuspendedTransactionOverlay(this);
+    }
+    
+    @Override
     public int hashCode() {
         return super.hashCode();
     }

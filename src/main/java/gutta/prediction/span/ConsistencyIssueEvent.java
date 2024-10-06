@@ -15,5 +15,15 @@ public class ConsistencyIssueEvent extends SpanEvent {
     public ConsistencyIssue<?> issue() {
         return this.issue;
     }
+    
+    @Override
+    public <R> R accept(TraceElementVisitor<R> visitor) {
+        return visitor.handleConsistencyIssueEvent(this);
+    }
+    
+    @Override
+    public void traverse(TraceElementVisitor<?> visitor) {
+        this.accept(visitor);
+    }
 
 }

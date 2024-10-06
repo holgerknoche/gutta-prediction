@@ -18,6 +18,11 @@ public final class DirtyTransactionOverlay extends TransactionOverlay {
     }
     
     @Override
+    public <R> R accept(TraceElementVisitor<R> visitor) {
+        return visitor.handleDirtyTransactionOverlay(this);
+    }
+    
+    @Override
     public int hashCode() {
         return super.hashCode();
     }

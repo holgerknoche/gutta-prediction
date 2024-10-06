@@ -1,6 +1,6 @@
 package gutta.prediction.span;
 
-public abstract class SpanEvent {
+public abstract class SpanEvent implements TraceElement {
 
     private final long timestamp;
     

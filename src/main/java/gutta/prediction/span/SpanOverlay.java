@@ -2,7 +2,7 @@ package gutta.prediction.span;
 
 import gutta.prediction.util.EqualityUtil;
 
-public abstract class SpanOverlay extends Interval {
+public abstract class SpanOverlay extends Interval implements TraceElement {
     
     protected SpanOverlay(long startTimestamp) {
         this(startTimestamp, 0);
@@ -24,6 +24,11 @@ public abstract class SpanOverlay extends Interval {
     
     protected boolean equalsInternal(SpanOverlay that) {
         return super.equalsInternal(that);
+    }
+    
+    @Override
+    public void traverse(TraceElementVisitor<?> visitor) {
+        this.accept(visitor);
     }
 
 }

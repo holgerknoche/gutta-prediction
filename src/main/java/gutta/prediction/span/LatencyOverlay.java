@@ -7,6 +7,11 @@ public class LatencyOverlay extends SpanOverlay {
     }
     
     @Override
+    public <R> R accept(TraceElementVisitor<R> visitor) {
+        return visitor.handleLatencyOverlay(this);
+    }
+    
+    @Override
     public String toString() {
         return "Latency: " + this.startTimestamp() + " -- " + this.endTimestamp();
     }

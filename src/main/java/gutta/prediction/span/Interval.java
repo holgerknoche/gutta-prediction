@@ -21,7 +21,7 @@ public abstract class Interval {
         return this.endTimestamp;
     }
 
-    protected void endTimestamp(long value) {
+    public void endTimestamp(long value) {
         this.endTimestamp = value;
     }
     

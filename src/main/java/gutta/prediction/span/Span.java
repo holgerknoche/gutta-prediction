@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Span extends Interval {
+public class Span extends Interval implements TraceElement {
 
     private final String name;
 
@@ -47,6 +47,19 @@ public class Span extends Interval {
     
     private void addChild(Span child) {
         this.children.add(child);
+    }
+    
+    @Override
+    public <R> R accept(TraceElementVisitor<R> visitor) {
+        return visitor.handleSpan(this);
+    }
+    
+    @Override
+    public void traverse(TraceElementVisitor<?> visitor) {
+        visitor.handleSpan(this);
+        
+        this.spanOverlays.forEach(overlay -> overlay.traverse(visitor));
+        this.spanEvents.forEach(event -> event.traverse(visitor));
     }
     
     @Override
