@@ -8,7 +8,7 @@ public final class CleanTransactionOverlay extends TransactionOverlay {
         super(startTimestamp);
     }
     
-    CleanTransactionOverlay(long startTimestamp, long endTimestamp) {
+    public CleanTransactionOverlay(long startTimestamp, long endTimestamp) {
         super(startTimestamp, endTimestamp);
     }
     

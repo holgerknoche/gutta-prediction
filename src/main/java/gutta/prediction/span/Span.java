@@ -9,7 +9,9 @@ import java.util.Objects;
 public class Span extends Interval implements TraceElement {
 
     private final String name;
-
+    
+    private final boolean root;
+    
     private final List<SpanOverlay> spanOverlays;
 
     private final List<SpanEvent> spanEvents;
@@ -29,7 +31,10 @@ public class Span extends Interval implements TraceElement {
         this.children = new ArrayList<>();
         
         if (parent != null) {
+            this.root = false;
             parent.addChild(this);
+        } else {
+            this.root = true;
         }
     }
 
@@ -37,11 +42,15 @@ public class Span extends Interval implements TraceElement {
         return this.name;
     }
     
+    public boolean isRoot() {
+        return this.root;
+    }
+    
     void addEvent(SpanEvent event) {
         this.spanEvents.add(event);
     }
     
-    void addOverlay(SpanOverlay overlay) {
+    public void addOverlay(SpanOverlay overlay) {
         this.spanOverlays.add(overlay);
     }
     
@@ -60,6 +69,8 @@ public class Span extends Interval implements TraceElement {
         
         this.spanOverlays.forEach(overlay -> overlay.traverse(visitor));
         this.spanEvents.forEach(event -> event.traverse(visitor));
+        
+        this.children.forEach(child -> child.traverse(visitor));
     }
     
     @Override

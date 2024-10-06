@@ -8,7 +8,7 @@ public final class DirtyTransactionOverlay extends TransactionOverlay {
         super(startTimestamp);
     }
     
-    DirtyTransactionOverlay(long startTimestamp, long endTimestamp) {
+    public DirtyTransactionOverlay(long startTimestamp, long endTimestamp) {
         super(startTimestamp, endTimestamp);
     }
 
