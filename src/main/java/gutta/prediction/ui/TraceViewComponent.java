@@ -10,7 +10,11 @@ import java.util.List;
 class TraceViewComponent extends TraceComponent {
 
     private static final long serialVersionUID = 29828340270697690L;
-            
+    
+    private static final int BORDER_WIDTH = 20;
+    
+    private static final int VERTICAL_DISTANCE_BETWEEN_SPANS = 60;
+                
     private Dimension preferredSize;
     
     private List<DrawableShape> shapes = new ArrayList<>();
@@ -28,14 +32,16 @@ class TraceViewComponent extends TraceComponent {
         
         // TODO Use the duration to calculate the necessary size / zoom factor
         var duration = (endTimestamp - startTimestamp);
-        // TODO Calculate X offset (based on the longest span name)
-        var xOffset = 100;
+        // Calculate X offset (based on the longest span name)
+        var spanNamesDimensions = new SpanNameSpaceCalculator(BORDER_WIDTH, VERTICAL_DISTANCE_BETWEEN_SPANS, this.getFontMetrics(TEXT_FONT), this.getGraphics()).calulateSpaceForSpanNames(trace);        
+        var xOffset = spanNamesDimensions.width + (3 * BORDER_WIDTH);
                 
         // Build the necessary shapes and repaint
-        this.shapes = new SpanComponentsCreator(startTimestamp, xOffset).createShapesFor(trace);
+        this.shapes = new SpanComponentsCreator(startTimestamp, xOffset, BORDER_WIDTH, VERTICAL_DISTANCE_BETWEEN_SPANS).createShapesFor(trace);
         
-        // TODO Calculate the required dimensions
-        this.preferredSize = new Dimension((int) duration, 768);
+        // Calculate the required dimensions (two border widths to separate the names from the spans)
+        var preferredXSize = spanNamesDimensions.width + (int) duration + (4 * BORDER_WIDTH);
+        this.preferredSize = new Dimension(preferredXSize, spanNamesDimensions.height);
         
         this.repaint();
     }
@@ -48,6 +54,6 @@ class TraceViewComponent extends TraceComponent {
     @Override
     protected void paint(Graphics2D graphics) {
         this.shapes.forEach(shape -> shape.drawOn(graphics));
-    }
+    }        
     
 }

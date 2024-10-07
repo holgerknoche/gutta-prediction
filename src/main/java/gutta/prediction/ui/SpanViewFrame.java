@@ -2,6 +2,7 @@ package gutta.prediction.ui;
 
 import gutta.prediction.span.CleanTransactionOverlay;
 import gutta.prediction.span.DirtyTransactionOverlay;
+import gutta.prediction.span.LatencyOverlay;
 import gutta.prediction.span.Span;
 import gutta.prediction.span.SuspendedTransactionOverlay;
 import gutta.prediction.span.Trace;
@@ -54,6 +55,11 @@ public class SpanViewFrame extends JFrame {
         childSpan.addOverlay(new SuspendedTransactionOverlay(500, 700, false));
         childSpan.addOverlay(new CleanTransactionOverlay(700, 750));
         childSpan.addOverlay(new DirtyTransactionOverlay(750, 850));
+        
+        var secondChildSpan = new Span("Child2", 550, childSpan);
+        secondChildSpan.endTimestamp(680);
+        secondChildSpan.addOverlay(new LatencyOverlay(500, 550));
+        secondChildSpan.addOverlay(new LatencyOverlay(680, 700));
         
         return new Trace(1234, "Span", rootSpan);
     }

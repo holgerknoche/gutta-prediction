@@ -13,7 +13,7 @@ abstract class TraceComponent extends JComponent {
     
     private static final long serialVersionUID = 7164581631239551683L;
 
-    private static final Font TEXT_FONT = Font.decode(Font.SANS_SERIF);
+    protected static final Font TEXT_FONT = Font.decode(Font.SANS_SERIF);
 
     @Override
     protected final void paintComponent(Graphics graphics) {
