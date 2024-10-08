@@ -10,14 +10,19 @@ import gutta.prediction.span.TraceElementVisitor;
 import gutta.prediction.span.TransactionOverlay;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 
-import java.util.ArrayList;
 import java.util.List;
 
 class SpanComponentsCreator implements TraceElementVisitor<Void> {    
-        
-    private final List<DrawableShape> overlays = new ArrayList<>();
+
+    private static final int NUMBER_OF_LAYERS = 4;
     
-    private final List<DrawableShape> spans = new ArrayList<>();
+    private static final int OVERLAYS_LAYER = 0;
+    
+    private static final int SPANS_LAYER = 1;
+    
+    private static final int EVENTS_LAYER = 2;
+    
+    private static final int TEXT_LAYER = 3;
     
     private final long startTimestamp;
     
@@ -26,6 +31,8 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
     private final int borderWidth;
     
     private final int verticalDistanceBetweenSpans;
+    
+    private final LayeredShapes shapes = new LayeredShapes(NUMBER_OF_LAYERS);
     
     private int currentY;
     
@@ -42,13 +49,8 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         this.currentY = this.borderWidth;
         
         trace.traverse(this);
-        
-        // Make sure that overlays are drawn before the spans
-        var sortedShapes = new ArrayList<DrawableShape>(this.overlays.size() + this.spans.size());
-        sortedShapes.addAll(this.overlays);
-        sortedShapes.addAll(this.spans);
-        
-        return sortedShapes;
+
+        return this.shapes.flatten();
     }
 
     private int convertTimestampToXPosition(long timestamp) {
@@ -65,10 +67,10 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         }
         
         var spanNameShape = new SpanNameShape(this.borderWidth, (this.currentY + (SpanShape.HEIGHT / 2)), span.name());
-        this.spans.add(spanNameShape);
+        this.shapes.addShape(TEXT_LAYER, spanNameShape);
         
         var spanShape = new SpanShape(xStart, this.currentY, xEnd);
-        this.spans.add(spanShape);
+        this.shapes.addShape(SPANS_LAYER, spanShape);
         
         this.currentSpan = span;
         
@@ -80,7 +82,7 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         var xEnd = this.convertTimestampToXPosition(overlay.endTimestamp());
         
         var overlayShape = new TransactionMarkerShape(xStart, (this.currentY - 10), xEnd, state);
-        this.overlays.add(overlayShape);
+        this.shapes.addShape(OVERLAYS_LAYER, overlayShape);
         
         return null;
     }
@@ -114,7 +116,7 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
             shape = new AppendedLatencyShape(xStart, this.currentY, xEnd);
         }
         
-        this.overlays.add(shape);
+        this.shapes.addShape(SPANS_LAYER,shape);
         
         return null;
     }
