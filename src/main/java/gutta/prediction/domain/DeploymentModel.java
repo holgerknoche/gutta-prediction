@@ -1,7 +1,10 @@
 package gutta.prediction.domain;
 
+import gutta.prediction.util.EqualityUtil;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,6 +22,10 @@ public class DeploymentModel {
     private final Map<String, UseCase> useCaseLookup;
     
     private final Map<String, ServiceCandidate> serviceCandidateLookup;        
+    
+    public static Builder builder() {
+        return new Builder();
+    }
     
     private DeploymentModel(Map<UseCase, Component> useCaseAllocation, Map<ServiceCandidate, Component> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
         this.useCaseAllocation = useCaseAllocation;
@@ -61,6 +68,23 @@ public class DeploymentModel {
     
     public Builder applyModifications() {
         return new Builder(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    private boolean equalsInternal(DeploymentModel that) {
+        return Objects.equals(this.useCaseAllocation, that.useCaseAllocation) &&
+                Objects.equals(this.serviceCandidateAllocation, that.serviceCandidateAllocation) &&
+                Objects.equals(this.entityTypeAllocation, that.entityTypeAllocation) &&
+                Objects.equals(this.componentConnections, that.componentConnections);
     }
     
     private record ConnectionKey(Component source, Component target) {

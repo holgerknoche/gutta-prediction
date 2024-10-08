@@ -22,6 +22,12 @@ class DomainModelBuilder extends DomainModelBaseVisitor<Void> {
     
     private final DeploymentModel.Builder builder = new DeploymentModel.Builder();
     
+    private Component currentComponent;
+    
+    public DeploymentModel getBuiltModel() {
+        return this.builder.build();
+    }
+    
     @Override
     public Void visitComponentDeclaration(ComponentDeclarationContext context) {
         var name = nameToString(context.name());
@@ -33,7 +39,11 @@ class DomainModelBuilder extends DomainModelBaseVisitor<Void> {
         var component = new Component(name);
         this.nameToComponent.put(name, component);
         
-        return this.visitChildren(context);
+        this.currentComponent = component;
+        this.visitChildren(context);
+        this.currentComponent = null;
+        
+        return null;
     }
     
     @Override
@@ -47,7 +57,8 @@ class DomainModelBuilder extends DomainModelBaseVisitor<Void> {
         var useCase = new UseCase(name);
         this.knownUseCases.add(name);
         
-        // TODO Add the use case to the current component
+        // Assign the use case to the current component
+        this.builder.assignUseCase(useCase, this.currentComponent);
         
         return null;
     }
@@ -66,7 +77,7 @@ class DomainModelBuilder extends DomainModelBaseVisitor<Void> {
         if (context.ID() != null) {
             return context.ID().getText();
         } else {
-            return unquote(context.LITERAL_ID().getText());
+            return unquote(context.STRING_LITERAL().getText());
         }
     }
     
