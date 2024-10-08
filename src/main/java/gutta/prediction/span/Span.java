@@ -46,7 +46,7 @@ public class Span extends Interval implements TraceElement {
         return this.root;
     }
     
-    void addEvent(SpanEvent event) {
+    public void addEvent(SpanEvent event) {
         this.spanEvents.add(event);
     }
     

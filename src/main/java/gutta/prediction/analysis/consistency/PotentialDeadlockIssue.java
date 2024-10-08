@@ -29,5 +29,10 @@ public class PotentialDeadlockIssue extends ConsistencyIssue<EntityReadEvent> {
     private boolean equalsInternal(PotentialDeadlockIssue that) {
         return super.equalsInternal(that);
     }
+    
+    @Override
+    public <R> R accept(ConsistencyIssueVisitor<R> visitor) {
+        return visitor.handlePotentialDeadlockIssue(this);
+    }
 
 }

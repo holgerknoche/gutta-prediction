@@ -29,5 +29,10 @@ public class WriteConflictIssue extends ConsistencyIssue<EntityWriteEvent> {
     private boolean equalsInternal(WriteConflictIssue that) {
         return super.equalsInternal(that);
     }
+    
+    @Override
+    public <R> R accept(ConsistencyIssueVisitor<R> visitor) {
+        return visitor.handleWriteConflictIssue(this);
+    }
 
 }

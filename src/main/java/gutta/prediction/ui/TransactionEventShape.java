@@ -9,11 +9,20 @@ class TransactionEventShape extends Ellipse2D.Float implements DrawableShape {
     private static final long serialVersionUID = 2023398039429544762L;
 
     private static final int DIAMETER = 10;
+    
+    private static final int RADIUS = (DIAMETER / 2);
 
     private final EventType type;
 
-    public TransactionEventShape(int startX, int y, EventType type) {
-        super(startX - (DIAMETER / 2), y, DIAMETER, DIAMETER);
+    /**
+     * Creates a new shape with its center point at the given coordinates.
+     * 
+     * @param centerX The x coordinate of the shape's center
+     * @param y The y coordinate of the shape's center
+     * @param type The type of the event, which determines the fill color
+     */
+    public TransactionEventShape(int centerX, int centerY, EventType type) {
+        super((centerX - RADIUS), (centerY - RADIUS), DIAMETER, DIAMETER);
 
         this.type = type;
     }
@@ -29,7 +38,7 @@ class TransactionEventShape extends Ellipse2D.Float implements DrawableShape {
     }
 
     public enum EventType {
-        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY), STALE_READ(Color.YELLOW), CONFLICTING_WRITE(Color.BLUE), COMMIT(Color.GREEN), ABORT(Color.RED);
+        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY), STALE_READ(Color.YELLOW), POTENTIAL_DEADLOCK(Color.CYAN), CONFLICTING_WRITE(Color.BLUE), COMMIT(Color.GREEN), ABORT(Color.RED);
 
         private final Color color;
 

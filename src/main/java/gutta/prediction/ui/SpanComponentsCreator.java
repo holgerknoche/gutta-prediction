@@ -1,6 +1,12 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.analysis.consistency.ConsistencyIssue;
+import gutta.prediction.analysis.consistency.ConsistencyIssueVisitor;
+import gutta.prediction.analysis.consistency.PotentialDeadlockIssue;
+import gutta.prediction.analysis.consistency.StaleReadIssue;
+import gutta.prediction.analysis.consistency.WriteConflictIssue;
 import gutta.prediction.span.CleanTransactionOverlay;
+import gutta.prediction.span.ConsistencyIssueEvent;
 import gutta.prediction.span.DirtyTransactionOverlay;
 import gutta.prediction.span.LatencyOverlay;
 import gutta.prediction.span.Span;
@@ -8,6 +14,7 @@ import gutta.prediction.span.SuspendedTransactionOverlay;
 import gutta.prediction.span.Trace;
 import gutta.prediction.span.TraceElementVisitor;
 import gutta.prediction.span.TransactionOverlay;
+import gutta.prediction.ui.TransactionEventShape.EventType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 
 import java.util.List;
@@ -33,6 +40,8 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
     private final int verticalDistanceBetweenSpans;
     
     private final LayeredShapes shapes = new LayeredShapes(NUMBER_OF_LAYERS);
+    
+    private final TransactionMarkerTypeChooser markerTypeChooser = new TransactionMarkerTypeChooser();
     
     private int currentY;
     
@@ -102,6 +111,21 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         return this.handleTransactionOverlay(overlay, TransactionState.SUSPENDED);
     }
     
+    private EventType determineEventTypeFor(ConsistencyIssue<?> issue) {
+        return issue.accept(this.markerTypeChooser);
+    }
+    
+    @Override
+    public Void handleConsistencyIssueEvent(ConsistencyIssueEvent event) {
+        var xPosition = this.convertTimestampToXPosition(event.timestamp());
+        var eventType = this.determineEventTypeFor(event.issue());
+        
+        var markerShape = new TransactionEventShape(xPosition, (this.currentY + 10), eventType);
+        this.shapes.addShape(EVENTS_LAYER, markerShape);
+        
+        return null;
+    }
+    
     @Override
     public Void handleLatencyOverlay(LatencyOverlay overlay) {
         var xStart = this.convertTimestampToXPosition(overlay.startTimestamp());
@@ -119,6 +143,25 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         this.shapes.addShape(SPANS_LAYER,shape);
         
         return null;
+    }
+    
+    private static class TransactionMarkerTypeChooser implements ConsistencyIssueVisitor<EventType> {
+        
+        @Override
+        public EventType handlePotentialDeadlockIssue(PotentialDeadlockIssue issue) {
+            return EventType.POTENTIAL_DEADLOCK;
+        }
+        
+        @Override
+        public EventType handleStaleReadIssue(StaleReadIssue issue) {
+            return EventType.STALE_READ;
+        }
+        
+        @Override
+        public EventType handleWriteConflictIssue(WriteConflictIssue issue) {
+            return EventType.CONFLICTING_WRITE;
+        }
+        
     }
     
 }

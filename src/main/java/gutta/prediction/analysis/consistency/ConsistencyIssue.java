@@ -41,5 +41,7 @@ public abstract class ConsistencyIssue<T extends MonitoringEvent> {
         return Objects.equals(this.entity, that.entity) &&
                 Objects.equals(this.event,  that.event);
     }
+    
+    public abstract <R> R accept(ConsistencyIssueVisitor<R> visitor);
 
 }

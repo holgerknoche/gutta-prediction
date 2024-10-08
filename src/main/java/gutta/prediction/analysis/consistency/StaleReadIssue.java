@@ -7,7 +7,7 @@ import gutta.prediction.util.EqualityUtil;
 
 public class StaleReadIssue extends ConsistencyIssue<EntityReadEvent> {
 
-    StaleReadIssue(Entity entity, EntityReadEvent event) {
+    public StaleReadIssue(Entity entity, EntityReadEvent event) {
         super(entity, event);
     }
     
@@ -28,6 +28,11 @@ public class StaleReadIssue extends ConsistencyIssue<EntityReadEvent> {
     
     private boolean equalsInternal(StaleReadIssue that) {
         return super.equalsInternal(that);
+    }
+    
+    @Override
+    public <R> R accept(ConsistencyIssueVisitor<R> visitor) {
+        return visitor.handleStaleReadIssue(this);
     }
 
 }
