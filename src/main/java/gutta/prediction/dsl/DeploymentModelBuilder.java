@@ -33,7 +33,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var name = nameToString(context.name());
         
         if (nameToComponent.containsKey(name)) {
-            throw new DomainModelParseException(context.refToken, "Duplicate component '" + name + "'.");
+            throw new DeploymentModelParseException(context.refToken, "Duplicate component '" + name + "'.");
         }
         
         var component = new Component(name);
@@ -51,7 +51,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var name = nameToString(context.name());
         
         if (this.knownUseCases.contains(name)) {
-            throw new DomainModelParseException(context.refToken, "Duplicate use case '" + name + "'.");
+            throw new DeploymentModelParseException(context.refToken, "Duplicate use case '" + name + "'.");
         }
         
         var useCase = new UseCase(name);
@@ -81,7 +81,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         }
     }
     
-    static class DomainModelParseException extends RuntimeException {
+    static class DeploymentModelParseException extends RuntimeException {
         
         private static final long serialVersionUID = -3560623347221634775L;
 
@@ -89,7 +89,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             return token.getLine() + "," + token.getCharPositionInLine() + ": " + message;
         }
         
-        public DomainModelParseException(Token referenceToken, String message) {
+        public DeploymentModelParseException(Token referenceToken, String message) {
             super(formatMessage(referenceToken, message));
         }
         

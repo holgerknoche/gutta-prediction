@@ -3,7 +3,7 @@ package gutta.prediction.dsl;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.UseCase;
-import gutta.prediction.dsl.DeploymentModelBuilder.DomainModelParseException;
+import gutta.prediction.dsl.DeploymentModelBuilder.DeploymentModelParseException;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -46,7 +46,7 @@ class DeploymentModelBuilderTest {
         var input = "Component test {}\n"
                 + "Component \"test\" {}";
         
-        var exception = assertThrows(DomainModelParseException.class, () -> this.parse(input));
+        var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("2,0: Duplicate component 'test'.", exception.getMessage());
     }
     
@@ -62,7 +62,7 @@ class DeploymentModelBuilderTest {
                 "    UseCase \"test\"\n" +
                 "}\n";
         
-        var exception = assertThrows(DomainModelParseException.class, () -> this.parse(input));
+        var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("5,4: Duplicate use case 'test'.", exception.getMessage());
     }
     
