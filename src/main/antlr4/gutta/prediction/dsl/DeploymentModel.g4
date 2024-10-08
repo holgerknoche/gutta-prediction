@@ -1,11 +1,11 @@
-grammar DomainModel;
+grammar DeploymentModel;
 
-domainModel:
-	domainModelElement*
+deploymentModel:
+	deploymentModelElement*
 	EOF
 ;
 
-domainModelElement:
+deploymentModelElement:
 	componentDeclaration |
 	componentConnectionDeclaration
 	

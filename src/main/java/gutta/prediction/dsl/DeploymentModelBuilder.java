@@ -3,10 +3,10 @@ package gutta.prediction.dsl;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.UseCase;
-import gutta.prediction.dsl.DomainModelParser.ComponentDeclarationContext;
-import gutta.prediction.dsl.DomainModelParser.NameContext;
-import gutta.prediction.dsl.DomainModelParser.ServiceCandidateDeclarationContext;
-import gutta.prediction.dsl.DomainModelParser.UseCaseDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.ComponentDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.NameContext;
+import gutta.prediction.dsl.DeploymentModelParser.ServiceCandidateDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.UseCaseDeclarationContext;
 import org.antlr.v4.runtime.Token;
 
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class DomainModelBuilder extends DomainModelBaseVisitor<Void> {
+class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     
     private final Map<String, Component> nameToComponent = new HashMap<>();
     

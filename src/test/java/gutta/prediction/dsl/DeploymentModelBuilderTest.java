@@ -3,7 +3,7 @@ package gutta.prediction.dsl;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.UseCase;
-import gutta.prediction.dsl.DomainModelBuilder.DomainModelParseException;
+import gutta.prediction.dsl.DeploymentModelBuilder.DomainModelParseException;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -13,9 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Test cases for the class {@link DomainModelBuilder}.
+ * Test cases for the class {@link DeploymentModelBuilder}.
  */
-class DomainModelBuilderTest {
+class DeploymentModelBuilderTest {
     
     @Test
     void simpleModel() {
@@ -68,15 +68,15 @@ class DomainModelBuilderTest {
     
     private DeploymentModel parse(String input) {
         var charStream = CharStreams.fromString(input);
-        var lexer = new DomainModelLexer(charStream);
+        var lexer = new DeploymentModelLexer(charStream);
         var tokenStream = new CommonTokenStream(lexer);
-        var parser = new DomainModelParser(tokenStream);
+        var parser = new DeploymentModelParser(tokenStream);
         
         parser.setErrorHandler(new BailErrorStrategy());
         
-        var modelContext = parser.domainModel();
+        var modelContext = parser.deploymentModel();
         
-        var modelBuilder = new DomainModelBuilder();
+        var modelBuilder = new DeploymentModelBuilder();
         modelContext.accept(modelBuilder);
         
         return modelBuilder.getBuiltModel();
