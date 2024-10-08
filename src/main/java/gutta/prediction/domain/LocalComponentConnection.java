@@ -1,6 +1,8 @@
 package gutta.prediction.domain;
 
-public class LocalComponentConnection extends ComponentConnection {
+import gutta.prediction.util.EqualityUtil;
+
+public final class LocalComponentConnection extends ComponentConnection {
     
     public LocalComponentConnection(Component source, Component target, boolean synthetic) {
         super(source, target, synthetic);
@@ -24,6 +26,20 @@ public class LocalComponentConnection extends ComponentConnection {
     @Override
     public TransactionPropagation transactionPropagation() {
         return TransactionPropagation.IDENTICAL;
+    }
+    
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    private boolean equalsInternal(LocalComponentConnection that) {
+        return super.equalsInternal(that);
     }
 
 }

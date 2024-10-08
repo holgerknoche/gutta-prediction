@@ -28,22 +28,23 @@ componentConnectionDeclaration:
 ;
 
 localComponentConnectionDeclaration:
-	refToken='local' name '->' name
+	refToken='local' source=name '->' target=name
 ;
 
 remoteComponentConnectionDeclaration:
-	refToken='remote' name '->' name '{'
-		properties+=propertyDeclaration*
-	'}';
+	symmetric='symmetric'? refToken='remote' source=name '->' target=name properties=propertiesDeclaration
+;
 
 useCaseDeclaration:
 	refToken='UseCase' name
 ;
 
 serviceCandidateDeclaration:
-	refToken='ServiceCandidate' name '{'
-		properties+=propertyDeclaration*
-	'}'
+	refToken='ServiceCandidate' name properties=propertiesDeclaration
+;
+
+propertiesDeclaration:
+	'{' properties+=propertyDeclaration* '}'
 ;
 
 propertyDeclaration:

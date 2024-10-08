@@ -1,5 +1,9 @@
 package gutta.prediction.domain;
 
+import gutta.prediction.util.EqualityUtil;
+
+import java.util.Objects;
+
 public abstract class ComponentConnection {
 
     private final Component source;
@@ -37,5 +41,21 @@ public abstract class ComponentConnection {
     }
     
     public abstract TransactionPropagation transactionPropagation();
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.source, this.target);
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    protected boolean equalsInternal(ComponentConnection that) {
+        return Objects.equals(this.source, that.source) &&
+                Objects.equals(this.target, that.target) &&
+                (this.synthetic == that.synthetic);
+    }
 
 }
