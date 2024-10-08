@@ -24,7 +24,7 @@ class DeploymentModelBuilderTest {
     void simpleModel() {
         var input = "Component component1 {\n" +
                 "    UseCase usecase\n" +
-                "    ServiceCandidate candidate1 {\n" +
+                "    ServiceCandidate candidate {\n" +
                 "        transactionBehavior = REQUIRED\n" +
                 "    }\n" +
                 "}\n" +
@@ -36,7 +36,7 @@ class DeploymentModelBuilderTest {
         var parsedModel = this.parse(input);
         
         var useCase = new UseCase("usecase");
-        var serviceCandidate = new ServiceCandidate("candidate1", TransactionBehavior.REQUIRED);
+        var serviceCandidate = new ServiceCandidate("candidate", TransactionBehavior.REQUIRED);
         var component1 = new Component("component1");
         var component2 = new Component("component2");
         
