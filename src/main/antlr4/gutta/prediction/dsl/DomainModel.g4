@@ -1,21 +1,38 @@
 grammar DomainModel;
 
 domainModel:
-	elements+=domainModelElement*
+	domainModelElement*
 	EOF
 ;
 
 domainModelElement:
-	useCaseDeclaration |
-	serviceCandidateDeclaration
+	componentDeclaration |
+	componentConnectionDeclaration
+	
 ;	
 
+componentDeclaration:
+	refToken='Component' name '{'
+		elements+=componentDeclarationElement*
+	'}'
+;
+
+componentDeclarationElement:
+	useCaseDeclaration |
+	serviceCandidateDeclaration
+;
+
+componentConnectionDeclaration:
+	name refToken='->' name '{'
+	'}'
+;
+
 useCaseDeclaration:
-	'UseCase' name
+	refToken='UseCase' name
 ;
 
 serviceCandidateDeclaration:
-	'ServiceCandidate' name '{'
+	refToken='ServiceCandidate' name '{'
 	'}'
 ;
 
