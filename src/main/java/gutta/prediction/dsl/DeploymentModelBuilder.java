@@ -1,12 +1,17 @@
 package gutta.prediction.dsl;
 
 import gutta.prediction.domain.Component;
+import gutta.prediction.domain.DataStore;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.EntityType;
+import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.dsl.DeploymentModelParser.ComponentDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.DataStoreDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.EntityTypeDeclarationContext;
 import gutta.prediction.dsl.DeploymentModelParser.LocalComponentConnectionDeclarationContext;
 import gutta.prediction.dsl.DeploymentModelParser.NameContext;
 import gutta.prediction.dsl.DeploymentModelParser.PropertiesDeclarationContext;
@@ -27,16 +32,26 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     private static final TransactionBehavior DEFAULT_TX_BEHAVIOR = TransactionBehavior.SUPPORTED;
     
     private static final TransactionPropagation DEFAULT_TX_PROPAGATION = TransactionPropagation.NONE;
+    
+    private static final ReadWriteConflictBehavior DEFAULT_RW_CONFLICT_BEHAVIOR = ReadWriteConflictBehavior.STALE_READ;
 
     private final Map<String, Component> nameToComponent = new HashMap<>();
+    
+    private final Set<ComponentPair> knownConnections = new HashSet<>();
+    
+    private final Set<String> knownDataStores = new HashSet<>();
 
     private final Set<String> knownUseCases = new HashSet<>();
 
     private final Set<String> knownServiceCandidates = new HashSet<>();
+    
+    private final Set<String> knownEntityTypes = new HashSet<>();
 
     private final DeploymentModel.Builder builder = new DeploymentModel.Builder();
 
     private Component currentComponent;
+    
+    private DataStore currentDataStore;
 
     public DeploymentModel getBuiltModel() {
         return this.builder.build();
@@ -124,7 +139,11 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var sourceComponent = this.resolveComponent(sourceComponentName, sourceName.start);
         var targetComponent = this.resolveComponent(targetComponentName, targetName.start);
 
-        // TODO Check for duplicates
+        // Check for duplicates
+        var componentPair = new ComponentPair(sourceComponent, targetComponent);
+        if (this.knownConnections.contains(componentPair)) {
+            throw new DeploymentModelParseException(sourceName.start, "Duplicate connection from '" + sourceName + "' to '" + targetName + "'.");
+        }
 
         specificAction.accept(sourceComponent, targetComponent);
         return null;
@@ -180,13 +199,69 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var transactionPropagation = determineTransactionPropagation(properties);
         
         if (symmetric) {
+            // TODO Check for existing "opposite" connections
             this.builder.addSymmetricRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
         } else {
             this.builder.addRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
         }
     }
+    
+    private static ReadWriteConflictBehavior determineReadWriteConflictBehavior(Map<String, PropertyValue> properties) {
+        var propertyValue = properties.get("readWriteConflictBehavior");
+        if (propertyValue == null) {
+            return DEFAULT_RW_CONFLICT_BEHAVIOR;
+        }
+        
+        try {
+            return ReadWriteConflictBehavior.valueOf(propertyValue.value().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new DeploymentModelParseException(propertyValue.token(), "Unsupported read-write conflict behavior '" + propertyValue.value() + "'.");
+        }
+    }
+    
+    @Override
+    public Void visitDataStoreDeclaration(DataStoreDeclarationContext context) {
+        var name = nameToString(context.name());
+        var properties = toPropertyMap(context.properties);
+        
+        if (this.knownDataStores.contains(name)) {
+            throw new DeploymentModelParseException(context.refToken, "Duplicate data store '" + name + "'.");
+        }
+        
+        var readWriteConflictBehavior = determineReadWriteConflictBehavior(properties);
+        var dataStore = new DataStore(name, readWriteConflictBehavior);
+        
+        this.knownDataStores.add(name);
+        
+        this.currentDataStore = dataStore;
+        this.visitChildren(context);
+        this.currentDataStore = null;
+        
+        return null;
+    }
+    
+    @Override
+    public Void visitEntityTypeDeclaration(EntityTypeDeclarationContext context) {
+        var name = nameToString(context.name());
+        
+        if (this.knownEntityTypes.contains(name)) {
+            throw new DeploymentModelParseException(context.refToken, "Duplicate entity type '" + name + "'.");
+        }
+        
+        this.knownEntityTypes.add(name);
+        
+        var entityType = new EntityType(name);
+        this.builder.assignEntityType(entityType, this.currentDataStore);
+        
+        return null;
+    }
 
     private static Map<String, PropertyValue> toPropertyMap(PropertiesDeclarationContext context) {
+        if (context == null || context.properties.isEmpty()) {
+            // If no properties have been specified, return an empty map
+            return Map.of();
+        }
+        
         var properties = new HashMap<String, PropertyValue>(context.properties.size());
 
         for (var property : context.properties) {
@@ -227,6 +302,9 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     }
 
     private record PropertyValue(String value, Token token) {
+    };
+    
+    private record ComponentPair(Component component1, Component component2) {
     };
 
     static class DeploymentModelParseException extends RuntimeException {

@@ -7,7 +7,8 @@ deploymentModel:
 
 deploymentModelElement:
 	componentDeclaration |
-	componentConnectionDeclaration
+	componentConnectionDeclaration |
+	dataStoreDeclaration
 	
 ;	
 
@@ -40,11 +41,22 @@ useCaseDeclaration:
 ;
 
 serviceCandidateDeclaration:
-	refToken='ServiceCandidate' name properties=propertiesDeclaration
+	refToken='ServiceCandidate' name properties=propertiesDeclaration?
+;
+
+dataStoreDeclaration:
+	refToken='DataStore' name properties=propertiesDeclaration?
+	'{'
+		elements+=entityTypeDeclaration*
+	'}'
+;
+
+entityTypeDeclaration:
+	refToken='EntityType' name
 ;
 
 propertiesDeclaration:
-	'{' properties+=propertyDeclaration* '}'
+	'[' properties+=propertyDeclaration* ']'
 ;
 
 propertyDeclaration:
