@@ -7,7 +7,7 @@ import gutta.prediction.util.EqualityUtil;
 
 public class WriteConflictIssue extends ConsistencyIssue<EntityWriteEvent> {
 
-    WriteConflictIssue(Entity entity, EntityWriteEvent event) {
+    public WriteConflictIssue(Entity entity, EntityWriteEvent event) {
         super(entity, event);
     }
     

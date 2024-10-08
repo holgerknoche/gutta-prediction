@@ -6,8 +6,8 @@ public class ConsistencyIssueEvent extends SpanEvent {
     
     private final ConsistencyIssue<?> issue;
     
-    public ConsistencyIssueEvent(long timestamp, ConsistencyIssue<?> issue) {
-        super(timestamp);
+    public ConsistencyIssueEvent(ConsistencyIssue<?> issue) {
+        super(issue.event().timestamp());
         
         this.issue = issue;
     }

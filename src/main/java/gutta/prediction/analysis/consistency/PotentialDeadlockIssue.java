@@ -7,7 +7,7 @@ import gutta.prediction.util.EqualityUtil;
 
 public class PotentialDeadlockIssue extends ConsistencyIssue<EntityReadEvent> {
         
-    PotentialDeadlockIssue(Entity entity, EntityReadEvent event) {
+    public PotentialDeadlockIssue(Entity entity, EntityReadEvent event) {
         super(entity, event);
     }
         

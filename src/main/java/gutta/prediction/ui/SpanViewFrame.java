@@ -1,5 +1,6 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.analysis.consistency.PotentialDeadlockIssue;
 import gutta.prediction.analysis.consistency.StaleReadIssue;
 import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.EntityType;
@@ -64,7 +65,8 @@ public class SpanViewFrame extends JFrame {
         var entityType = new EntityType("type");
         var entity = new Entity(entityType, "1234");
         
-        childSpan.addEvent(new ConsistencyIssueEvent(790, new StaleReadIssue(entity, new EntityReadEvent(0, 790, null, entity))));
+        childSpan.addEvent(new ConsistencyIssueEvent(new StaleReadIssue(entity, new EntityReadEvent(0, 790, null, entity))));
+        childSpan.addEvent(new ConsistencyIssueEvent(new PotentialDeadlockIssue(entity, new EntityReadEvent(0, 820, null, entity))));
         
         var secondChildSpan = new Span("Child2", 550, childSpan);
         secondChildSpan.endTimestamp(680);
