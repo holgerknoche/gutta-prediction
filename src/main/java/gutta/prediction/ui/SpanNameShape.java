@@ -1,5 +1,6 @@
 package gutta.prediction.ui;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
@@ -40,6 +41,7 @@ class SpanNameShape implements DrawableShape {
             this.initialized = true;
         }
         
+        graphics.setColor(Color.BLACK);
         graphics.setFont(TEXT_FONT);
         graphics.drawString(this.name, this.x, this.actualY);        
     }

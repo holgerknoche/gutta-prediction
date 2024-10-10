@@ -1,6 +1,7 @@
 package gutta.prediction.ui;
 
 import gutta.prediction.ui.TransactionEventShape.EventType;
+import gutta.prediction.ui.TransactionIssueShape.IssueType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
@@ -139,7 +140,7 @@ class DemoFrame extends JFrame {
 
                 new SpanShape(200, 60, 450),
 
-                new TransactionEventShape(270, 65, EventType.STALE_READ), new TransactionEventShape(310, 65, EventType.CONFLICTING_WRITE),
+                new TransactionIssueShape(270, 65, IssueType.STALE_READ), new TransactionIssueShape(310, 65, IssueType.CONFLICTING_WRITE),
 
                 // Service C
 

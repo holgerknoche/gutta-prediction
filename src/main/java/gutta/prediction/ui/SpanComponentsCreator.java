@@ -15,6 +15,7 @@ import gutta.prediction.span.Trace;
 import gutta.prediction.span.TraceElementVisitor;
 import gutta.prediction.span.TransactionOverlay;
 import gutta.prediction.ui.TransactionEventShape.EventType;
+import gutta.prediction.ui.TransactionIssueShape.IssueType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 
 import java.util.List;
@@ -111,16 +112,16 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         return this.handleTransactionOverlay(overlay, TransactionState.SUSPENDED);
     }
     
-    private EventType determineEventTypeFor(ConsistencyIssue<?> issue) {
+    private IssueType determineIssueTypeFor(ConsistencyIssue<?> issue) {
         return issue.accept(this.markerTypeChooser);
     }
     
     @Override
     public Void handleConsistencyIssueEvent(ConsistencyIssueEvent event) {
         var xPosition = this.convertTimestampToXPosition(event.timestamp());
-        var eventType = this.determineEventTypeFor(event.issue());
+        var issueType = this.determineIssueTypeFor(event.issue());
         
-        var markerShape = new TransactionEventShape(xPosition, (this.currentY + 10), eventType);
+        var markerShape = new TransactionIssueShape(xPosition, (this.currentY + 10), issueType);
         this.shapes.addShape(EVENTS_LAYER, markerShape);
         
         return null;
@@ -145,21 +146,21 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         return null;
     }
     
-    private static class TransactionMarkerTypeChooser implements ConsistencyIssueVisitor<EventType> {
+    private static class TransactionMarkerTypeChooser implements ConsistencyIssueVisitor<IssueType> {
         
         @Override
-        public EventType handlePotentialDeadlockIssue(PotentialDeadlockIssue issue) {
-            return EventType.POTENTIAL_DEADLOCK;
+        public IssueType handlePotentialDeadlockIssue(PotentialDeadlockIssue issue) {
+            return IssueType.POTENTIAL_DEADLOCK;
         }
         
         @Override
-        public EventType handleStaleReadIssue(StaleReadIssue issue) {
-            return EventType.STALE_READ;
+        public IssueType handleStaleReadIssue(StaleReadIssue issue) {
+            return IssueType.STALE_READ;
         }
         
         @Override
-        public EventType handleWriteConflictIssue(WriteConflictIssue issue) {
-            return EventType.CONFLICTING_WRITE;
+        public IssueType handleWriteConflictIssue(WriteConflictIssue issue) {
+            return IssueType.CONFLICTING_WRITE;
         }
         
     }

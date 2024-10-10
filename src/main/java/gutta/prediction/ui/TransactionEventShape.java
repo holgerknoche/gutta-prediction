@@ -38,7 +38,7 @@ class TransactionEventShape extends Ellipse2D.Float implements DrawableShape {
     }
 
     public enum EventType {
-        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY), STALE_READ(Color.YELLOW), POTENTIAL_DEADLOCK(Color.CYAN), CONFLICTING_WRITE(Color.BLUE), COMMIT(Color.GREEN), ABORT(Color.RED);
+        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY), COMMIT(Color.GREEN), ABORT(Color.RED);
 
         private final Color color;
 
