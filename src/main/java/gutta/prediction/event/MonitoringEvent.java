@@ -3,7 +3,9 @@ package gutta.prediction.event;
 /**
  * A {@link MonitoringEvent} represents a meaningful event in a observed or rewritten {@link EventTrace}.
  */
-public interface MonitoringEvent {
+public sealed interface MonitoringEvent permits EntityReadEvent, EntityWriteEvent, ExplicitTransactionAbortEvent, ImplicitTransactionAbortEvent,
+        ServiceCandidateEntryEvent, ServiceCandidateExitEvent, ServiceCandidateInvocationEvent, ServiceCandidateReturnEvent, TransactionCommitEvent,
+        TransactionStartEvent, UseCaseEndEvent, UseCaseStartEvent {
 
     /**
      * The ID of the trace in which this event occurred.
@@ -25,11 +27,11 @@ public interface MonitoringEvent {
      * @return see above
      */
     Location location();
-    
+
     /**
      * Accepts the given visitor.
      * 
-     * @param <R> The type of the operation provided by the visitor 
+     * @param <R>     The type of the operation provided by the visitor
      * @param visitor The visitor to accept
      * @return The result of the operation provided by the visitor
      */

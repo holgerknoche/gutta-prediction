@@ -12,7 +12,7 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -38,7 +38,7 @@ class TraceBuilderWorkerTest {
      */
     @Test
     void plainEventTrace() {
-        var location = new ProcessLocation("test", 1234, 0);
+        var location = new ObservedLocation("test", 1234, 0);
         var traceId = 1234;
         
         var eventTrace = EventTrace.of(
@@ -73,8 +73,8 @@ class TraceBuilderWorkerTest {
      */
     @Test
     void traceWithMultipleLocations() {
-        var location1 = new ProcessLocation("test", 1234, 0);
-        var location2 = new ProcessLocation("test", 1234, 1);
+        var location1 = new ObservedLocation("test", 1234, 0);
+        var location2 = new ObservedLocation("test", 1234, 1);
         var traceId = 1234;
         
         var eventTrace = EventTrace.of(
@@ -122,7 +122,7 @@ class TraceBuilderWorkerTest {
      */
     @Test
     void transactionOverlaysForIndependentTransactions() {
-        var location = new ProcessLocation("test", 1234, 0);
+        var location = new ObservedLocation("test", 1234, 0);
         var traceId = 1234;
         
         var entityType = new EntityType("et");
@@ -160,8 +160,8 @@ class TraceBuilderWorkerTest {
      */
     @Test
     void transactionOverlaysForSubordinateTransactions() {
-        var location1 = new ProcessLocation("test", 1234, 0);
-        var location2 = new ProcessLocation("test", 1234, 1);
+        var location1 = new ObservedLocation("test", 1234, 0);
+        var location2 = new ObservedLocation("test", 1234, 1);
         var traceId = 1234;
         
         var entityType = new EntityType("et");

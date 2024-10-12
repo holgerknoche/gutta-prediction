@@ -9,7 +9,7 @@ import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -51,7 +51,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
     @Test
     void introduceSubordinatePropagationToExplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var originalTransactionStartEvent = new TransactionStartEvent(traceId, 50, location, "tx1");
@@ -135,7 +135,7 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
     @Test
     void introduceSubordinatePropagationToImplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
         var originalServiceCandidateInvocationEvent1 = new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1");
@@ -232,8 +232,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
     @Test
     void internalizeSubordinatePropagationFromExplicitTransaction() {
         final var traceId = 1234L;
-        final var location1 = new ProcessLocation("test", 1234, 1);
-        final var location2 = new ProcessLocation("test", 5678, 1);
+        final var location1 = new ObservedLocation("test", 1234, 1);
+        final var location2 = new ObservedLocation("test", 5678, 1);
         
         var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 0, location1, "uc1");
         var originalTransactionStartEvent = new TransactionStartEvent(traceId, 50, location1, "tx1");

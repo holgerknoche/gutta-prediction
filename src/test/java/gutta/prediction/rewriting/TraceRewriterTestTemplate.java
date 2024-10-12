@@ -12,7 +12,7 @@ import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -28,7 +28,7 @@ abstract class TraceRewriterTestTemplate {
     
     protected TraceFixture createIdentityTraceFixture() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "id1");
 

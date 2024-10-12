@@ -14,7 +14,6 @@ import gutta.prediction.span.SuspendedTransactionOverlay;
 import gutta.prediction.span.Trace;
 import gutta.prediction.span.TraceElementVisitor;
 import gutta.prediction.span.TransactionOverlay;
-import gutta.prediction.ui.TransactionEventShape.EventType;
 import gutta.prediction.ui.TransactionIssueShape.IssueType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 

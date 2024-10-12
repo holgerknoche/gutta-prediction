@@ -15,7 +15,7 @@ import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -53,7 +53,7 @@ class TraceSimulatorWorkerTest {
     void explicitTransaction() {
         // Define the individual events
         var traceId = 1234L;
-        var location = new ProcessLocation("test", 1234, 1);
+        var location = new ObservedLocation("test", 1234, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -126,7 +126,7 @@ class TraceSimulatorWorkerTest {
     void implicitTransaction() {
         // Define the individual events
         var traceId = 1234L;
-        var location = new ProcessLocation("test", 1234, 1);
+        var location = new ObservedLocation("test", 1234, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -204,7 +204,7 @@ class TraceSimulatorWorkerTest {
     void behaviorWithActiveTransaction(TransactionBehavior behavior, ExpectedOutcome expectedOutcome, String expectedErrorMessageFragment) {
         // Define the individual events
         var traceId = 1234L;
-        var location = new ProcessLocation("test", 1234, 1);
+        var location = new ObservedLocation("test", 1234, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -304,7 +304,7 @@ class TraceSimulatorWorkerTest {
     void behaviorWithNoTransaction(TransactionBehavior behavior, ExpectedOutcome expectedOutcome, String expectedErrorMessageFragment) {
         // Define the individual events
         var traceId = 1234L;
-        var location = new ProcessLocation("test", 1234, 1);
+        var location = new ObservedLocation("test", 1234, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -396,8 +396,8 @@ class TraceSimulatorWorkerTest {
     void behaviorWithPropagatedTransaction(TransactionBehavior behavior, ExpectedOutcome expectedOutcome, String expectedErrorMessageFragment) {
         // Define the individual events
         var traceId = 1234L;
-        var location1 = new ProcessLocation("test", 1234, 1);
-        var location2 = new ProcessLocation("test", 2345, 1);
+        var location1 = new ObservedLocation("test", 1234, 1);
+        var location2 = new ObservedLocation("test", 2345, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -499,8 +499,8 @@ class TraceSimulatorWorkerTest {
     void behaviorWithNoTransactionPropagation(TransactionBehavior behavior, ExpectedOutcome expectedOutcome, String expectedErrorMessageFragment) {
         // Define the individual events
         var traceId = 1234L;
-        var location1 = new ProcessLocation("test", 1234, 1);
-        var location2 = new ProcessLocation("test", 2345, 1);
+        var location1 = new ObservedLocation("test", 1234, 1);
+        var location2 = new ObservedLocation("test", 2345, 1);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -589,7 +589,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void activeTransactionWhenExplicitTransactionIsStarted() {        
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
                          
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -629,7 +629,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void successfulCommitOfExplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -674,7 +674,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void failedCommitOfExplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -722,7 +722,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void abortOfExplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -767,7 +767,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void successfulCommitOfImplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -818,7 +818,7 @@ class TraceSimulatorWorkerTest {
     @Test
     void failedCommitOfImplicitTransaction() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");

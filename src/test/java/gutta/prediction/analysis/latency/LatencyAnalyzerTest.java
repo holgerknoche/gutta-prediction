@@ -6,7 +6,7 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -44,7 +44,7 @@ class LatencyAnalyzerTest {
     @Test
     void nonemptyTraceWithNoLatency() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1234, 0);
+        var location = new ObservedLocation("test", 1234, 0);
         
         var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
@@ -76,7 +76,7 @@ class LatencyAnalyzerTest {
     @Test
     void nonemptyTraceWithLatency() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1234, 0);
+        var location = new ObservedLocation("test", 1234, 0);
         
         var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),

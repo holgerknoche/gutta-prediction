@@ -14,7 +14,7 @@ import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -58,7 +58,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void staleRead() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -106,7 +106,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void potentialDeadlockOnRead() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -154,7 +154,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void writeConflict() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         var entity = new Entity(entityType, "e1");
         
@@ -200,7 +200,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void nestedCommitAndOuterAbort() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         
         var entity1 = new Entity(entityType, "e1");
@@ -248,7 +248,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void commitOfImplicitTransaction() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         
         var entity1 = new Entity(entityType, "e1");
@@ -289,7 +289,7 @@ class ConsistencyIssuesAnalyzerTest {
     @Test
     void abortOfImplicitTransaction() {
         var traceId = 1234;
-        var location = new ProcessLocation("test", 1, 0);
+        var location = new ObservedLocation("test", 1, 0);
         var entityType = new EntityType("et1");
         
         var entity1 = new Entity(entityType, "e1");

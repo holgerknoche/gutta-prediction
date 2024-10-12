@@ -8,7 +8,7 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -122,7 +122,7 @@ class DurationChangeAnalysisTest {
     }
     
     private static EventTrace buildSequenceOfInvocations(int numberOfInvocations, int traceId, long latencyPerInvocation, long durationPerInvocation) {
-        var location = new ProcessLocation("test", 1234, 1);        
+        var location = new ObservedLocation("test", 1234, 1);        
         var events = new ArrayList<MonitoringEvent>(numberOfInvocations * 4 + 2);                
         
         var currentTime = 0L;

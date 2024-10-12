@@ -11,7 +11,7 @@ import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -36,7 +36,7 @@ class ConsistencyIssuesAnalysisTest {
      */
     @Test
     void changesNotRevertedDueToTransactionSeparation() {
-        var location = new ProcessLocation("test", 1234, 1);
+        var location = new ObservedLocation("test", 1234, 1);
         var traceId = 1234;
         
         var entityType = new EntityType("et1");

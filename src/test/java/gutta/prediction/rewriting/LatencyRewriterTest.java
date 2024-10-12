@@ -8,7 +8,7 @@ import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.event.ProcessLocation;
+import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
@@ -47,7 +47,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
     @Test
     void localTransition() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
 
         var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
         var originalServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
@@ -122,7 +122,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
     @Test
     void locationChange() {
         final var traceId = 1234L;
-        final var location = new ProcessLocation("test", 1234, 1);
+        final var location = new ObservedLocation("test", 1234, 1);
 
         var originalUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
         var originalServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
