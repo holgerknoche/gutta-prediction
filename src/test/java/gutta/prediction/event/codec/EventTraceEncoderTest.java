@@ -28,8 +28,7 @@ class EventTraceEncoderTest {
         var expectedBytes = new byte[] {
                 0x00, 0x00, 0x00, 0x00, // Number of traces (0)
                 0x00, 0x00, 0x00, 0x00, // Number of string table entries (0)
-                0x00, 0x00, 0x00, 0x00, // Number of location table entries (0)
-                0x00, 0x00, 0x00, 0x00 // Number of encoded trace bytes  (0)
+                0x00, 0x00, 0x00, 0x00 // Number of location table entries (0)
         };
 
         this.runEncoderTest(traces, expectedBytes);
