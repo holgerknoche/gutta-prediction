@@ -10,6 +10,10 @@ import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
 import gutta.prediction.event.ObservedLocation;
+import gutta.prediction.event.ServiceCandidateEntryEvent;
+import gutta.prediction.event.ServiceCandidateExitEvent;
+import gutta.prediction.event.ServiceCandidateInvocationEvent;
+import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.SyntheticLocation;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
@@ -270,6 +274,55 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
         
         stream.writeInt(this.storeString(event.transactionId()));
         stream.writeInt(this.storeString(event.cause()));
+    }
+    
+    @Override
+    protected void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
+        this.encodeEvent(event, this::encodeServiceCandidateInvocationEvent);
+    }
+    
+    private void encodeServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_SERVICE_CANDIDATE_INVOCATION, stream);
+        
+        stream.writeInt(this.storeString(event.name()));
+    }
+    
+    @Override
+    protected void handleServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
+        this.encodeEvent(event, this::encodeServiceCandidateEntryEvent);
+    }
+    
+    private void encodeServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_SERVICE_CANDIDATE_ENTRY, stream);
+        
+        stream.writeInt(this.storeString(event.name()));
+        stream.writeBoolean(event.transactionStarted());
+        
+        if (event.transactionStarted()) {
+            stream.writeInt(this.storeString(event.transactionId()));
+        }
+    }
+    
+    @Override
+    protected void handleServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
+        this.encodeEvent(event, this::encodeServiceCandidateExitEvent);
+    }
+    
+    private void encodeServiceCandidateExitEvent(ServiceCandidateExitEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_SERVICE_CANDIDATE_EXIT, stream);
+        
+        stream.writeInt(this.storeString(event.name()));
+    }
+    
+    @Override
+    protected void handleServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
+        this.encodeEvent(event, this::encodeServiceCandidateReturnEvent);
+    }
+    
+    private void encodeServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_SERVICE_CANDIDATE_RETURN, stream);
+        
+        stream.writeInt(this.storeString(event.name()));
     }
     
     static class EventTraceEncodingException extends RuntimeException {
