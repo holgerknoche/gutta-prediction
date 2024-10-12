@@ -28,13 +28,4 @@ public sealed interface MonitoringEvent permits EntityReadEvent, EntityWriteEven
      */
     Location location();
 
-    /**
-     * Accepts the given visitor.
-     * 
-     * @param <R>     The type of the operation provided by the visitor
-     * @param visitor The visitor to accept
-     * @return The result of the operation provided by the visitor
-     */
-    <R> R accept(MonitoringEventVisitor<R> visitor);
-
 }

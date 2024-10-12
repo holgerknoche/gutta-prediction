@@ -3,6 +3,7 @@ package gutta.prediction.simulation;
 import gutta.prediction.event.MonitoringEvent;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class EventStream {
 
@@ -37,6 +38,18 @@ public class EventStream {
     public void consume() {
         if (this.currentPosition <= this.maxPosition) {
             this.currentPosition++;
+        }
+    }
+    
+    public void forEach(Consumer<MonitoringEvent> action) {
+        while (true) {
+            var currentEvent = this.lookahead(0);
+            if (currentEvent == null) {
+                return;
+            }
+            
+            action.accept(currentEvent);
+            this.consume();
         }
     }
     

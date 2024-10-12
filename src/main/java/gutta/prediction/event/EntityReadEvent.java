@@ -12,9 +12,4 @@ import gutta.prediction.domain.Entity;
  */
 public record EntityReadEvent(long traceId, long timestamp, Location location, Entity entity) implements MonitoringEvent {
 
-    @Override
-    public <R> R accept(MonitoringEventVisitor<R> visitor) {
-        return visitor.handleEntityReadEvent(this);
-    }
-
 }

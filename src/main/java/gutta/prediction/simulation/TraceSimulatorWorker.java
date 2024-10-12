@@ -28,7 +28,7 @@ import gutta.prediction.simulation.Transaction.Outcome;
 
 import java.util.List;
 
-class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
+class TraceSimulatorWorker extends MonitoringEventVisitor {
 
     private final List<TraceSimulationListener> listeners;
 
@@ -65,15 +65,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
 
     private void processEventsInStream() {
-        while (true) {
-            var currentEvent = this.events.lookahead(0);
-            if (currentEvent == null) {
-                return;
-            }
-
-            currentEvent.accept(this);
-            this.events.consume();
-        }
+        this.events.forEach(this::handleMonitoringEvent);
     }
 
     private void onEndOfProcessing() {
@@ -102,25 +94,22 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
     
     @Override
-    public Void handleEntityReadEvent(EntityReadEvent event) {
+    protected void handleEntityReadEvent(EntityReadEvent event) {
         this.listeners.forEach(listener -> listener.onEntityReadEvent(event, this.context));
-        return null;
     }
 
     @Override
-    public Void handleEntityWriteEvent(EntityWriteEvent event) {
+    protected void handleEntityWriteEvent(EntityWriteEvent event) {
         this.listeners.forEach(listener -> listener.onEntityWriteEvent(event, this.context));
-        return null;
     }
 
     @Override
-    public Void handleServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
+    protected void handleServiceCandidateEntryEvent(ServiceCandidateEntryEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateEntryEvent(event, this.context));
-        return null;
     }
 
     @Override
-    public Void handleServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
+    protected void handleServiceCandidateExitEvent(ServiceCandidateExitEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateExitEvent(event, this.context));
 
         var nextEvent = this.events.lookahead(1);
@@ -135,8 +124,6 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         } else {
             throw new IllegalStateException("A service candidate exit event is not followed by a service candidate return event.");
         }
-
-        return null;
     }
     
     private void performComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
@@ -180,7 +167,7 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
             
     @Override
-    public Void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
+    protected void handleServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateInvocationEvent(event, context));
 
         var nextEvent = this.events.lookahead(1);        
@@ -194,8 +181,6 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         } else {
             throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
         }
-
-        return null;
     }
     
     private ComponentConnection findConnectionForCandidateEntry(String candidateName, Component sourceComponent, MonitoringEvent event) {
@@ -357,25 +342,22 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
     }
 
     @Override
-    public Void handleServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
+    protected void handleServiceCandidateReturnEvent(ServiceCandidateReturnEvent event) {
         this.listeners.forEach(listener -> listener.onServiceCandidateReturnEvent(event, this.context));
-        return null;
     }
 
     @Override
-    public Void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
+    protected void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onImplicitTransactionAbortEvent(event, this.context));
         
         var transaction = this.currentTransaction();
         if (transaction != null) {
             transaction.registerImplicitAbort(event);
         }
-        
-        return null;
     }
     
     @Override
-    public Void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
+    protected void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onExplicitTransactionAbortEvent(event, this.context));
         
         var transaction = this.currentTransaction();
@@ -384,12 +366,10 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
             
             this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
         }
-        
-        return null;
     }
 
     @Override
-    public Void handleTransactionCommitEvent(TransactionCommitEvent event) {
+    protected void handleTransactionCommitEvent(TransactionCommitEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionCommitEvent(event, this.context));
         
         var transaction = this.currentTransaction();                
@@ -403,12 +383,10 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
             
             this.context.currentTransaction(null);
         }
-        
-        return null;
     }
 
     @Override
-    public Void handleTransactionStartEvent(TransactionStartEvent event) {
+    protected void handleTransactionStartEvent(TransactionStartEvent event) {
         if (this.context.currentTransaction() != null) {
             throw new TraceProcessingException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
         }
@@ -419,12 +397,10 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         this.registerTransactionAndSetAsCurrent(newTransaction);                        
         
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));
-        
-        return null;
     }    
 
     @Override
-    public Void handleUseCaseStartEvent(UseCaseStartEvent event) {
+    protected void handleUseCaseStartEvent(UseCaseStartEvent event) {
         // Determine the component providing the given use case
         var useCase = new UseCase(event.name());
         
@@ -436,18 +412,15 @@ class TraceSimulatorWorker implements MonitoringEventVisitor<Void> {
         this.context.currentLocation(event.location());
 
         this.listeners.forEach(listener -> listener.onUseCaseStartEvent(event, this.context));
-        return null;
     }
 
     @Override
-    public Void handleUseCaseEndEvent(UseCaseEndEvent event) {
+    protected void handleUseCaseEndEvent(UseCaseEndEvent event) {
         this.listeners.forEach(listener -> listener.onUseCaseEndEvent(event, this.context));
 
         this.context.currentServiceCandidate(null);
         this.context.currentComponent(null);
         this.context.currentLocation(null);
-
-        return null;
     }
     
     private enum TransactionAction {
