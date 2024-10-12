@@ -4,11 +4,15 @@ import gutta.prediction.domain.Entity;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.ExplicitTransactionAbortEvent;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.MonitoringEventVisitor;
 import gutta.prediction.event.ObservedLocation;
 import gutta.prediction.event.SyntheticLocation;
+import gutta.prediction.event.TransactionCommitEvent;
+import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
@@ -211,7 +215,7 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
 
         this.encodeEntity(event.entity(), stream);
     }
-    
+        
     @Override
     protected void handleEntityWriteEvent(EntityWriteEvent event) {
         this.encodeEvent(event, this::encodeEntityWriteEvent);
@@ -221,6 +225,51 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
         this.encodeCommonEventFields(event, Constants.EVENT_TYPE_ENTITY_WRITE, stream);
         
         this.encodeEntity(event.entity(), stream);
+    }
+    
+    @Override
+    protected void handleTransactionStartEvent(TransactionStartEvent event) {
+        this.encodeEvent(event, this::encodeTransactionStartEvent);
+    }
+    
+    private void encodeTransactionStartEvent(TransactionStartEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_TRANSACTION_START, stream);
+        
+        stream.writeInt(this.storeString(event.transactionId()));
+    }
+    
+    @Override
+    protected void handleTransactionCommitEvent(TransactionCommitEvent event) {
+        this.encodeEvent(event, this::encodeTransactionCommitEvent);
+    }
+    
+    private void encodeTransactionCommitEvent(TransactionCommitEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_TRANSACTION_COMMIT, stream);
+        
+        stream.writeInt(this.storeString(event.transactionId()));
+    }
+    
+    @Override
+    protected void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
+        this.encodeEvent(event, this::encodeExplicitTransactionAbortEvent);
+    }
+    
+    private void encodeExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_EXPLICIT_TRANSACTION_ABORT, stream);
+        
+        stream.writeInt(this.storeString(event.transactionId()));
+    }
+    
+    @Override
+    protected void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
+        this.encodeEvent(event, this::encodeImplicitTransactionAbortEvent);
+    }
+    
+    private void encodeImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_IMPLICIT_TRANSACTION_ABORT, stream);
+        
+        stream.writeInt(this.storeString(event.transactionId()));
+        stream.writeInt(this.storeString(event.cause()));
     }
     
     static class EventTraceEncodingException extends RuntimeException {
@@ -233,11 +282,9 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
         
     }
     
-    private record StringTableEntry(String value, int code) {
-    }
+    private record StringTableEntry(String value, int code) {}
     
-    private record LocationTableEntry(Location location, int code) {        
-    }
+    private record LocationTableEntry(Location location, int code) {}
     
     private interface EventEncodingOperation<T extends MonitoringEvent> {
         
