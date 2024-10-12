@@ -4,6 +4,7 @@ import gutta.prediction.util.EqualityUtil;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -23,8 +24,16 @@ public class EventTrace {
         this.events = requireNonNull(events);
     }
     
+    public int size() {
+        return this.events.size();
+    }
+    
     public List<MonitoringEvent> events() {
         return Collections.unmodifiableList(this.events);
+    }
+    
+    public void forEach(Consumer<MonitoringEvent> action) {
+        this.events.forEach(action);
     }
     
     @Override
