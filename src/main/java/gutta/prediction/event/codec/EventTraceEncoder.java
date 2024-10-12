@@ -1,5 +1,8 @@
 package gutta.prediction.event.codec;
 
+import gutta.prediction.domain.Entity;
+import gutta.prediction.event.EntityReadEvent;
+import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
@@ -162,16 +165,21 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
         }
     }
     
+    private void encodeCommonEventFields(MonitoringEvent event, byte eventTypeId, DataOutputStream stream) throws IOException {
+        stream.writeByte(eventTypeId);            
+        stream.writeLong(event.traceId());
+        stream.writeLong(event.timestamp());
+        stream.writeInt(this.storeLocation(event.location()));
+    }
+    
     @Override
     protected void handleUseCaseStartEvent(UseCaseStartEvent event) {
          this.encodeEvent(event, this::encodeUseCaseStartEvent);
     }
     
     private void encodeUseCaseStartEvent(UseCaseStartEvent event, DataOutputStream stream) throws IOException {
-        stream.writeByte(Constants.EVENT_TYPE_USE_CASE_START);            
-        stream.writeLong(event.traceId());
-        stream.writeLong(event.timestamp());
-        stream.writeInt(this.storeLocation(event.location()));
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_USE_CASE_START, stream);
+        
         stream.writeInt(this.storeString(event.name()));        
     }
     
@@ -181,11 +189,38 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
     }
     
     private void encodeUseCaseEndEvent(UseCaseEndEvent event, DataOutputStream stream) throws IOException {
-        stream.writeByte(Constants.EVENT_TYPE_USE_CASE_END);            
-        stream.writeLong(event.traceId());
-        stream.writeLong(event.timestamp());
-        stream.writeInt(this.storeLocation(event.location()));
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_USE_CASE_END, stream);
+        
         stream.writeInt(this.storeString(event.name()));        
+    }
+    
+    @Override
+    protected void handleEntityReadEvent(EntityReadEvent event) {
+        this.encodeEvent(event, this::encodeEntityReadEvent);
+    }
+    
+    private void encodeEntity(Entity entity, DataOutputStream stream) throws IOException {
+        var entityType = entity.type();
+        
+        stream.writeInt(this.storeString(entityType.name()));
+        stream.writeInt(this.storeString(entity.id()));
+    }
+    
+    private void encodeEntityReadEvent(EntityReadEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_ENTITY_READ, stream);
+
+        this.encodeEntity(event.entity(), stream);
+    }
+    
+    @Override
+    protected void handleEntityWriteEvent(EntityWriteEvent event) {
+        this.encodeEvent(event, this::encodeEntityWriteEvent);
+    }
+    
+    private void encodeEntityWriteEvent(EntityWriteEvent event, DataOutputStream stream) throws IOException {
+        this.encodeCommonEventFields(event, Constants.EVENT_TYPE_ENTITY_WRITE, stream);
+        
+        this.encodeEntity(event.entity(), stream);
     }
     
     static class EventTraceEncodingException extends RuntimeException {
