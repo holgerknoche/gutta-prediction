@@ -37,6 +37,39 @@ class EventTraceDecoderTest extends EventTraceCodecTestTemplate {
 
         this.runDecoderTest(traceBytes, expectedTraces);
     }
+    
+    /**
+     * Test case: A trace with a synthetic location is decoded successfully.
+     */
+    @Test
+    void decodeTraceWithSyntheticLocation() {
+        var traceBytes = serializedTraceWithSyntheticLocation();
+        var expectedTraces = List.of(traceWithSyntheticLocation());                
+        
+        this.runDecoderTest(traceBytes, expectedTraces);        
+    }
+    
+    /**
+     * Test case: A trace across multiple locations is decoded successfully.
+     */
+    @Test
+    void decodeTraceWithMultipleLocations() {
+        var traceBytes = serializedTraceWithMultipleLocations();
+        var expectedTraces = List.of(traceWithMultipleLocations());        
+        
+        this.runDecoderTest(traceBytes, expectedTraces);
+    }
+    
+    /**
+     * Test case: A block consisting of multiple traces is decoded successfully.
+     */
+    @Test
+    void decodeMultipleTraces() {
+        var traceBytes = serializedBlockWithMultipleTraces();
+        var expectedTraces = blockWithMultipleTraces();                
+                
+        this.runDecoderTest(traceBytes, expectedTraces);
+    }
 
     private void runDecoderTest(byte[] serializedTraces, Collection<EventTrace> expectedTraces) {
         try (var inputStream = new ByteArrayInputStream(serializedTraces)) {
