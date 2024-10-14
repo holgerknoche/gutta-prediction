@@ -12,6 +12,7 @@ import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
+import gutta.prediction.event.SyntheticLocation;
 import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
@@ -167,5 +168,43 @@ abstract class EventTraceCodecTestTemplate {
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 // String index of the use case name (0)
         };
     }
-
+    
+    protected static EventTrace traceWithSyntheticLocation() {
+        var traceId = 5678;
+        var location = new SyntheticLocation(123);
+        
+        return EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location, "uc"),
+                new UseCaseEndEvent(traceId, 200, location, "uc")
+                );
+    }
+    
+    protected static byte[] serializedTraceWithSyntheticLocation() {
+        return new byte[] {
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Number of traces (1)
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Number of string table entries (1)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // Length of the first string table entry (2)
+                (byte) 0x75, (byte) 0x63, // String data of the first entry ("uc")
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Number of location table entries (1)
+                (byte) 0x02, // Type of the first location entry
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x7B, // ID of the first location entry (123)
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // Number of events in the first trace (2)
+                
+                (byte) 0x01, // Event type (1)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x16, (byte) 0x2E, // Trace id (5678)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x64, // Timestamp (100)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // String index of the use case name (0)
+                
+                (byte) 0x02, // Event type (2)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x16, (byte) 0x2E, // Trace id (5678)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xC8, // Timestamp (200)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 // String index of the use case name (0)
+        };
+    }
+    
 }
