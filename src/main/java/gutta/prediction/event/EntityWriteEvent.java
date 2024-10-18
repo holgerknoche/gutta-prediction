@@ -10,6 +10,6 @@ import gutta.prediction.domain.Entity;
  * @param location The location at which this timestamp occurred
  * @param entity The written entity
  */
-public record EntityWriteEvent(long traceId, long timestamp, Location location, Entity entity) implements MonitoringEvent {
+public record EntityWriteEvent(long traceId, long timestamp, Location location, Entity entity) implements EntityAccessEvent {
 
 }
