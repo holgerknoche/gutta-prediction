@@ -142,6 +142,7 @@ class DemoFrame extends JFrame {
                 new SpanShape(200, 60, 450),
 
                 new TransactionIssueShape(270, 70, IssueType.STALE_READ), new TransactionIssueShape(310, 70, IssueType.CONFLICTING_WRITE),
+                new TransactionEventShape(400, 70, TransactionEventType.IMPLICIT_ABORT),
 
                 // Service C
 

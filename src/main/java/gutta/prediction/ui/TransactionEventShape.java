@@ -36,7 +36,7 @@ class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
     }
 
     public enum TransactionEventType {
-        COMMIT(Color.GREEN), IMPLICIT_ABORT(Color.WHITE), ABORT(Color.RED);
+        COMMIT(Color.GREEN), IMPLICIT_ABORT(Color.MAGENTA), ABORT(Color.RED);
 
         private final Color color;
 
