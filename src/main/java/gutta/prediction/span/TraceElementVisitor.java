@@ -36,5 +36,15 @@ public interface TraceElementVisitor<T> {
         // Do nothing by default
         return null;
     }
+    
+    default T handleTransactionEvent(TransactionEvent event) {
+        // Do nothing by default
+        return null;
+    }
+    
+    default T handleEntityEvent(EntityEvent event) {
+        // Do nothing by default
+        return null;
+    }
 
 }

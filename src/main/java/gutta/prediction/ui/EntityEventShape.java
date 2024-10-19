@@ -2,16 +2,18 @@ package gutta.prediction.ui;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.Ellipse2D;
 
-class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
+class EntityEventShape extends Ellipse2D.Float implements DrawableShape {
 
-    private static final long serialVersionUID = 2023398039429544762L;
+    private static final long serialVersionUID = -4752863530156002616L;
 
-    private static final int SIZE = 10;
-        
-    private final TransactionEventType type;
+    private static final int DIAMETER = 10;
+    
+    private static final int RADIUS = (DIAMETER / 2);
 
+    private final EntityEventType type;
+    
     /**
      * Creates a new shape with its center point at the given coordinates.
      * 
@@ -19,12 +21,12 @@ class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
      * @param y The y coordinate of the shape's center
      * @param type The type of the event, which determines the fill color
      */
-    public TransactionEventShape(int centerX, int centerY, TransactionEventType type) {
-        super((centerX - (SIZE / 2)), (centerY - (SIZE / 2)), SIZE, SIZE);
+    public EntityEventShape(int centerX, int centerY, EntityEventType type) {
+        super((centerX - RADIUS), (centerY - RADIUS), DIAMETER, DIAMETER);
 
         this.type = type;
     }
-
+    
     @Override
     public void drawOn(Graphics2D graphics) {
         Color color = this.type.getColor();
@@ -34,13 +36,13 @@ class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
         graphics.setColor(Color.BLACK);
         graphics.draw(this);
     }
-
-    public enum TransactionEventType {
-        COMMIT(Color.GREEN), IMPLICIT_ABORT(Color.WHITE), ABORT(Color.RED);
+    
+    public enum EntityEventType {
+        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY);
 
         private final Color color;
 
-        private TransactionEventType(Color color) {
+        private EntityEventType(Color color) {
             this.color = color;
         }
 
@@ -49,5 +51,5 @@ class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
         }
 
     }
-
+    
 }

@@ -1,6 +1,7 @@
 package gutta.prediction.ui;
 
-import gutta.prediction.ui.TransactionEventShape.EventType;
+import gutta.prediction.ui.EntityEventShape.EntityEventType;
+import gutta.prediction.ui.TransactionEventShape.TransactionEventType;
 import gutta.prediction.ui.TransactionIssueShape.IssueType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 import org.apache.batik.dom.GenericDOMImplementation;
@@ -101,8 +102,8 @@ class DemoFrame extends JFrame {
 
         private final List<DrawableShape> shapes = Arrays.asList(new TransactionMarkerShape(150, 10, 200, TransactionState.CLEAN),
                 new TransactionMarkerShape(200, 10, 300, TransactionState.DIRTY), new SpanShape(100, 20, 500),
-                new TransactionEventShape(150, 25, EventType.READ), new TransactionEventShape(200, 25, EventType.WRITE),
-                new TransactionEventShape(300, 25, EventType.COMMIT));
+                new EntityEventShape(150, 30, EntityEventType.READ), new EntityEventShape(200, 30, EntityEventType.WRITE),
+                new TransactionEventShape(300, 30, TransactionEventType.COMMIT));
 
         @Override
         public Dimension getPreferredSize() {
@@ -130,8 +131,8 @@ class DemoFrame extends JFrame {
 
                 new SpanShape(100, 10, 500),
 
-                new TransactionEventShape(130, 15, EventType.READ), new TransactionEventShape(150, 15, EventType.WRITE),
-                new TransactionEventShape(500, 15, EventType.ABORT),
+                new EntityEventShape(130, 20, EntityEventType.READ), new EntityEventShape(150, 20, EntityEventType.WRITE),
+                new TransactionEventShape(500, 20, TransactionEventType.ABORT),
 
                 // Service B
 
@@ -140,7 +141,7 @@ class DemoFrame extends JFrame {
 
                 new SpanShape(200, 60, 450),
 
-                new TransactionIssueShape(270, 65, IssueType.STALE_READ), new TransactionIssueShape(310, 65, IssueType.CONFLICTING_WRITE),
+                new TransactionIssueShape(270, 70, IssueType.STALE_READ), new TransactionIssueShape(310, 70, IssueType.CONFLICTING_WRITE),
 
                 // Service C
 
