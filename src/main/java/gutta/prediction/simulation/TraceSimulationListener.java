@@ -41,16 +41,26 @@ public interface TraceSimulationListener {
         // Do nothing by default
     }
 
-    default void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
+    default void beforeComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
             TraceSimulationContext context) {
         // Do nothing by default
+    }
+    
+    default void afterComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
+            TraceSimulationContext context) {
+     // Do nothing by default
     }
 
     default void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
 
-    default void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
+    default void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
+            TraceSimulationContext context) {
+        // Do nothing by default
+    }
+    
+    default void afterComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
             TraceSimulationContext context) {
         // Do nothing by default
     }

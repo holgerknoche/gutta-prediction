@@ -1,5 +1,6 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.EntityType;
 import gutta.prediction.dsl.DeploymentModelReader;
@@ -15,17 +16,23 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.rewriting.LatencyRewriter;
+import gutta.prediction.rewriting.RewrittenEventTrace;
+import gutta.prediction.rewriting.TransactionContextRewriter;
 import gutta.prediction.span.TraceBuilder;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JToolBar;
 
 public class SpanSimulationFrame extends JFrame {
 
@@ -53,13 +60,24 @@ public class SpanSimulationFrame extends JFrame {
     
     private final InitializeOnce<JTextArea> simulatedDeploymentModelArea = new InitializeOnce<>(this::createSimulatedDeploymentModelArea);
     
+    private final InitializeOnce<JToolBar> simulationToolbar = new InitializeOnce<>(this::createSimulationToolbar);
+    
+    private final InitializeOnce<JButton> updateViewButton = new InitializeOnce<>(this::createUpdateViewButton);
+    
+    private final InitializeOnce<JButton> resetButton = new InitializeOnce<>(this::createResetButton);
+    
     private EventTrace trace;
+    
+    private String originalDeploymentModelSpec;
+    
+    private DeploymentModel originalDeploymentModel;
     
     public SpanSimulationFrame() {
         this.initialize();
-        this.initializeControls();
         
         this.initializeTestTrace();
+        
+        this.initializeControls();
     }
     
     private void initialize() {
@@ -72,6 +90,7 @@ public class SpanSimulationFrame extends JFrame {
         this.setLayout(new BorderLayout());
         
         this.add(this.mainPanel.get(), BorderLayout.CENTER);
+        this.add(this.simulationToolbar.get(), BorderLayout.SOUTH);
     }
     
     private void initializeTestTrace() {
@@ -90,8 +109,8 @@ public class SpanSimulationFrame extends JFrame {
                 
                 new EntityReadEvent(traceId, 200, location, entity),
                 
-                new ServiceCandidateInvocationEvent(traceId, 180, location, "sc2"),
-                new ServiceCandidateEntryEvent(traceId, 180, location, "sc2"),
+                new ServiceCandidateInvocationEvent(traceId, 220, location, "sc2"),
+                new ServiceCandidateEntryEvent(traceId, 220, location, "sc2"),
                 
                 new EntityWriteEvent(traceId, 300, location, entity),
                 
@@ -105,19 +124,21 @@ public class SpanSimulationFrame extends JFrame {
                 new UseCaseEndEvent(traceId, 800, location, "usecase")                
                 );
         
-        var originalDeploymentModel = 
+        var originalDeploymentModelSpec = 
                 "Component \"Component 1\" {\n" +
                 "    UseCase usecase\n" +
                 "    ServiceCandidate sc1\n" +
                 "    ServiceCandidate sc2\n" +
                 "}";
         
-        this.originalDeploymentModelArea.get().setText(originalDeploymentModel);
+        this.originalDeploymentModelArea.get().setText(originalDeploymentModelSpec);
         
-        var deploymentModel = new DeploymentModelReader().readModel(originalDeploymentModel);        
-        var spanTrace = new TraceBuilder().buildTrace(trace, deploymentModel, Set.of());
+        var originalDeploymentModel = new DeploymentModelReader().readModel(originalDeploymentModelSpec);        
+        var spanTrace = new TraceBuilder().buildTrace(trace, originalDeploymentModel, Set.of());
         this.originalTraceView.get().trace(spanTrace);
         
+        this.originalDeploymentModelSpec = originalDeploymentModelSpec;
+        this.originalDeploymentModel = originalDeploymentModel;
         this.trace = trace;
     }
     
@@ -186,7 +207,7 @@ public class SpanSimulationFrame extends JFrame {
         var scrollPane = new JScrollPane();
         
         scrollPane.setBorder(BorderFactory.createTitledBorder("Simulated Trace"));
-        scrollPane.add(this.simulatedTraceView.get());
+        scrollPane.setViewportView(this.simulatedTraceView.get());
         
         return scrollPane;
     }
@@ -207,9 +228,54 @@ public class SpanSimulationFrame extends JFrame {
     private JTextArea createSimulatedDeploymentModelArea() {
         var textArea = new JTextArea();
         
-        textArea.setText("Huba");
+        textArea.setText(this.originalDeploymentModelSpec);
         
         return textArea;
+    }
+    
+    private JToolBar createSimulationToolbar() {
+        var toolBar = new JToolBar();
+        
+        toolBar.add(this.updateViewButton.get());
+        toolBar.add(this.resetButton.get());
+        
+        return toolBar;
+    }
+    
+    private JButton createUpdateViewButton() {
+        var button = new JButton("Update View");
+        
+        button.addActionListener(this::updateViewAction);
+        
+        return button;
+    }
+    
+    private JButton createResetButton() {
+        var button = new JButton("Reset");
+        
+        button.addActionListener(this::resetAction);
+        
+        return button;
+    }
+    
+    private void updateViewAction(ActionEvent event) {
+        var deploymentModelSpec = this.simulatedDeploymentModelArea.get().getText();
+        
+        var modifieldDeploymentModel = new DeploymentModelReader().readModel(deploymentModelSpec, this.originalDeploymentModel);        
+        var rewrittenTrace = this.rewriteTrace(this.trace, modifieldDeploymentModel);
+        
+        var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifieldDeploymentModel, Set.of());
+        this.simulatedTraceView.get().trace(spanTrace);
+    }
+    
+    private RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
+        var latencyRewriter = new LatencyRewriter(modifiedDeploymentModel);
+        var transactionRewriter = new TransactionContextRewriter(modifiedDeploymentModel);
+        return transactionRewriter.rewriteTrace(latencyRewriter.rewriteTrace(trace));
+    }
+    
+    private void resetAction(ActionEvent event) {
+        this.simulatedDeploymentModelArea.get().setText(this.originalDeploymentModelSpec);
     }
 
 }

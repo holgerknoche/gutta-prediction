@@ -127,7 +127,7 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
     }
     
     private void performComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
-        this.listeners.forEach(listener -> listener.onComponentReturn(exitEvent, returnEvent, connection, this.context));
+        this.listeners.forEach(listener -> listener.beforeComponentReturn(exitEvent, returnEvent, connection, this.context));
         
         var transaction = this.currentTransaction();
         var stackEntry = this.context.peek();
@@ -146,6 +146,8 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         if (restoredTransaction != null && restoredTransaction != transaction) {
             this.listeners.forEach(listener -> listener.onTransactionResume(returnEvent, restoredTransaction, this.context));
         }
+        
+        this.listeners.forEach(listener -> listener.afterComponentReturn(exitEvent, returnEvent, connection, this.context));
     }
     
     private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
@@ -208,7 +210,7 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         // Save the current state on the stack before making changes
         this.context.pushCurrentState();
         
-        this.listeners.forEach(listener -> listener.onComponentTransition(invocationEvent, entryEvent, connection, this.context));
+        this.listeners.forEach(listener -> listener.beforeComponentTransition(invocationEvent, entryEvent, connection, this.context));
         
         // Update the current location and transaction state
         this.updateLocationOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
@@ -218,6 +220,8 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
             // If a new transaction is created, notify the listeners (in the new state)
             this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
         }
+        
+        this.listeners.forEach(listener -> listener.afterComponentTransition(invocationEvent, entryEvent, connection, this.context));
     }
      
     private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {

@@ -65,7 +65,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     }
 
     @Override
-    public void onComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
+    public void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
             TraceSimulationContext context) {
 
         if (locationChange(invocationEvent, entryEvent)) {            
@@ -93,7 +93,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     }
 
     @Override
-    public void onComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
+    public void beforeComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
             TraceSimulationContext context) {
 
         this.addLatencyOverlayIfNecessary(exitEvent, returnEvent);
@@ -112,12 +112,20 @@ class TraceBuilderWorker implements TraceSimulationListener {
                 
                 this.currentSpan.addOverlay(newOverlay);
                 this.pendingSuspendedOverlays.put(currentTransaction, newOverlay);
-            }
-            
-            // Restore the state from the stack
+            }            
+        }
+    }
+    
+    @Override
+    public void afterComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
+            TraceSimulationContext context) {
+        
+        if (locationChange(exitEvent, returnEvent)) {
+            // Restore the state from the stack. We do this after the component return so that possible end-of-transaction events are
+            // added to the right span
             var newState = this.stack.pop();
             this.currentSpan = newState.span();
-            this.currentTransactionOverlay = newState.transactionOverlay();
+            this.currentTransactionOverlay = newState.transactionOverlay();    
         }
     }
     

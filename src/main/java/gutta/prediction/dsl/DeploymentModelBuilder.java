@@ -47,11 +47,19 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     
     private final Set<String> knownEntityTypes = new HashSet<>();
 
-    private final DeploymentModel.Builder builder = new DeploymentModel.Builder();
+    private final DeploymentModel.Builder builder;
 
     private Component currentComponent;
     
     private DataStore currentDataStore;
+    
+    public DeploymentModelBuilder() {
+        this.builder = new DeploymentModel.Builder();
+    }
+    
+    public DeploymentModelBuilder(DeploymentModel originalModel) {
+        this.builder = originalModel.applyModifications();
+    }
 
     public DeploymentModel getBuiltModel() {
         return this.builder.build();

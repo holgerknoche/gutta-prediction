@@ -8,17 +8,21 @@ import org.antlr.v4.runtime.CommonTokenStream;
 public class DeploymentModelReader {
     
     public DeploymentModel readModel(String input) {
-        return this.readModel(CharStreams.fromString(input));
+        return this.readModel(CharStreams.fromString(input), null);
     }
     
-    private DeploymentModel readModel(CharStream inputStream) {
+    public DeploymentModel readModel(String input, DeploymentModel originalModel) {
+        return this.readModel(CharStreams.fromString(input), originalModel);
+    }
+    
+    private DeploymentModel readModel(CharStream inputStream, DeploymentModel originalModel) {
         var lexer = new DeploymentModelLexer(inputStream);
         var tokenStream = new CommonTokenStream(lexer);
         var parser = new DeploymentModelParser(tokenStream);
         
         var modelContext = parser.deploymentModel();
         
-        var modelBuilder = new DeploymentModelBuilder();
+        var modelBuilder = (originalModel == null) ? new DeploymentModelBuilder() : new DeploymentModelBuilder(originalModel);
         modelContext.accept(modelBuilder);
         
         return modelBuilder.getBuiltModel();

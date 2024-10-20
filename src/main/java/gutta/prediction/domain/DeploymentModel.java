@@ -67,7 +67,7 @@ public class DeploymentModel {
     }
     
     public Builder applyModifications() {
-        return new Builder(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+        return new Builder(this.useCaseAllocation, this.serviceCandidateLookup, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
     }
     
     @Override
@@ -93,11 +93,13 @@ public class DeploymentModel {
             this(connection.source(), connection.target());
         }
 
-    }
+    }    
     
     public static class Builder {
         
         private final Map<UseCase, Component> useCaseAllocation;
+        
+        private final Map<String, ServiceCandidate> nameToServiceCandidate;
         
         private final Map<ServiceCandidate, Component> serviceCandidateAllocation;
         
@@ -109,14 +111,16 @@ public class DeploymentModel {
         
         public Builder() {
             this.useCaseAllocation = new HashMap<>();
+            this.nameToServiceCandidate = new HashMap<>();
             this.serviceCandidateAllocation = new HashMap<>();
             this.entityTypeAllocation = new HashMap<>();
-            this.componentConnections = new HashMap<>();
+            this.componentConnections = new HashMap<>();            
             this.modificationInProgress = false;
         }
         
-        private Builder(Map<UseCase, Component> useCaseAllocation, Map<ServiceCandidate, Component> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+        private Builder(Map<UseCase, Component> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, Map<ServiceCandidate, Component> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
             this.useCaseAllocation = new HashMap<>(useCaseAllocation);
+            this.nameToServiceCandidate = new HashMap<>(nameToServiceCandidate);
             this.serviceCandidateAllocation = new HashMap<>(serviceCandidateAllocation);
             this.entityTypeAllocation = new HashMap<>(entityTypeAllocation);
             this.componentConnections = new HashMap<>(componentConnections);
@@ -129,6 +133,12 @@ public class DeploymentModel {
         }
         
         public Builder assignServiceCandidate(ServiceCandidate candidate, Component component) {
+            var previousCandidate = this.nameToServiceCandidate.put(candidate.name(), candidate);
+            
+            if (previousCandidate != null) {
+                this.serviceCandidateAllocation.remove(previousCandidate);
+            }
+            
             this.serviceCandidateAllocation.put(candidate, component);
             return this;
         }
