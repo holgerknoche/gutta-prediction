@@ -3,6 +3,7 @@ package gutta.prediction.span;
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
@@ -15,6 +16,8 @@ import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.Transaction;
+import gutta.prediction.span.EntityEvent.EntityEventType;
+import gutta.prediction.span.TransactionEvent.TransactionEventType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -124,12 +127,14 @@ class TraceBuilderWorker implements TraceSimulationListener {
         
         this.currentSpan.addOverlay(newOverlay);
         this.currentTransactionOverlay = newOverlay;
+        
+        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.START));
     }
     
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        // TODO Add successful commit marker
         this.completeTransactionOverlay(event, transaction);
+        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.COMMIT));
     }
     
     private void completeTransactionOverlay(MonitoringEvent event, Transaction transaction) {
@@ -150,12 +155,19 @@ class TraceBuilderWorker implements TraceSimulationListener {
         
     @Override
     public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        // TODO Add abort marker
         this.completeTransactionOverlay(event, transaction);
+        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.EXPLICIT_ABORT));
+    }
+    
+    @Override
+    public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
     }
     
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
+        
         if (this.currentTransactionOverlay == null || this.currentTransactionOverlay.isDirty()) {
             // If there is no transaction overlay or it is already marked as dirty, nothing needs to be done
             return;

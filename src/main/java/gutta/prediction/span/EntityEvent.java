@@ -6,18 +6,18 @@ import static java.util.Objects.requireNonNull;
 
 public class EntityEvent extends SpanEvent {
 
-    private final Type type;
+    private final EntityEventType type;
     
     private final Entity entity;
     
-    public EntityEvent(long timestamp, Type type, Entity entity) {
+    public EntityEvent(long timestamp, EntityEventType type, Entity entity) {
         super(timestamp);
         
         this.type = requireNonNull(type);
         this.entity = requireNonNull(entity);
     }
     
-    public Type type() {
+    public EntityEventType type() {
         return this.type;
     }
     
@@ -35,7 +35,7 @@ public class EntityEvent extends SpanEvent {
         this.accept(visitor);
     }
     
-    public enum Type {
+    public enum EntityEventType {
         READ,
         WRITE
     }    

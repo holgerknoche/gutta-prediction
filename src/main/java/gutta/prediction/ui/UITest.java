@@ -8,6 +8,7 @@ public class UITest {
         var frameToShow = switch (testCase) {        
         case "shapes" -> new DemoFrame();
         case "span" -> new SpanViewFrame();
+        case "span-simulation" -> new SpanSimulationFrame();
         default -> new DemoFrame();
         };
 

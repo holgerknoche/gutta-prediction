@@ -8,12 +8,16 @@ import gutta.prediction.analysis.consistency.WriteConflictIssue;
 import gutta.prediction.span.CleanTransactionOverlay;
 import gutta.prediction.span.ConsistencyIssueEvent;
 import gutta.prediction.span.DirtyTransactionOverlay;
+import gutta.prediction.span.EntityEvent;
 import gutta.prediction.span.LatencyOverlay;
 import gutta.prediction.span.Span;
 import gutta.prediction.span.SuspendedTransactionOverlay;
 import gutta.prediction.span.Trace;
 import gutta.prediction.span.TraceElementVisitor;
+import gutta.prediction.span.TransactionEvent;
 import gutta.prediction.span.TransactionOverlay;
+import gutta.prediction.ui.EntityEventShape.EntityEventType;
+import gutta.prediction.ui.TransactionEventShape.TransactionEventType;
 import gutta.prediction.ui.TransactionIssueShape.IssueType;
 import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
 
@@ -30,6 +34,8 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
     private static final int EVENTS_LAYER = 2;
     
     private static final int TEXT_LAYER = 3;
+    
+    private static final int HALF_SPAN_HEIGHT = 10;
     
     private final long startTimestamp;
     
@@ -141,6 +147,38 @@ class SpanComponentsCreator implements TraceElementVisitor<Void> {
         }
         
         this.shapes.addShape(SPANS_LAYER,shape);
+        
+        return null;
+    }
+    
+    @Override
+    public Void handleEntityEvent(EntityEvent event) {
+        var xPosition = this.convertTimestampToXPosition(event.timestamp());
+        
+        var shapeType = switch (event.type()) {
+        case READ -> EntityEventType.READ;
+        case WRITE -> EntityEventType.WRITE;
+        };
+        
+        var shape = new EntityEventShape(xPosition, (this.currentY + HALF_SPAN_HEIGHT), shapeType);
+        this.shapes.addShape(EVENTS_LAYER, shape);
+        
+        return null;
+    }
+    
+    @Override
+    public Void handleTransactionEvent(TransactionEvent event) {
+        var xPosition = this.convertTimestampToXPosition(event.timestamp());
+        
+        var shapeType = switch(event.type()) {
+        case START -> TransactionEventType.START;
+        case IMPLICIT_ABORT -> TransactionEventType.IMPLICIT_ABORT;
+        case EXPLICIT_ABORT -> TransactionEventType.ABORT;
+        case COMMIT -> TransactionEventType.COMMIT;
+        };
+        
+        var shape = new TransactionEventShape(xPosition, (this.currentY + HALF_SPAN_HEIGHT), shapeType);
+        this.shapes.addShape(EVENTS_LAYER, shape);
         
         return null;
     }

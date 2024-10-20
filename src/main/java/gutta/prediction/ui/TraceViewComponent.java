@@ -14,8 +14,10 @@ class TraceViewComponent extends TraceComponent {
     private static final int BORDER_WIDTH = 20;
     
     private static final int VERTICAL_DISTANCE_BETWEEN_SPANS = 60;
+    
+    private static final Dimension DEFAULT_DIMENSION = new Dimension(100, 100);
                 
-    private Dimension preferredSize;
+    private Dimension preferredSize = DEFAULT_DIMENSION;
     
     private List<DrawableShape> shapes = new ArrayList<>();
     
@@ -23,7 +25,7 @@ class TraceViewComponent extends TraceComponent {
         if (trace == null) {
             // Delete all shapes
             this.shapes = new ArrayList<>();
-            this.preferredSize = null;
+            this.preferredSize = DEFAULT_DIMENSION;
             return;
         }
         

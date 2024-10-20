@@ -4,22 +4,22 @@ import static java.util.Objects.requireNonNull;
 
 public class TransactionEvent extends SpanEvent {
 
-    private final Type type;
+    private final TransactionEventType type;
     
     private final String message;
     
-    public TransactionEvent(long timestamp, Type type) {
+    public TransactionEvent(long timestamp, TransactionEventType type) {
         this(timestamp, type, "");
     }
     
-    public TransactionEvent(long timestamp, Type type, String message) {
+    public TransactionEvent(long timestamp, TransactionEventType type, String message) {
         super(timestamp);
         
         this.type = requireNonNull(type);
         this.message = requireNonNull(message);
     }
 
-    public Type type() {
+    public TransactionEventType type() {
         return this.type;
     }
     
@@ -37,7 +37,7 @@ public class TransactionEvent extends SpanEvent {
         this.accept(visitor);        
     }
     
-    public enum Type {
+    public enum TransactionEventType {
         START,
         COMMIT,
         IMPLICIT_ABORT,
