@@ -1,8 +1,12 @@
 package gutta.prediction.span;
 
+import gutta.prediction.util.EqualityUtil;
+
+import java.util.Objects;
+
 import static java.util.Objects.requireNonNull;
 
-public class TransactionEvent extends SpanEvent {
+public final class TransactionEvent extends SpanEvent {
 
     private final TransactionEventType type;
     
@@ -35,6 +39,30 @@ public class TransactionEvent extends SpanEvent {
     @Override
     public void traverse(TraceElementVisitor<?> visitor) {
         this.accept(visitor);        
+    }
+    
+    @Override
+    public int hashCode() {
+        return (int) this.timestamp() + this.type.hashCode();
+    } 
+    
+    @Override
+    public boolean equals(Object that) {
+        return EqualityUtil.equals(this, that, this::equalsInternal);
+    }
+    
+    private boolean equalsInternal(TransactionEvent that) {
+        if (!super.equalsInternal(that)) {
+            return false;
+        }
+        
+        return (this.type() == that.type()) &&
+                Objects.equals(this.message(), that.message());
+    }
+    
+    @Override
+    public String toString() {
+        return "Transaction Event '" + this.type() + "' at " + this.timestamp();
     }
     
     public enum TransactionEventType {

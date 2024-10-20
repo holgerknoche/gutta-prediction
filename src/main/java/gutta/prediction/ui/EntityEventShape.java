@@ -38,7 +38,7 @@ class EntityEventShape extends Ellipse2D.Float implements DrawableShape {
     }
     
     public enum EntityEventType {
-        READ(Color.WHITE), WRITE(Color.LIGHT_GRAY);
+        READ(Color.ORANGE), WRITE(Color.MAGENTA);
 
         private final Color color;
 

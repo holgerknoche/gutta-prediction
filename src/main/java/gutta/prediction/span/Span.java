@@ -3,6 +3,7 @@ package gutta.prediction.span;
 import gutta.prediction.util.EqualityUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -56,6 +57,10 @@ public class Span extends Interval implements TraceElement {
     
     private void addChild(Span child) {
         this.children.add(child);
+    }
+    
+    public List<SpanEvent> events() {
+        return Collections.unmodifiableList(this.spanEvents);
     }
     
     @Override

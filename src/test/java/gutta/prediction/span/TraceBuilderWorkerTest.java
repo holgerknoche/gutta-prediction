@@ -21,6 +21,8 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
+import gutta.prediction.span.EntityEvent.EntityEventType;
+import gutta.prediction.span.TransactionEvent.TransactionEventType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -149,8 +151,11 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("component", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 500), new DirtyTransactionOverlay(500, 800)));
-        var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
+        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new EntityEvent(500, EntityEventType.WRITE, new Entity(new EntityType("et"), "e")), new TransactionEvent(800, TransactionEventType.COMMIT));
+        var expectedRootSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(200, 500), new DirtyTransactionOverlay(500, 800));
+        
+        var expectedRootSpan = new Span("component", 100, 1000, null, expectedRootSpanEvents, expectedRootSpanOverlays);
+        var expectedTrace = new Trace(1234, "uc", expectedRootSpan);                
         
         assertEquals(expectedTrace, spanTrace);
     }
@@ -196,11 +201,15 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new CleanTransactionOverlay(200, 300), new SuspendedTransactionOverlay(300, 700, false), new CleanTransactionOverlay(700, 800)));
-        new Span("component2", 300, 700, expectedRootSpan, List.of(), List.of(new CleanTransactionOverlay(300, 500), new DirtyTransactionOverlay(500, 700), new SuspendedTransactionOverlay(700, 800, true)));
+        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new TransactionEvent(800, TransactionEventType.COMMIT), new TransactionEvent(800, TransactionEventType.COMMIT));
+        var expectedRootSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(200, 300), new SuspendedTransactionOverlay(300, 700, false), new CleanTransactionOverlay(700, 800));
+        var expectedSubSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(300, 500), new DirtyTransactionOverlay(500, 700), new SuspendedTransactionOverlay(700, 800, true));
+        
+        var expectedRootSpan = new Span("component1", 100, 1000, null, expectedRootSpanEvents, expectedRootSpanOverlays);
+        new Span("component2", 300, 700, expectedRootSpan, List.of(), expectedSubSpanOverlays);
         
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
-        
+                
         assertEquals(expectedTrace, spanTrace);
     }
 
