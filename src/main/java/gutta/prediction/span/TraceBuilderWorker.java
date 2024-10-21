@@ -31,8 +31,8 @@ class TraceBuilderWorker implements TraceSimulationListener {
 
     private final Deque<SpanState> stack = new ArrayDeque<>();
     
-    private final Map<Transaction, SuspendedTransactionOverlay> pendingSuspendedOverlays = new HashMap<>();
-       
+    private final Map<Transaction, SpanState> pendingSuspendedStates = new HashMap<>();
+           
     private long traceId;
     
     private String traceName;
@@ -111,7 +111,9 @@ class TraceBuilderWorker implements TraceSimulationListener {
                 var newOverlay = new SuspendedTransactionOverlay(currentTimestamp, this.currentTransactionOverlay.isDirty());
                 
                 this.currentSpan.addOverlay(newOverlay);
-                this.pendingSuspendedOverlays.put(currentTransaction, newOverlay);
+                
+                var pendingState = new SpanState(this.currentSpan, newOverlay);
+                this.pendingSuspendedStates.put(currentTransaction, pendingState);                
             }            
         }
     }
@@ -141,30 +143,34 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.COMMIT));
-        this.completeTransactionOverlay(event, transaction);        
+        this.handleTransactionCompletion(event, transaction, TransactionEventType.COMMIT);
     }
     
-    private void completeTransactionOverlay(MonitoringEvent event, Transaction transaction) {
+    private void handleTransactionCompletion(MonitoringEvent event, Transaction transaction, TransactionEventType eventType) {
         var currentTimestamp = event.timestamp();
         
-        if (this.currentTransactionOverlay != null) {
-            // If an overlay is active, adjust the end timestamp and remove it so it is not touched again
-            this.currentTransactionOverlay.endTimestamp(currentTimestamp);
-            this.currentTransactionOverlay = null;
+        var pendingState = this.pendingSuspendedStates.remove(transaction);
+        TransactionOverlay affectedOverlay;
+        Span affectedSpan;
+        
+        if (pendingState == null) {
+            affectedOverlay = this.currentTransactionOverlay;
+            affectedSpan = this.currentSpan;
+        } else {
+            affectedOverlay = pendingState.transactionOverlay();
+            affectedSpan = pendingState.span();
         }
-
-        // If a suspended overlay is attached to the transaction, complete it 
-        var suspendedOverlay = this.pendingSuspendedOverlays.remove(transaction);
-        if (suspendedOverlay != null) {
-            suspendedOverlay.endTimestamp(event.timestamp());
+        
+        if (affectedOverlay != null) {
+            affectedOverlay.endTimestamp(currentTimestamp);
         }
+        
+        affectedSpan.addEvent(new TransactionEvent(currentTimestamp, eventType));
     }
         
     @Override
     public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        this.completeTransactionOverlay(event, transaction);
-        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.EXPLICIT_ABORT));
+        this.handleTransactionCompletion(event, transaction, TransactionEventType.EXPLICIT_ABORT);
     }
     
     @Override
