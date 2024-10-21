@@ -33,7 +33,7 @@ localComponentConnectionDeclaration:
 ;
 
 remoteComponentConnectionDeclaration:
-	symmetric='symmetric'? refToken='remote' source=name '->' target=name properties=propertiesDeclaration
+	asymmetric='asymmetric'? refToken='remote' source=name '->' target=name properties=propertiesDeclaration
 ;
 
 useCaseDeclaration:

@@ -35,7 +35,7 @@ class DeploymentModelBuilderTest {
                 "DataStore store {\n" +
                 "    EntityType type\n" +
                 "}\n" +
-                "symmetric remote component1 -> component2 [\n" +
+                "remote component1 -> component2 [\n" +
                 "    latency = 10\n" +
                 "]";
         

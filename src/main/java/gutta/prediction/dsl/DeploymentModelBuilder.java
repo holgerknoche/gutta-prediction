@@ -200,17 +200,17 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     }
     
     private void buildRemoteComponentConnection(Component sourceComponent, Component targetComponent, RemoteComponentConnectionDeclarationContext context) {
-        var symmetric = (context.symmetric != null);
+        var asymmetric = (context.asymmetric != null);
         var properties = toPropertyMap(context.properties);
         
         var latency = determineConnectionLatency(properties, context.refToken);
         var transactionPropagation = determineTransactionPropagation(properties);
         
-        if (symmetric) {
+        if (asymmetric) {
+            this.builder.addRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
+        } else {
             // TODO Check for existing "opposite" connections
             this.builder.addSymmetricRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
-        } else {
-            this.builder.addRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
         }
     }
     
