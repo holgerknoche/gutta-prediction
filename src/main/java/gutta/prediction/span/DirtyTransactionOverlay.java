@@ -36,4 +36,9 @@ public final class DirtyTransactionOverlay extends TransactionOverlay {
         return super.equalsInternal(that);
     }
     
+    @Override
+    public String toString() {
+        return "Dirty TX overlay [" + this.startTimestamp() + " -- " + this.endTimestamp() + "]";
+    }
+    
 }

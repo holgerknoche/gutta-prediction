@@ -34,5 +34,10 @@ public final class CleanTransactionOverlay extends TransactionOverlay {
     private boolean equalsInternal(CleanTransactionOverlay that) {
         return super.equalsInternal(that);
     }
+    
+    @Override
+    public String toString() {
+        return "Clean TX overlay [" + this.startTimestamp() + " -- " + this.endTimestamp() + "]";
+    }
 
 }

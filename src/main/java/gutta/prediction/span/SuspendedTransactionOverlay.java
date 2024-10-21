@@ -50,5 +50,10 @@ public final class SuspendedTransactionOverlay extends TransactionOverlay {
         
         return (this.dirty == that.dirty);
     }
+    
+    @Override
+    public String toString() {
+        return "Suspended TX overlay [" + this.startTimestamp() + " -- " + this.endTimestamp() + "], dirty: " + this.isDirty();
+    }
 
 }

@@ -141,13 +141,13 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         // Restore the state from the stack (including location, etc.)
         this.context.popCurrentState();
 
+        this.listeners.forEach(listener -> listener.afterComponentReturn(exitEvent, returnEvent, connection, this.context));
+        
         // If we return to a different transaction, notify the listeners that it is resumed
         var restoredTransaction = this.context.currentTransaction();
         if (restoredTransaction != null && restoredTransaction != transaction) {
             this.listeners.forEach(listener -> listener.onTransactionResume(returnEvent, restoredTransaction, this.context));
-        }
-        
-        this.listeners.forEach(listener -> listener.afterComponentReturn(exitEvent, returnEvent, connection, this.context));
+        }                
     }
     
     private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {

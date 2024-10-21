@@ -101,7 +101,7 @@ public class Span extends Interval implements TraceElement {
     
     @Override
     public String toString() {
-        return "Span '" + this.name + "', [" + this.startTimestamp() + " -- " + this.endTimestamp() + "]";
+        return "Span '" + this.name + "', [" + this.startTimestamp() + " -- " + this.endTimestamp() + "]\n events: " + this.events() + "\n overlays: " + this.spanOverlays + "\n children: " + this.children;
     }
 
 }

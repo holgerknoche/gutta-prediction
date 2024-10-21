@@ -141,8 +141,8 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        this.completeTransactionOverlay(event, transaction);
         this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.COMMIT));
+        this.completeTransactionOverlay(event, transaction);        
     }
     
     private void completeTransactionOverlay(MonitoringEvent event, Transaction transaction) {
