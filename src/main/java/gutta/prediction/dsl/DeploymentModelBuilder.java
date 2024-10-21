@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
+abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
     private static final TransactionBehavior DEFAULT_TX_BEHAVIOR = TransactionBehavior.SUPPORTED;
     
@@ -45,26 +45,22 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
     private final Set<String> knownServiceCandidates = new HashSet<>();
     
-    private final Set<String> knownEntityTypes = new HashSet<>();
-
-    private final DeploymentModel.Builder builder;
+    private final Set<String> knownEntityTypes = new HashSet<>();    
 
     private Component currentComponent;
     
     private DataStore currentDataStore;
     
-    public DeploymentModelBuilder() {
-        this.builder = new DeploymentModel.Builder();
+    private  final DeploymentModel.Builder builder;
+    
+    protected DeploymentModelBuilder(DeploymentModel.Builder builder) {
+        this.builder = builder;
     }
     
-    public DeploymentModelBuilder(DeploymentModel originalModel) {
-        this.builder = originalModel.applyModifications();
-    }
-
     public DeploymentModel getBuiltModel() {
         return this.builder.build();
     }
-
+    
     @Override
     public Void visitComponentDeclaration(ComponentDeclarationContext context) {
         var name = nameToString(context.name());
@@ -73,7 +69,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             throw new DeploymentModelParseException(context.refToken, "Duplicate component '" + name + "'.");
         }
 
-        var component = new Component(name);
+        var component = this.buildComponent(name);
         this.nameToComponent.put(name, component);
 
         this.currentComponent = component;
@@ -82,6 +78,8 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return null;
     }
+    
+    protected abstract Component buildComponent(String name);
 
     @Override
     public Void visitUseCaseDeclaration(UseCaseDeclarationContext context) {
@@ -91,7 +89,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             throw new DeploymentModelParseException(context.refToken, "Duplicate use case '" + name + "'.");
         }
 
-        var useCase = new UseCase(name);
+        var useCase = this.buildUseCase(name);
         this.knownUseCases.add(name);
 
         // Assign the use case to the current component
@@ -99,6 +97,8 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return null;
     }
+    
+    protected abstract UseCase buildUseCase(String name);
 
     @Override
     public Void visitServiceCandidateDeclaration(ServiceCandidateDeclarationContext context) {
@@ -111,12 +111,14 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var properties = toPropertyMap(context.properties);
 
         var transactionBehavior = determineTransactionBehavior(properties);
-        var serviceCandidate = new ServiceCandidate(name, transactionBehavior);
+        var serviceCandidate = this.buildServiceCandidate(name, transactionBehavior);
 
         this.builder.assignServiceCandidate(serviceCandidate, this.currentComponent);
 
         return null;
     }
+    
+    protected abstract ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior);
 
     private static TransactionBehavior determineTransactionBehavior(Map<String, PropertyValue> properties) {
         var propertyValue = properties.get("transactionBehavior");
@@ -130,9 +132,13 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             throw new DeploymentModelParseException(propertyValue.token(), "Unsupported transaction behavior '" + propertyValue.value() + "'.");
         }
     }
+    
+    protected Component resolveComponentByName(String name) {
+        return this.nameToComponent.get(name);
+    }
 
     private Component resolveComponent(String name, Token refToken) {
-        var component = this.nameToComponent.get(name);
+        var component = this.resolveComponentByName(name);
         if (component == null) {
             throw new DeploymentModelParseException(refToken, "Component '" + name + "' does not exist.");
         }
@@ -237,7 +243,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         }
         
         var readWriteConflictBehavior = determineReadWriteConflictBehavior(properties);
-        var dataStore = new DataStore(name, readWriteConflictBehavior);
+        var dataStore = this.buildDataStore(name, readWriteConflictBehavior);
         
         this.knownDataStores.add(name);
         
@@ -247,6 +253,8 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         
         return null;
     }
+    
+    protected abstract DataStore buildDataStore(String name, ReadWriteConflictBehavior readWriteConflictBehavior);
     
     @Override
     public Void visitEntityTypeDeclaration(EntityTypeDeclarationContext context) {
@@ -258,11 +266,13 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         
         this.knownEntityTypes.add(name);
         
-        var entityType = new EntityType(name);
+        var entityType = this.buildEntityType(name);
         this.builder.assignEntityType(entityType, this.currentDataStore);
         
         return null;
     }
+    
+    protected abstract EntityType buildEntityType(String name);
 
     private static Map<String, PropertyValue> toPropertyMap(PropertiesDeclarationContext context) {
         if (context == null || context.properties.isEmpty()) {
@@ -314,7 +324,7 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     
     private record ComponentPair(Component component1, Component component2) {
     };
-
+    
     static class DeploymentModelParseException extends RuntimeException {
 
         private static final long serialVersionUID = -3560623347221634775L;
@@ -328,5 +338,5 @@ class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         }
 
     }
-
+    
 }

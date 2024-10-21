@@ -22,7 +22,7 @@ public class DeploymentModelReader {
         
         var modelContext = parser.deploymentModel();
         
-        var modelBuilder = (originalModel == null) ? new DeploymentModelBuilder() : new DeploymentModelBuilder(originalModel);
+        var modelBuilder = (originalModel == null) ? new StandaloneDeploymentModelBuilder() : new DeltaDeploymentModelBuilder(originalModel);
         modelContext.accept(modelBuilder);
         
         return modelBuilder.getBuiltModel();

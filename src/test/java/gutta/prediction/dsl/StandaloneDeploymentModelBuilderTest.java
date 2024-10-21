@@ -19,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Test cases for the class {@link DeploymentModelBuilder}.
+ * Test cases for the class {@link StandaloneDeploymentModelBuilder}.
  */
-class DeploymentModelBuilderTest {
+class StandaloneDeploymentModelBuilderTest {
     
     @Test
     void simpleModel() {
@@ -155,7 +155,7 @@ class DeploymentModelBuilderTest {
         
         var modelContext = parser.deploymentModel();
         
-        var modelBuilder = new DeploymentModelBuilder();
+        var modelBuilder = new StandaloneDeploymentModelBuilder();
         modelContext.accept(modelBuilder);
         
         return modelBuilder.getBuiltModel();

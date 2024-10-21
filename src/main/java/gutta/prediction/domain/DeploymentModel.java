@@ -8,9 +8,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DeploymentModel {
-        
+    
     private final Map<UseCase, Component> useCaseAllocation;
     
     private final Map<ServiceCandidate, Component> serviceCandidateAllocation;
@@ -21,7 +22,13 @@ public class DeploymentModel {
     
     private final Map<String, UseCase> useCaseLookup;
     
-    private final Map<String, ServiceCandidate> serviceCandidateLookup;        
+    private final Map<String, ServiceCandidate> serviceCandidateLookup;
+    
+    private final Map<String, Component> componentLookup;
+    
+    private final Map<String, DataStore> dataStoreLookup;
+    
+    private final Map<String, EntityType> entityTypeLookup;
     
     public static Builder builder() {
         return new Builder();
@@ -33,16 +40,34 @@ public class DeploymentModel {
         this.entityTypeAllocation = entityTypeAllocation;
         this.componentConnections = componentConnections;
         
-        this.useCaseLookup = useCaseAllocation.keySet().stream().collect(Collectors.toMap(UseCase::name, Function.identity()));
-        this.serviceCandidateLookup = serviceCandidateAllocation.keySet().stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));
-    }
+        var allComponents = Stream.concat(this.serviceCandidateAllocation.values().stream(), this.useCaseAllocation.values().stream()).collect(Collectors.toSet());
         
+        // Build name-based lookups
+        this.useCaseLookup = useCaseAllocation.keySet().stream().collect(Collectors.toMap(UseCase::name, Function.identity()));
+        this.serviceCandidateLookup = serviceCandidateAllocation.keySet().stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));                
+        this.componentLookup = allComponents.stream().collect(Collectors.toMap(Component::name, Function.identity()));
+        this.dataStoreLookup = this.entityTypeAllocation.values().stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
+        this.entityTypeLookup = this.entityTypeAllocation.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
+    }
+            
     public Optional<ServiceCandidate> resolveServiceCandidateByName(String candidateName) {
         return Optional.ofNullable(this.serviceCandidateLookup.get(candidateName));
     }
     
     public Optional<UseCase> resolveUseCaseByName(String useCaseName) {
         return Optional.ofNullable(this.useCaseLookup.get(useCaseName));
+    }
+    
+    public Optional<Component> resolveComponentByName(String componentName) {
+        return Optional.ofNullable(this.componentLookup.get(componentName));
+    }
+    
+    public Optional<DataStore> resolveDataStoreByName(String dataStoreName) {
+        return Optional.ofNullable(this.dataStoreLookup.get(dataStoreName));
+    }
+    
+    public Optional<EntityType> resolveEntityTypeByName(String entityTypeName) {
+        return Optional.ofNullable(this.entityTypeLookup.get(entityTypeName));
     }
     
     public Optional<Component> getComponentForUseCase(UseCase useCase) {
