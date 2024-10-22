@@ -9,7 +9,7 @@ public class UITest {
         case "shapes" -> new DemoFrame();
         case "span" -> new SpanViewFrame();
         case "span-simulation" -> new SpanSimulationFrame();
-        case "use-cases" -> new UseCaseOverviewFrame();
+        case "use-cases" -> new TestUseCaseOverviewFrame();
         default -> new DemoFrame();
         };
 
