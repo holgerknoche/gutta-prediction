@@ -21,21 +21,18 @@ class StackWalker<T> {
         var transitionCount = 0;
         var currentVertex = startVertex;
         var stack = new ArrayDeque<Vertex<T>>(maxDepth);
-        
-        this.listener.onVertexEntry(currentVertex);
-        
+                
         // Generate the desired number of transitions
         while (transitionCount < numberOfTransitions) {
            if (stack.size() < maxDepth) {
                // Add a new invocation if there is stack depth to spare
                var probability = this.random.nextDouble(1.0);
-               var edge = currentVertex.selectEdge(probability);
-               
-               stack.push(currentVertex);
+               var edge = currentVertex.selectEdge(probability);                              
                
                currentVertex = edge.target();
                transitionCount++;
                                   
+               stack.push(currentVertex);
                this.listener.onVertexEntry(currentVertex);
            } else {
                // Otherwise, pop a random number of vertices of the stack before proceeding

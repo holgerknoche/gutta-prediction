@@ -67,7 +67,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     @Override
     public void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection,
             TraceSimulationContext context) {
-
+        
         if (locationChange(invocationEvent, entryEvent)) {            
             // Save the current state to the stack
             var newState = new SpanState(this.currentSpan, this.currentTransactionOverlay);
@@ -121,7 +121,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     @Override
     public void afterComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
             TraceSimulationContext context) {
-        
+                
         if (locationChange(exitEvent, returnEvent)) {
             // Restore the state from the stack. We do this after the component return so that possible end-of-transaction events are
             // added to the right span

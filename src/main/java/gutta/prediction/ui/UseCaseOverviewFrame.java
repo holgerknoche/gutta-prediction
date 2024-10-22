@@ -7,6 +7,7 @@ import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.event.codec.EventTraceDecoder;
 import gutta.prediction.span.TraceBuilder;
 
@@ -52,6 +53,7 @@ public class UseCaseOverviewFrame extends JFrame {
     private void initialize() {
         this.setTitle("Use Case Overview");
         this.setSize(new Dimension(1024, 768));
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
     
     private void initializeControls() {
@@ -77,21 +79,26 @@ public class UseCaseOverviewFrame extends JFrame {
         var serviceCandidate10 = new ServiceCandidate("Service Candidate 10", TransactionBehavior.SUPPORTED);
         
         var component1 = new Component("Component 1");
+        var component2 = new Component("Component 2");
+        var component3 = new Component("Component 3");
         
         this.deploymentModel = new DeploymentModel.Builder()
                 .assignUseCase(useCase1, component1)
-                .assignUseCase(useCase2, component1)
-                .assignUseCase(useCase3, component1)
+                .assignUseCase(useCase2, component2)
+                .assignUseCase(useCase3, component3)
                 .assignServiceCandidate(serviceCandidate1, component1)
-                .assignServiceCandidate(serviceCandidate2, component1)
-                .assignServiceCandidate(serviceCandidate3, component1)
+                .assignServiceCandidate(serviceCandidate2, component2)
+                .assignServiceCandidate(serviceCandidate3, component3)
                 .assignServiceCandidate(serviceCandidate4, component1)
-                .assignServiceCandidate(serviceCandidate5, component1)
-                .assignServiceCandidate(serviceCandidate6, component1)
+                .assignServiceCandidate(serviceCandidate5, component2)
+                .assignServiceCandidate(serviceCandidate6, component3)
                 .assignServiceCandidate(serviceCandidate7, component1)
-                .assignServiceCandidate(serviceCandidate8, component1)
-                .assignServiceCandidate(serviceCandidate9, component1)
+                .assignServiceCandidate(serviceCandidate8, component2)
+                .assignServiceCandidate(serviceCandidate9, component3)
                 .assignServiceCandidate(serviceCandidate10, component1)
+                .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
+                .addSymmetricRemoteConnection(component1, component3, 0, TransactionPropagation.NONE)
+                .addSymmetricRemoteConnection(component2, component3, 0, TransactionPropagation.NONE)
                 .build();
         
         try (var inputStream = new FileInputStream("traces.dat")) {
@@ -167,11 +174,37 @@ public class UseCaseOverviewFrame extends JFrame {
         this.tracesList.get().setListData(viewsArray);
     }
     
-    private record EventTraceView(EventTrace trace) {
+    private static class EventTraceView {
+        
+        private final String useCase;
+        
+        private final EventTrace trace;
+
+        private static String determineUseCaseName(EventTrace trace) {
+            if (trace.events().isEmpty()) {
+                return "<empty>";
+            } else {
+                var firstEvent = trace.events().get(0);
+                if (firstEvent instanceof UseCaseStartEvent startEvent) {
+                    return startEvent.name();
+                } else {
+                    return "<invalid trace>";
+                }
+            }
+        }
+        
+        public EventTraceView(EventTrace trace) {            
+            this.useCase = determineUseCaseName(trace);
+            this.trace = trace;
+        }
+        
+        public EventTrace trace() {
+            return this.trace;
+        }
         
         @Override
         public final String toString() {
-            return "Trace " + this.trace().toString();
+            return "Trace for Use case '" + this.useCase + "'";
         }
         
     }

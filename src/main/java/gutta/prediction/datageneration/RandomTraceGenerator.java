@@ -20,8 +20,12 @@ import gutta.prediction.event.codec.EventTraceEncoder;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -44,6 +48,22 @@ public class RandomTraceGenerator {
         var serviceCandidate8 = new ServiceCandidate("Service Candidate 8", TransactionBehavior.SUPPORTED);
         var serviceCandidate9 = new ServiceCandidate("Service Candidate 9", TransactionBehavior.SUPPORTED);
         var serviceCandidate10 = new ServiceCandidate("Service Candidate 10", TransactionBehavior.SUPPORTED);
+
+        var location1 = new ObservedLocation("test1", 123, 1);
+        var location2 = new ObservedLocation("test2", 456, 2);
+        var location3 = new ObservedLocation("test3", 789, 3);
+        
+        var serviceAllocation = new HashMap<ServiceCandidate, Location>();
+        serviceAllocation.put(serviceCandidate1, location1);
+        serviceAllocation.put(serviceCandidate2, location2);
+        serviceAllocation.put(serviceCandidate3, location3);
+        serviceAllocation.put(serviceCandidate4, location1);
+        serviceAllocation.put(serviceCandidate5, location2);
+        serviceAllocation.put(serviceCandidate6, location3);
+        serviceAllocation.put(serviceCandidate7, location1);
+        serviceAllocation.put(serviceCandidate8, location2);
+        serviceAllocation.put(serviceCandidate9, location3);
+        serviceAllocation.put(serviceCandidate10, location1);
         
         // First use case
         var useCase1 = new UseCase("Use Case 1");
@@ -98,6 +118,8 @@ public class RandomTraceGenerator {
         
         transitionGraph1.validate();
         
+        var candidates1 = List.of(serviceCandidate1, serviceCandidate2, serviceCandidate3, serviceCandidate4, serviceCandidate5, serviceCandidate6, serviceCandidate7, serviceCandidate8, serviceCandidate9, serviceCandidate10); 
+        
         // Second use case
         
         var useCase2 = new UseCase("Use Case 2");
@@ -131,6 +153,8 @@ public class RandomTraceGenerator {
                 );       
         
         transitionGraph2.validate();
+        
+        var candidates2 = List.of(serviceCandidate2, serviceCandidate4, serviceCandidate6, serviceCandidate8, serviceCandidate10);
         
         // Third use case
         
@@ -169,12 +193,14 @@ public class RandomTraceGenerator {
                 vertex1_10
                 );       
         
-        transitionGraph3.validate();
+        transitionGraph3.validate();                
+
+        var candidates3 = List.of(serviceCandidate1, serviceCandidate3, serviceCandidate5, serviceCandidate7, serviceCandidate9);
         
         return List.of(
-                new UseCaseSpecification(useCase1, List.of(serviceCandidate1, serviceCandidate2, serviceCandidate3, serviceCandidate4, serviceCandidate5, serviceCandidate6, serviceCandidate7, serviceCandidate8, serviceCandidate9, serviceCandidate10), transitionGraph1, vertex1_1),
-                new UseCaseSpecification(useCase2, List.of(serviceCandidate2, serviceCandidate4, serviceCandidate6, serviceCandidate8, serviceCandidate10), transitionGraph2, vertex2_1),
-                new UseCaseSpecification(useCase3, List.of(serviceCandidate1, serviceCandidate3, serviceCandidate5, serviceCandidate7, serviceCandidate9), transitionGraph3, vertex3_1)
+                new UseCaseSpecification(useCase1, candidates1, location1, serviceAllocation, transitionGraph1, vertex1_1),
+                new UseCaseSpecification(useCase2, candidates2, location2, serviceAllocation, transitionGraph2, vertex2_1),
+                new UseCaseSpecification(useCase3, candidates3, location3, serviceAllocation, transitionGraph3, vertex3_1)
                 );
     }
     
@@ -210,18 +236,18 @@ public class RandomTraceGenerator {
         
         var useCase = useCaseSpec.useCase();
         var transitionGraph = useCaseSpec.transitionGraph();
+        var startLocation = useCaseSpec.useCaseLocation();
         
         var events = new ArrayList<MonitoringEvent>();
         
-        var timestampGenerator = new TimestampGenerator(10, 0, 0);
-        var location = new ObservedLocation("test", 123, 45);
+        var timestampGenerator = new TimestampGenerator(10, 0, 0);              
         
-        events.add(new UseCaseStartEvent(traceId, timestampGenerator.nextStep(), location, useCase.name()));
+        events.add(new UseCaseStartEvent(traceId, timestampGenerator.nextStep(), startLocation, useCase.name()));
                 
-        var invocationGenerator = new InvocationGenerator(traceId, timestampGenerator, location, events::add);
+        var invocationGenerator = new InvocationGenerator(traceId, timestampGenerator, startLocation, useCaseSpec.candidateAllocation(), events::add);
         transitionGraph.stackWalk(useCaseSpec.startVertex(), numberOfInvocations, maxInvocationDepth, invocationGenerator);
         
-        events.add(new UseCaseEndEvent(traceId, timestampGenerator.nextStep(), location, useCase.name()));
+        events.add(new UseCaseEndEvent(traceId, timestampGenerator.nextStep(), startLocation, useCase.name()));
         
         return EventTrace.of(events);
     }
@@ -232,34 +258,43 @@ public class RandomTraceGenerator {
         
         private final TimestampGenerator timestampGenerator;
         
-        private final Location location;
+        private final Map<ServiceCandidate, Location> candidateAllocation;
         
         private final Consumer<MonitoringEvent> eventConsumer;
         
-        public InvocationGenerator(long traceId, TimestampGenerator timestampGenerator, Location location, Consumer<MonitoringEvent> eventConsumer) {
+        private final Deque<Location> stack = new ArrayDeque<>();
+        
+        public InvocationGenerator(long traceId, TimestampGenerator timestampGenerator, Location startLocation, Map<ServiceCandidate, Location> candidateAllocation, Consumer<MonitoringEvent> eventConsumer) {
             this.traceId = traceId;
             this.timestampGenerator = timestampGenerator;
-            this.location = location;
+            this.candidateAllocation = candidateAllocation;
             this.eventConsumer = eventConsumer;
+            this.stack.push(startLocation);
         }
         
         @Override
         public void onVertexEntry(Vertex<ServiceCandidate> vertex) {
             var candidateName = vertex.label().name();
-            
-            var invocationEvent = new ServiceCandidateInvocationEvent(this.traceId, this.timestampGenerator.nextStep(), this.location, candidateName);
-            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, this.timestampGenerator.nextLatency(), this.location, candidateName);
+            var sourceLocation = this.stack.peek();
+            var targetLocation = this.candidateAllocation.get(vertex.label());            
+                        
+            var invocationEvent = new ServiceCandidateInvocationEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
+            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, this.timestampGenerator.nextLatency(), targetLocation, candidateName);
             
             this.eventConsumer.accept(invocationEvent);
             this.eventConsumer.accept(entryEvent);
+            
+            this.stack.push(targetLocation);
         }
 
         @Override
         public void onVertexExit(Vertex<ServiceCandidate> vertex) {
             var candidateName = vertex.label().name();
+            var sourceLocation = this.stack.pop();
+            var targetLocation = this.stack.peek();
             
-            var exitEvent = new ServiceCandidateExitEvent(this.traceId, this.timestampGenerator.nextStep(), this.location, candidateName);
-            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, this.timestampGenerator.nextLatency(), this.location, candidateName);
+            var exitEvent = new ServiceCandidateExitEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
+            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, this.timestampGenerator.nextLatency(), targetLocation, candidateName);
             
             this.eventConsumer.accept(exitEvent);
             this.eventConsumer.accept(returnEvent);            
@@ -267,6 +302,6 @@ public class RandomTraceGenerator {
         
     }
     
-    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex) {}
+    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex) {}
     
 }
