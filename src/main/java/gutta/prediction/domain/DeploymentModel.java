@@ -180,6 +180,7 @@ public class DeploymentModel {
         
         public Builder addLocalConnection(Component sourceComponent, Component targetComponent) {
             this.addConnection(new LocalComponentConnection(sourceComponent, targetComponent, this.modificationInProgress));
+            this.addConnection(new LocalComponentConnection(targetComponent, sourceComponent, this.modificationInProgress));
             return this;
         }
         
