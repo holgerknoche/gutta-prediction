@@ -175,12 +175,7 @@ public class DeploymentModel {
 
         private void addConnection(ComponentConnection connection) {
             var connectionKey = new ConnectionKey(connection);
-            this.componentConnections.put(connectionKey, connection);
-            
-            if (connection.isSymmetric() && !(connection.source().equals(connection.target()))) {
-                var symmetricKey = new ConnectionKey(connection.target(), connection.source());
-                this.componentConnections.put(symmetricKey, connection);
-            }
+            this.componentConnections.put(connectionKey, connection);            
         }
         
         public Builder addLocalConnection(Component sourceComponent, Component targetComponent) {
@@ -189,12 +184,13 @@ public class DeploymentModel {
         }
         
         public Builder addRemoteConnection(Component sourceComponent, Component targetComponent, long latency, TransactionPropagation propagation) {
-            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, false, latency, propagation, this.modificationInProgress));
+            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, latency, propagation, this.modificationInProgress));
             return this;
         }        
         
         public Builder addSymmetricRemoteConnection(Component sourceComponent, Component targetComponent, long latency, TransactionPropagation propagation) {
-            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, true, latency, propagation, this.modificationInProgress));
+            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, latency, propagation, this.modificationInProgress));
+            this.addConnection(new RemoteComponentConnection(targetComponent, sourceComponent, latency, propagation, this.modificationInProgress));
             return this;
         }
         

@@ -3,17 +3,14 @@ package gutta.prediction.domain;
 import gutta.prediction.util.EqualityUtil;
 
 public final class RemoteComponentConnection extends ComponentConnection {
-    
-    private final boolean symmetric;
-    
+        
     private final long latency;
     
     private final TransactionPropagation transactionPropagation;
     
-    public RemoteComponentConnection(Component source, Component target, boolean symmetric, long latency, TransactionPropagation transactionPropagation, boolean synthetic) {
+    public RemoteComponentConnection(Component source, Component target, long latency, TransactionPropagation transactionPropagation, boolean synthetic) {
         super(source, target, synthetic);
         
-        this.symmetric = symmetric;
         this.latency = latency;
         this.transactionPropagation = transactionPropagation;
     }
@@ -21,11 +18,6 @@ public final class RemoteComponentConnection extends ComponentConnection {
     @Override
     public long latency() {
         return this.latency;
-    }
-
-    @Override
-    public boolean isSymmetric() {
-        return this.symmetric;
     }
 
     @Override
@@ -53,9 +45,13 @@ public final class RemoteComponentConnection extends ComponentConnection {
             return false;
         }
         
-        return (this.symmetric == that.symmetric) &&
-                (this.latency == that.latency) &&
+        return (this.latency == that.latency) &&
                 (this.transactionPropagation == that.transactionPropagation);
+    }
+    
+    @Override
+    public String toString() {
+        return "remote " + this.source() + " -> " + this.target();
     }
     
 }

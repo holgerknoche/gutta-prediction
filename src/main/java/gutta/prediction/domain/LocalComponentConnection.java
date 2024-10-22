@@ -9,11 +9,6 @@ public final class LocalComponentConnection extends ComponentConnection {
     }
     
     @Override
-    public boolean isSymmetric() {
-        return true;
-    }
-
-    @Override
     public long latency() {
         return 0;
     }
@@ -40,6 +35,11 @@ public final class LocalComponentConnection extends ComponentConnection {
     
     private boolean equalsInternal(LocalComponentConnection that) {
         return super.equalsInternal(that);
+    }
+    
+    @Override
+    public String toString() {
+        return "local " + this.source() + " -- " + this.target();
     }
 
 }

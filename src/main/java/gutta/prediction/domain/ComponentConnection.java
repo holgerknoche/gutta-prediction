@@ -31,9 +31,7 @@ public abstract class ComponentConnection {
     }
     
     public abstract long latency();
-    
-    public abstract boolean isSymmetric();
-    
+        
     public abstract boolean isRemote();
     
     public boolean canPropagateTransactions() {

@@ -179,6 +179,8 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
             var sourceComponent = this.currentComponent();
             var connection = this.findConnectionForCandidateEntry(invokedCandidateName, sourceComponent, event);
             
+            System.out.println("Transitioning from " + sourceComponent + " via " + connection + " due to " + invokedCandidateName);
+            
             this.performComponentTransition(event, entryEvent, connection);
         } else {
             throw new IllegalStateException("A service candidate invocation event is not followed by a service candidate entry event.");
