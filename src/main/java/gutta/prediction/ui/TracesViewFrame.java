@@ -39,7 +39,7 @@ class TracesViewFrame extends UIFrameTemplate {
     }
     
     private void initializeControls() {
-        var layout = new GridBagLayoutBuilder(this, 1, 2);
+        var layout = new SimpleGridBagLayout(this, 1, 2);
                 
         layout.add(this.tracesListPane.get(), 0, 0, 1, 1);
         layout.add(this.traceViewPane.get(), 0, 1, 1, 1);

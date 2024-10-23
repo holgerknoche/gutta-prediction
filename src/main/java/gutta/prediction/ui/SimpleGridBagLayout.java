@@ -6,7 +6,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Arrays;
 
-class GridBagLayoutBuilder {
+class SimpleGridBagLayout {
     
     private final GridBagLayout layout;        
 
@@ -14,7 +14,7 @@ class GridBagLayoutBuilder {
     
     private final GridBagConstraints constraints = new GridBagConstraints();
     
-    public GridBagLayoutBuilder(Container container, int numberOfColumns, int numberOfRows) {
+    public SimpleGridBagLayout(Container container, int numberOfColumns, int numberOfRows) {
         this.container = container;
         this.layout = new GridBagLayout();
         
@@ -31,22 +31,22 @@ class GridBagLayoutBuilder {
         this.layout.rowWeights = rowWeights;
     }
     
-    public GridBagLayoutBuilder fill(int fillType) {
+    public SimpleGridBagLayout fill(int fillType) {
         this.constraints.fill = fillType;
         return this;
     }
     
-    public GridBagLayoutBuilder columnWeights(double... weights) {
+    public SimpleGridBagLayout columnWeights(double... weights) {
         this.layout.columnWeights = weights;
         return this;
     }
     
-    public GridBagLayoutBuilder rowWeights(double... weights) {
+    public SimpleGridBagLayout rowWeights(double... weights) {
         this.layout.rowWeights = weights;
         return this;
     }
     
-    public GridBagLayoutBuilder add(Component component, int gridX, int gridY, int width, int height) {
+    public SimpleGridBagLayout add(Component component, int gridX, int gridY, int width, int height) {
         this.constraints.gridx = gridX;
         this.constraints.gridy = gridY;
         this.constraints.gridheight = height;

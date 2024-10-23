@@ -13,6 +13,8 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
@@ -38,6 +41,8 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private final InitializeOnce<JTable> useCasesTable = new InitializeOnce<>(this::createUseCasesTable);
 
     private Map<String, Collection<EventTrace>> tracesPerUseCase = new HashMap<>();
+    
+    private String deploymentModelSpec;
     
     private DeploymentModel deploymentModel;
     
@@ -84,6 +89,7 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         var analysisMenu = new JMenu("Analysis");
         
         var latencyChangeMenuItem = new JMenuItem("Latency change analysis...");
+        latencyChangeMenuItem.addActionListener(this::performLatencyAnalysisAction);
         analysisMenu.add(latencyChangeMenuItem);        
         
         var consistencyChangeMenuItem = new JMenuItem("Consistency change analysis...");
@@ -159,17 +165,30 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     }
     
     private void loadDeploymentModelFromFile(File file) {
-        try (var inputStream = new FileInputStream(file)) {
-            this.deploymentModel = new DeploymentModelReader().readModel(inputStream);            
+        try {
+            var modelSpec = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            var model = new DeploymentModelReader().readModel(modelSpec);
+            
+            this.deploymentModelSpec = modelSpec;
+            this.deploymentModel = model;            
         } catch (IOException e) {
-            e.printStackTrace();
-        }
+            throw new RuntimeException(e);
+        }            
     }
 
     private void refreshUseCaseTable(Map<String, UseCaseOverviewAnalysis.UseCaseOverview> useCaseOverviews) {
         this.useCasesTable.get().setModel(new UseCaseTableModel(useCaseOverviews));
     }
 
+    private void performLatencyAnalysisAction(ActionEvent event) {
+        if (this.deploymentModel == null) {
+            JOptionPane.showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
+        }
+        
+        var frame = new UseCaseLatencyAnalysisFrame(this.deploymentModelSpec, this.deploymentModel);
+        frame.setVisible(true);
+    }
+    
     private static class UseCaseTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = -5733710300186756473L;
