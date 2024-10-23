@@ -83,6 +83,12 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private JMenu createAnalysisMenu() {
         var analysisMenu = new JMenu("Analysis");
         
+        var latencyChangeMenuItem = new JMenuItem("Latency change analysis...");
+        analysisMenu.add(latencyChangeMenuItem);        
+        
+        var consistencyChangeMenuItem = new JMenuItem("Consistency change analysis...");
+        analysisMenu.add(consistencyChangeMenuItem);
+        
         return analysisMenu;
     }
 
