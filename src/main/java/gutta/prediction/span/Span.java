@@ -63,6 +63,10 @@ public class Span extends Interval implements TraceElement {
         return Collections.unmodifiableList(this.spanEvents);
     }
     
+    public List<SpanOverlay> overlays() {
+        return Collections.unmodifiableList(this.spanOverlays);
+    }
+    
     @Override
     public <R> R accept(TraceElementVisitor<R> visitor) {
         return visitor.handleSpan(this);

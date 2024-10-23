@@ -25,6 +25,10 @@ class TimestampGenerator {
         this.maxLatency = maxLatency;
     }
     
+    public long noStep() {
+        return this.currentTimestamp;
+    }
+    
     public long nextStep() {
         return (this.currentTimestamp += this.stepSize);
     }

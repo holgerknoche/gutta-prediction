@@ -277,9 +277,11 @@ public class RandomTraceGenerator {
             var candidateName = vertex.label().name();
             var sourceLocation = this.stack.peek();
             var targetLocation = this.candidateAllocation.get(vertex.label());            
-                        
+
+            var remoteInvocation = (!sourceLocation.equals(targetLocation));
+            
             var invocationEvent = new ServiceCandidateInvocationEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
-            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, this.timestampGenerator.nextLatency(), targetLocation, candidateName);
+            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextLatency() : this.timestampGenerator.noStep()), targetLocation, candidateName);
             
             this.eventConsumer.accept(invocationEvent);
             this.eventConsumer.accept(entryEvent);
@@ -293,8 +295,10 @@ public class RandomTraceGenerator {
             var sourceLocation = this.stack.pop();
             var targetLocation = this.stack.peek();
             
+            var remoteInvocation = (!sourceLocation.equals(targetLocation));
+            
             var exitEvent = new ServiceCandidateExitEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
-            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, this.timestampGenerator.nextLatency(), targetLocation, candidateName);
+            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextLatency() : this.timestampGenerator.noStep()), targetLocation, candidateName);
             
             this.eventConsumer.accept(exitEvent);
             this.eventConsumer.accept(returnEvent);            

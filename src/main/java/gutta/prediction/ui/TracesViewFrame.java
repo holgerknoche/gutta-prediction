@@ -1,13 +1,11 @@
 package gutta.prediction.ui;
 
-import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
-import gutta.prediction.span.TraceBuilder;
+import gutta.prediction.span.ObservedTraceBuilder;
 
 import java.awt.event.MouseEvent;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.JScrollPane;
@@ -25,13 +23,10 @@ class TracesViewFrame extends UIFrameTemplate {
     private final InitializeOnce<JScrollPane> traceViewPane = new InitializeOnce<>(this::createTraceViewPane);
     
     private final InitializeOnce<TraceViewComponent> traceView = new InitializeOnce<>(this::createTraceView);
-    
-    private final DeploymentModel deploymentModel;
-    
+        
     private final List<TraceView> traceViews;
     
-    public TracesViewFrame(String useCaseName, Collection<EventTrace> traces, DeploymentModel deploymentModel) {
-        this.deploymentModel = deploymentModel;
+    public TracesViewFrame(String useCaseName, Collection<EventTrace> traces) {
         this.traceViews = traces.stream().map(TraceView::new).collect(Collectors.toList());
         
         this.initialize(useCaseName);
@@ -60,7 +55,7 @@ class TracesViewFrame extends UIFrameTemplate {
     
     private JTable createTracesTable() {
         var table = new JTable();
-        
+                
         table.addMouseListener(new MouseBaseListener() {
             
             @Override
@@ -71,7 +66,7 @@ class TracesViewFrame extends UIFrameTemplate {
                 var view = TracesViewFrame.this.traceViews.get(rowIndex);
                 var trace = view.trace();
                 
-                var spanTrace = new TraceBuilder().buildTrace(trace, TracesViewFrame.this.deploymentModel, Set.of());
+                var spanTrace = new ObservedTraceBuilder(trace).buildTrace();
                 TracesViewFrame.this.traceView.get().trace(spanTrace);
             }
             

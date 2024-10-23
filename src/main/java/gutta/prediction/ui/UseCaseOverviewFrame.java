@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
@@ -98,19 +97,14 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             
             @Override
             public void mouseClicked(MouseEvent event) {
-                if (event.getClickCount() == 2) {
-                    if (UseCaseOverviewFrame.this.deploymentModel == null) {
-                        JOptionPane.showMessageDialog(UseCaseOverviewFrame.this, "No deployment model loaded. Please load a deployment model first.");
-                        return;
-                    }
-                    
+                if (event.getClickCount() == 2) {                    
                     var table = useCasesTable.get();
                     
                     var row = table.rowAtPoint(event.getPoint());
                     var useCaseName = (String) table.getValueAt(row, 0);
                     var traces = tracesPerUseCase.get(useCaseName);
                     
-                    var tracesFrame = new TracesViewFrame(useCaseName, traces, UseCaseOverviewFrame.this.deploymentModel);
+                    var tracesFrame = new TracesViewFrame(useCaseName, traces);
                     tracesFrame.setVisible(true);
                 }
             }

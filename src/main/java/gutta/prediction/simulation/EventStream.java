@@ -1,5 +1,6 @@
 package gutta.prediction.simulation;
 
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
 
 import java.util.List;
@@ -13,6 +14,10 @@ public class EventStream {
 
     private int currentPosition;
 
+    public EventStream(EventTrace trace) {
+        this(trace.events());
+    }
+    
     public EventStream(List<MonitoringEvent> events) {
         this.events = events;
         this.maxPosition = (events.size() - 1);
