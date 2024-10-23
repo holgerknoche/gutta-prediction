@@ -1,28 +1,34 @@
 package gutta.prediction.ui;
 
 import gutta.prediction.analysis.overview.UseCaseOverviewAnalysis;
+import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.dsl.DeploymentModelReader;
+import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.codec.EventTraceDecoder;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-class UseCaseOverviewFrame extends JFrame {
+class UseCaseOverviewFrame extends UIFrameTemplate {
 
     private static final long serialVersionUID = 1827116057177051262L;
 
@@ -32,15 +38,17 @@ class UseCaseOverviewFrame extends JFrame {
 
     private final InitializeOnce<JTable> useCasesTable = new InitializeOnce<>(this::createUseCasesTable);
 
+    private Map<String, Collection<EventTrace>> tracesPerUseCase = new HashMap<>();
+    
+    private DeploymentModel deploymentModel;
+    
     public UseCaseOverviewFrame() {
         this.initialize();
         this.initializeControls();
     }
 
     private void initialize() {
-        this.setTitle("Use Case Overview");
-        this.setSize(new Dimension(1024, 768));
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        super.initialize("Use Case Overview");
     }
 
     private void initializeControls() {
@@ -54,6 +62,7 @@ class UseCaseOverviewFrame extends JFrame {
         var menuBar = new JMenuBar();
 
         menuBar.add(this.createTracesMenu());
+        menuBar.add(this.createAnalysisMenu());
 
         return menuBar;
     }
@@ -61,11 +70,21 @@ class UseCaseOverviewFrame extends JFrame {
     private JMenu createTracesMenu() {
         var tracesMenu = new JMenu("Traces");
 
-        var loadMenuItem = new JMenuItem("Load...");
-        loadMenuItem.addActionListener(this::loadTracesAction);
-        tracesMenu.add(loadMenuItem);
-
+        var loadTracesMenuItem = new JMenuItem("Load Traces...");
+        loadTracesMenuItem.addActionListener(this::loadTracesAction);
+        tracesMenu.add(loadTracesMenuItem);
+        
+        var loadModelMenuItem = new JMenuItem("Load Deployment Model...");
+        loadModelMenuItem.addActionListener(this::loadDeploymentModelAction);
+        tracesMenu.add(loadModelMenuItem);
+        
         return tracesMenu;
+    }
+    
+    private JMenu createAnalysisMenu() {
+        var analysisMenu = new JMenu("Analysis");
+        
+        return analysisMenu;
     }
 
     private JScrollPane createUseCasesTablePane() {
@@ -75,30 +94,73 @@ class UseCaseOverviewFrame extends JFrame {
     private JTable createUseCasesTable() {
         var table = new JTable();
 
+        table.addMouseListener(new MouseBaseListener() {
+            
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2) {
+                    if (UseCaseOverviewFrame.this.deploymentModel == null) {
+                        JOptionPane.showMessageDialog(UseCaseOverviewFrame.this, "No deployment model loaded. Please load a deployment model first.");
+                        return;
+                    }
+                    
+                    var table = useCasesTable.get();
+                    
+                    var row = table.rowAtPoint(event.getPoint());
+                    var useCaseName = (String) table.getValueAt(row, 0);
+                    var traces = tracesPerUseCase.get(useCaseName);
+                    
+                    var tracesFrame = new TracesViewFrame(useCaseName, traces, UseCaseOverviewFrame.this.deploymentModel);
+                    tracesFrame.setVisible(true);
+                }
+            }
+            
+        });
+        
         return table;
     }
 
     private void loadTracesAction(ActionEvent event) {
+        var selectedFile = this.loadFileWithDialog();
+        
+        selectedFile.ifPresent(this::loadTracesFromFile);
+    }
+
+    private void loadDeploymentModelAction(ActionEvent event) {
+        var selectedFile = this.loadFileWithDialog();
+        
+        selectedFile.ifPresent(this::loadDeploymentModelFromFile);
+    }
+    
+    private Optional<File> loadFileWithDialog() {
         var openDialog = new FileDialog(this);
         openDialog.setMultipleMode(false);
         openDialog.setVisible(true);
 
         var selectedFiles = openDialog.getFiles();
         if (selectedFiles.length == 0) {
-            return;
+            return Optional.empty();
         } else {
-            var selectedFile = selectedFiles[0];
-            this.loadTracesFromFile(selectedFile);
+            return Optional.of(selectedFiles[0]);            
         }
     }
-
+    
     private void loadTracesFromFile(File file) {
         try (var inputStream = new FileInputStream(file)) {
             var eventTraces = new EventTraceDecoder().decodeTraces(inputStream);
-            System.out.println(eventTraces.size() + " traces read from " + file);
-
-            var results = new UseCaseOverviewAnalysis().analyzeTraces(eventTraces);
+            
+            this.tracesPerUseCase = UseCaseOverviewAnalysis.groupByUseCase(eventTraces);
+            
+            var results = new UseCaseOverviewAnalysis().analyzeTraces(eventTraces);            
             this.refreshUseCaseTable(results);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void loadDeploymentModelFromFile(File file) {
+        try (var inputStream = new FileInputStream(file)) {
+            this.deploymentModel = new DeploymentModelReader().readModel(inputStream);            
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -131,19 +193,13 @@ class UseCaseOverviewFrame extends JFrame {
         
         @Override
         public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return "Use Case";
-            case 1:
-                return "# of Traces";
-            case 2:
-                return "Avg. Duration";
-            case 3:
-                return "Latency %";
-
-            default:
-                return "";
-            }
+            return switch (column) {
+            case 0 -> "Use Case";
+            case 1 -> "# of Traces";
+            case 2 -> "Avg. Duration";
+            case 3 -> "Latency %";
+            default -> "";
+            };
         }
 
         @Override

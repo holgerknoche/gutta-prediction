@@ -65,7 +65,7 @@ public class UseCaseOverviewAnalysis {
         
         for (var trace : traces) {
             var traceDuration = determineDuration(trace);
-            var traceLatency = new LatencySummarizer().determineLatencyIn(trace);
+            var traceLatency = determineLatency(trace);
             
             totalDuration += traceDuration;
             totalLatency += traceLatency;
@@ -77,7 +77,7 @@ public class UseCaseOverviewAnalysis {
         return new UseCaseOverview(traces, averageDuration, latencyPercentage);
     }
     
-    private static long determineDuration(EventTrace trace) {
+    public static long determineDuration(EventTrace trace) {
         var traceEvents = trace.events();
         
         if (traceEvents.size() < 2) {
@@ -88,6 +88,10 @@ public class UseCaseOverviewAnalysis {
         var lastEvent = traceEvents.get(traceEvents.size() - 1);
         
         return Math.max(0L, (lastEvent.timestamp() - firstEvent.timestamp()));
+    }
+    
+    public static long determineLatency(EventTrace trace) {
+        return new LatencySummarizer().determineLatencyIn(trace);
     }
 
     public record UseCaseOverview(Collection<EventTrace> traces, double averageDuration, double latencyPercentage) {}

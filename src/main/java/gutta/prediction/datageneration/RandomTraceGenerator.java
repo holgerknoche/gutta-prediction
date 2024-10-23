@@ -199,7 +199,7 @@ public class RandomTraceGenerator {
         
         return List.of(
                 new UseCaseSpecification(useCase1, candidates1, location1, serviceAllocation, transitionGraph1, vertex1_1),
-                new UseCaseSpecification(useCase2, candidates2, location2, serviceAllocation, transitionGraph2, vertex2_1),
+                new UseCaseSpecification(useCase2, candidates2, location2, serviceAllocation, transitionGraph2, vertex2_1, 10, 20),
                 new UseCaseSpecification(useCase3, candidates3, location3, serviceAllocation, transitionGraph3, vertex3_1)
                 );
     }
@@ -240,7 +240,7 @@ public class RandomTraceGenerator {
         
         var events = new ArrayList<MonitoringEvent>();
         
-        var timestampGenerator = new TimestampGenerator(10, 0, 0);              
+        var timestampGenerator = new TimestampGenerator(10, useCaseSpec.minLatency(), useCaseSpec.maxLatency());              
         
         events.add(new UseCaseStartEvent(traceId, timestampGenerator.nextStep(), startLocation, useCase.name()));
                 
@@ -302,6 +302,13 @@ public class RandomTraceGenerator {
         
     }
     
-    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex) {}
+    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex, long minLatency, long maxLatency) {
+        
+        public UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex) {
+            this(useCase, serviceCandidates, useCaseLocation, candidateAllocation, transitionGraph, startVertex, 0, 0);
+        }
+        
+    }
+    
     
 }
