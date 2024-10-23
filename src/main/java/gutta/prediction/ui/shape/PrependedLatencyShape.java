@@ -1,4 +1,4 @@
-package gutta.prediction.ui;
+package gutta.prediction.ui.shape;
 
 class PrependedLatencyShape extends SyntheticLatencyShape {
 

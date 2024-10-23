@@ -1,6 +1,8 @@
 package gutta.prediction.ui;
 
 import gutta.prediction.span.Trace;
+import gutta.prediction.ui.shape.DrawableShape;
+import gutta.prediction.ui.shape.SpanComponentsCreator;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
 

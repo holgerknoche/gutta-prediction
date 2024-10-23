@@ -1,4 +1,4 @@
-package gutta.prediction.ui;
+package gutta.prediction.ui.shape;
 
 import java.util.ArrayList;
 import java.util.List;

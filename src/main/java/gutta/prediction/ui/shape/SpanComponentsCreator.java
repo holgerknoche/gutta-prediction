@@ -1,4 +1,4 @@
-package gutta.prediction.ui;
+package gutta.prediction.ui.shape;
 
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.analysis.consistency.ConsistencyIssueVisitor;
@@ -16,14 +16,14 @@ import gutta.prediction.span.Trace;
 import gutta.prediction.span.TraceElementVisitor;
 import gutta.prediction.span.TransactionEvent;
 import gutta.prediction.span.TransactionOverlay;
-import gutta.prediction.ui.EntityEventShape.EntityEventType;
-import gutta.prediction.ui.TransactionEventShape.TransactionEventType;
-import gutta.prediction.ui.TransactionIssueShape.IssueType;
-import gutta.prediction.ui.TransactionMarkerShape.TransactionState;
+import gutta.prediction.ui.shape.EntityEventShape.EntityEventType;
+import gutta.prediction.ui.shape.TransactionEventShape.TransactionEventType;
+import gutta.prediction.ui.shape.TransactionIssueShape.IssueType;
+import gutta.prediction.ui.shape.TransactionMarkerShape.TransactionState;
 
 import java.util.List;
 
-class SpanComponentsCreator implements TraceElementVisitor<Void> {    
+public class SpanComponentsCreator implements TraceElementVisitor<Void> {    
 
     private static final int NUMBER_OF_LAYERS = 4;
     

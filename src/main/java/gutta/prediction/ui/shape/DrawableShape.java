@@ -1,8 +1,8 @@
-package gutta.prediction.ui;
+package gutta.prediction.ui.shape;
 
 import java.awt.Graphics2D;
 
-interface DrawableShape {
+public interface DrawableShape {
 
     void drawOn(Graphics2D graphics);
 

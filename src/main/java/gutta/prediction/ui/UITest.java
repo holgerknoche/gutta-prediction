@@ -6,11 +6,10 @@ public class UITest {
         var testCase = (arguments.length > 0) ? arguments[0] : "shapes";
 
         var frameToShow = switch (testCase) {        
-        case "shapes" -> new DemoFrame();
         case "span" -> new SpanViewFrame();
         case "span-simulation" -> new SpanSimulationFrame();
         case "use-cases" -> new TestUseCaseOverviewFrame();
-        default -> new DemoFrame();
+        default -> new SpanViewFrame();
         };
 
         frameToShow.setVisible(true);
