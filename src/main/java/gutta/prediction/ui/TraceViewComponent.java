@@ -3,8 +3,6 @@ package gutta.prediction.ui;
 import gutta.prediction.span.Trace;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
 
 import java.awt.Dimension;
 import java.awt.FileDialog;
@@ -14,7 +12,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -111,13 +108,13 @@ class TraceViewComponent extends TraceComponent {
     }
     
     private void saveToSvg(File file) {
-        DOMImplementation domImplementation = GenericDOMImplementation.getDOMImplementation();
-        Document document = domImplementation.createDocument(SVG_NAMESPACE, "svg", null);
-        SVGGraphics2D svgGraphics = new SVGGraphics2D(document);
+        var domImplementation = GenericDOMImplementation.getDOMImplementation();
+        var document = domImplementation.createDocument(SVG_NAMESPACE, "svg", null);
+        var svgGraphics = new SVGGraphics2D(document);
 
         this.paint(svgGraphics);
 
-        try (Writer writer = new FileWriter(file)) {
+        try (var writer = new FileWriter(file)) {
             svgGraphics.stream(writer, true);
         } catch (IOException e) {
             throw new RuntimeException(e);
