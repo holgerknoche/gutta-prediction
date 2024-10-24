@@ -14,12 +14,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JMenu;
@@ -29,7 +29,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.table.AbstractTableModel;
 
 class UseCaseOverviewFrame extends UIFrameTemplate {
 
@@ -207,7 +206,19 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     }
 
     private void refreshUseCaseTable(Map<String, UseCaseOverviewAnalysis.UseCaseOverview> useCaseOverviews) {
-        this.useCasesTable.get().setModel(new UseCaseTableModel(useCaseOverviews));
+        var views = new ArrayList<UseCaseView>();
+
+        for (var entry : useCaseOverviews.entrySet()) {
+            var useCaseName = entry.getKey();
+            var overview = entry.getValue();
+            
+            var view = new UseCaseView(useCaseName, overview.traces().size(), overview.averageDuration(), overview.latencyPercentage());
+            views.add(view);
+        }
+        
+        views.sort((view1, view2) -> view1.useCaseName().compareTo(view2.useCaseName()));
+        
+        this.useCasesTable.get().setModel(new UseCaseTableModel(views));
     }
 
     private void performLatencyAnalysisAction(ActionEvent event) {
@@ -219,72 +230,31 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         frame.setVisible(true);
     }
     
-    private static class UseCaseTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = -5733710300186756473L;
-
-        private final List<String> useCaseNames;
-
-        private final Map<String, UseCaseOverviewAnalysis.UseCaseOverview> useCaseOverviews;
-
-        public UseCaseTableModel(Map<String, UseCaseOverviewAnalysis.UseCaseOverview> useCaseOverviews) {
-            var useCaseNames = useCaseOverviews.keySet().stream().collect(Collectors.toList());
-            useCaseNames.sort(String::compareTo);
-
-            this.useCaseNames = useCaseNames;
-            this.useCaseOverviews = useCaseOverviews;
-        }
-
-        @Override
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return false;
-        }
+    private record UseCaseView(String useCaseName, int numberOfTraces, double averageDuration, double latencyPercentage) {
         
+    }
+    
+    private static class UseCaseTableModel extends SimpleTableModel<UseCaseView> {
+
+        private static final List<String> COLUMN_NAMES = List.of("Use Case", "# of Traces", "Avg. Duration", "Latency %");
+        
+        private static final long serialVersionUID = -5733710300186756473L;
+        
+        public UseCaseTableModel(List<UseCaseView> values) {
+            super(COLUMN_NAMES, values);            
+        }
+
         @Override
-        public String getColumnName(int column) {
-            return switch (column) {
-            case 0 -> "Use Case";
-            case 1 -> "# of Traces";
-            case 2 -> "Avg. Duration";
-            case 3 -> "Latency %";
+        protected Object fieldOf(UseCaseView object, int columnIndex) {
+            return switch(columnIndex) {
+            case 0 -> object.useCaseName();
+            case 1 -> object.numberOfTraces();
+            case 2 -> String.format("%.02f", object.averageDuration());
+            case 3 -> String.format("%.02f", object.latencyPercentage());
             default -> "";
             };
         }
-
-        @Override
-        public int getRowCount() {
-            return this.useCaseNames.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return 4;
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            if (columnIndex == 0) {
-                return this.useCaseNames.get(rowIndex);
-            }
-
-            var useCaseName = this.useCaseNames.get(rowIndex);
-            var overview = this.useCaseOverviews.get(useCaseName);
-
-            switch (columnIndex) {
-            case 1:
-                return overview.traces().size();
-
-            case 2:
-                return String.format("%.02f", overview.averageDuration());
-
-            case 3:
-                return String.format("%.02f", overview.latencyPercentage());
-
-            default:
-                return "";
-            }
-        }
-
+        
     }
 
 }

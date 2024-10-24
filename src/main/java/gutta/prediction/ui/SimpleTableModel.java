@@ -18,6 +18,11 @@ abstract class SimpleTableModel<T> extends AbstractTableModel {
     }
     
     @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return false;
+    }
+    
+    @Override
     public String getColumnName(int column) {
         return this.columnNames.get(column);
     }
