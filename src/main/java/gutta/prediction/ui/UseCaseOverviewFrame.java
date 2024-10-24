@@ -185,7 +185,7 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             JOptionPane.showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
         }
         
-        var frame = new UseCaseLatencyAnalysisFrame(this.deploymentModelSpec, this.deploymentModel);
+        var frame = new UseCaseLatencyAnalysisFrame(this.tracesPerUseCase, this.deploymentModelSpec, this.deploymentModel);
         frame.setVisible(true);
     }
     
