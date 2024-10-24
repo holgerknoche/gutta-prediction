@@ -226,18 +226,18 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
      
     private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var targetComponent = connection.target();
-        var sourceLocation = invocationEvent.location();
+        var sourceLocation = this.currentLocation();
         var targetLocation = entryEvent.location();
 
-        if (connection.isSynthetic()) {
-            if (connection.isRemote() && !targetLocation.isSynthetic()) {
+        if (connection.isRemote()) {
+            if (connection.isSynthetic() && !targetLocation.isSynthetic()) {
                 // For transitions along synthetic remote connections, a synthetic target location is required.
                 // If the target location is not already synthetic (for instance, due to a previous rewrite), it is created.
-                targetLocation = this.createSyntheticLocation();
-            } else if (!connection.isRemote()) {
-                // If the connection is not remote, keep the current location
-                targetLocation = this.currentLocation();
+                targetLocation = this.createSyntheticLocation();                
             }
+        } else {
+            // If the connection is not remote, keep the current location
+            targetLocation = this.currentLocation();
         }
         
         // Ensure that the transition is valid
