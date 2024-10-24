@@ -50,9 +50,10 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     
     private DeploymentModel deploymentModel;
     
-    public UseCaseOverviewFrame() {
+    public UseCaseOverviewFrame(File tracesFile, File deploymentModelFile) {
         this.initialize();
         this.initializeControls();
+        this.initializeDefaults(tracesFile, deploymentModelFile);
     }
 
     private void initialize() {
@@ -66,6 +67,16 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         
         layout.add(this.useCasesTablePane.get(), 0, 0, 1, 1);
         layout.add(this.deploymentModelPane.get(), 0, 1, 1, 1);
+    }
+    
+    private void initializeDefaults(File tracesFile, File deploymentModelFile) {
+        if (tracesFile != null && tracesFile.exists()) {
+            this.loadTracesFromFile(tracesFile);
+        }
+        
+        if (deploymentModelFile != null && deploymentModelFile.exists()) {
+            this.loadDeploymentModelFromFile(deploymentModelFile);
+        }
     }
 
     private JMenuBar createMenuBar() {
@@ -99,6 +110,7 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         analysisMenu.add(latencyChangeMenuItem);        
         
         var consistencyChangeMenuItem = new JMenuItem("Consistency change analysis...");
+        consistencyChangeMenuItem.addActionListener(this::performConsistencyAnalysisAction);
         analysisMenu.add(consistencyChangeMenuItem);
         
         return analysisMenu;
@@ -230,8 +242,16 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         frame.setVisible(true);
     }
     
-    private record UseCaseView(String useCaseName, int numberOfTraces, double averageDuration, double latencyPercentage) {
+    private void performConsistencyAnalysisAction(ActionEvent event) {
+        if (this.deploymentModel == null) {
+            JOptionPane.showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
+        }
         
+        var frame = new UseCaseConsistencyAnalysisFrame();
+        frame.setVisible(true);
+    }
+    
+    private record UseCaseView(String useCaseName, int numberOfTraces, double averageDuration, double latencyPercentage) {
     }
     
     private static class UseCaseTableModel extends SimpleTableModel<UseCaseView> {
