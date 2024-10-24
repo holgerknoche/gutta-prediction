@@ -15,6 +15,7 @@ import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -45,6 +46,8 @@ class UseCaseLatencyAnalysisFrame extends UIFrameTemplate {
     private final InitializeOnce<JToolBar> toolBar = new InitializeOnce<>(this::createToolBar);
     
     private final InitializeOnce<JButton> analyzeButton = new InitializeOnce<>(this::createAnalyzeButton);
+    
+    private final InitializeOnce<JLabel> significanceLevelLabel = new InitializeOnce<>(this::createSignificanceLevelLabel);
     
     private final InitializeOnce<JTextField> significanceLevelField = new InitializeOnce<>(this::createSignificanceLevelTextField);
     
@@ -79,6 +82,7 @@ class UseCaseLatencyAnalysisFrame extends UIFrameTemplate {
     
     private void initializeDefaults() {
         this.originalDeploymentModelArea.get().setText(this.originalDeploymentModelSpec);
+        this.significanceLevelField.get().setText(String.valueOf(DEFAULT_SIGNIFICANCE_LEVEL));
     }
     
     private JPanel createMainPanel() {
@@ -137,6 +141,7 @@ class UseCaseLatencyAnalysisFrame extends UIFrameTemplate {
         var toolBar = new JToolBar();
         
         toolBar.add(this.analyzeButton.get());
+        toolBar.add(this.significanceLevelLabel.get());
         toolBar.add(this.significanceLevelField.get());
         toolBar.add(this.resetButton.get());
         
@@ -149,6 +154,10 @@ class UseCaseLatencyAnalysisFrame extends UIFrameTemplate {
         button.addActionListener(this::analyzeScenarioAction);
         
         return button;
+    }
+    
+    private JLabel createSignificanceLevelLabel() {
+        return new JLabel("Significance level:");
     }
     
     private JTextField createSignificanceLevelTextField() {
