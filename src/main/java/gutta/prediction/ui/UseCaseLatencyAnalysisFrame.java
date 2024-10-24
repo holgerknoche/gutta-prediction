@@ -206,7 +206,7 @@ class UseCaseLatencyAnalysisFrame extends UIFrameTemplate {
         
         private static final long serialVersionUID = -8857807589164164128L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Duration", "New Duration", "Significant Change?", "p Value");
+        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Significant Change?", "p Value");
         
         public LatencyAnalysisTableModel(List<ResultView> values) {
             super(COLUMN_NAMES, values);

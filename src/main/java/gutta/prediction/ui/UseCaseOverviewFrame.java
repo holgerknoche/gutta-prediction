@@ -6,7 +6,6 @@ import gutta.prediction.dsl.DeploymentModelReader;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.codec.EventTraceDecoder;
 
-import java.awt.BorderLayout;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
@@ -22,12 +21,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.swing.BorderFactory;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.table.AbstractTableModel;
 
 class UseCaseOverviewFrame extends UIFrameTemplate {
@@ -39,6 +40,10 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private final InitializeOnce<JScrollPane> useCasesTablePane = new InitializeOnce<>(this::createUseCasesTablePane);
 
     private final InitializeOnce<JTable> useCasesTable = new InitializeOnce<>(this::createUseCasesTable);
+    
+    private final InitializeOnce<JScrollPane> deploymentModelPane = new InitializeOnce<>(this::createDeploymentModelPane);
+    
+    private final InitializeOnce<JTextArea> deploymentModelArea = new InitializeOnce<>(this::createDeploymentModelArea);
 
     private Map<String, Collection<EventTrace>> tracesPerUseCase = new HashMap<>();
     
@@ -58,8 +63,10 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private void initializeControls() {
         this.setJMenuBar(this.menuBar.get());
 
-        this.setLayout(new BorderLayout());
-        this.add(this.useCasesTablePane.get(), BorderLayout.CENTER);
+        var layout = new SimpleGridBagLayout(this, 1, 2);
+        
+        layout.add(this.useCasesTablePane.get(), 0, 0, 1, 1);
+        layout.add(this.deploymentModelPane.get(), 0, 1, 1, 1);
     }
 
     private JMenuBar createMenuBar() {
@@ -99,7 +106,11 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     }
 
     private JScrollPane createUseCasesTablePane() {
-        return new JScrollPane(this.useCasesTable.get());
+        var pane = new JScrollPane(this.useCasesTable.get());
+        
+        pane.setBorder(BorderFactory.createTitledBorder("Use Cases"));
+        
+        return pane;
     }
 
     private JTable createUseCasesTable() {
@@ -124,6 +135,23 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         });
         
         return table;
+    }
+    
+    private JScrollPane createDeploymentModelPane() {
+        var pane = new JScrollPane(this.deploymentModelArea.get());
+        
+        pane.setBorder(BorderFactory.createTitledBorder("Deployment Model"));
+        
+        return pane;
+    }
+    
+    private JTextArea createDeploymentModelArea() {
+        var textArea = new JTextArea();
+        
+        textArea.setFont(MONOSPACED_FONT);
+        textArea.setEditable(false);
+        
+        return textArea;
     }
 
     private void loadTracesAction(ActionEvent event) {
@@ -170,7 +198,9 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             var model = new DeploymentModelReader().readModel(modelSpec);
             
             this.deploymentModelSpec = modelSpec;
-            this.deploymentModel = model;            
+            this.deploymentModel = model;
+            
+            this.deploymentModelArea.get().setText(modelSpec);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }            
