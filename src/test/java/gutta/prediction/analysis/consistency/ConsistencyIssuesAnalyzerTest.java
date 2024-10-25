@@ -236,7 +236,7 @@ class ConsistencyIssuesAnalyzerTest {
         var analyzer = new ConsistencyIssuesAnalyzer();
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
-        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new WriteConflictIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of(conflictCausingEvent));
         
         assertEquals(expectedResult, result);
     }
@@ -496,9 +496,10 @@ class ConsistencyIssuesAnalyzerTest {
         
         var expectedIssue = new WriteConflictIssue(entity1, new EntityWriteEvent(traceId, 500, location, entity1));
         var expectedCommittedWrite = new EntityWriteEvent(traceId, 200, location, entity1);
-        var expectedRevertedWrite = new EntityWriteEvent(traceId, 600, location, entity2);
+        var expectedRevertedWrite1 = new EntityWriteEvent(traceId, 500, location, entity1);
+        var expectedRevertedWrite2 = new EntityWriteEvent(traceId, 600, location, entity2);
         
-        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite), Set.of(expectedRevertedWrite));
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite), Set.of(expectedRevertedWrite1, expectedRevertedWrite2));
         
         assertEquals(expectedResult, result);
     }        
