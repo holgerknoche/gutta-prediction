@@ -4,6 +4,6 @@ import gutta.prediction.event.EntityWriteEvent;
 
 import java.util.Set;
 
-public record ConsistencyAnalysisResult(Set<ConsistencyIssue<?>> newIssues, Set<ConsistencyIssue<?>> obsoleteIssues, Set<EntityWriteEvent> nowCommittedWrites, Set<EntityWriteEvent> nowRevertedWrites) {
+public record ConsistencyAnalysisResult(int numberOfIssuesInOriginalTrace, int numberOfIssuesInModifiedTrace, Set<ConsistencyIssue<?>> newIssues, Set<ConsistencyIssue<?>> obsoleteIssues, Set<EntityWriteEvent> nowCommittedWrites, Set<EntityWriteEvent> nowRevertedWrites) {
 
 }

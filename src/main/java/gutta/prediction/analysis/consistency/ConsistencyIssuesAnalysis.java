@@ -42,7 +42,7 @@ public class ConsistencyIssuesAnalysis {
         
         this.diffWrites(originalResult.committedWrites(), originalResult.abortedWrites(), rewrittenResult.committedWrites(), rewrittenResult.abortedWrites(), eventMap, nowCommittedWrites::add, nowRevertedWrites::add);
 
-        return new ConsistencyAnalysisResult(newIssues, obsoleteIssues, nowCommittedWrites, nowRevertedWrites);
+        return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, nowCommittedWrites, nowRevertedWrites);
     }
 
     private void diffIssues(Set<ConsistencyIssue<?>> theseIssues, Set<ConsistencyIssue<?>> thoseIssues, EventMap eventMap, IssueCollector newIssuesCollector,

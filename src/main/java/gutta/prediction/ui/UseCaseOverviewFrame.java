@@ -30,6 +30,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 
+import static javax.swing.JOptionPane.showMessageDialog;
+
 class UseCaseOverviewFrame extends UIFrameTemplate {
 
     private static final long serialVersionUID = 1827116057177051262L;
@@ -244,10 +246,10 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     
     private void performConsistencyAnalysisAction(ActionEvent event) {
         if (this.deploymentModel == null) {
-            JOptionPane.showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
+            showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
         }
         
-        var frame = new UseCaseConsistencyAnalysisFrame();
+        var frame = new UseCaseConsistencyAnalysisFrame(this.tracesPerUseCase, this.deploymentModelSpec, this.deploymentModel);
         frame.setVisible(true);
     }
     

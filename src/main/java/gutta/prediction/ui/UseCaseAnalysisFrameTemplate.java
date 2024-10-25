@@ -131,7 +131,9 @@ abstract class UseCaseAnalysisFrameTemplate<T extends Comparable<T>> extends UIF
         return toolBar;
     }
     
-    protected abstract void addSpecificItemsToToolBar(JToolBar toolBar);
+    protected void addSpecificItemsToToolBar(JToolBar toolBar) {
+        // No items by default
+    }
     
     private JButton createAnalyzeButton() {
         var button = new JButton("Analyze Scenario");
