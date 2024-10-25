@@ -8,6 +8,7 @@ import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
+import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
@@ -284,6 +285,56 @@ class ConsistencyIssuesAnalyzerTest {
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(committedEvent), Set.of(abortedEvent));
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: Writes in subordinate transactions are also recorded.
+     */
+    @Test
+    void writesInSubordinateTransaction() {
+        var traceId = 1234;
+        
+        var location1 = new ObservedLocation("test1", 123, 1);
+        var location2 = new ObservedLocation("test2", 123, 1);
+        
+        var entityType = new EntityType("et1");
+        var entity1 = new Entity(entityType, "1");
+        var entity2 = new Entity(entityType, "2"); 
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location1, "uc"),
+                new TransactionStartEvent(traceId, 200, location1, "tx1"),
+                new EntityWriteEvent(traceId, 300, location1, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 400, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 500, location2, "sc1"),
+                new EntityWriteEvent(traceId, 600, location2, entity2),
+                new ServiceCandidateExitEvent(traceId, 700, location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 800, location1, "sc1"),
+                new TransactionCommitEvent(traceId, 900, location1, "tx1"),
+                new UseCaseEndEvent(traceId, 1000, location1, "uc")                
+                );
+        
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        
+        var component1 = new Component("c1");       
+        var component2 = new Component("c2");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component1)
+                .assignServiceCandidate(serviceCandidate, component2)
+                .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 300, location1, entity1);
+        var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 600, location2, entity2);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of());
         
         assertEquals(expectedResult, result);
     }

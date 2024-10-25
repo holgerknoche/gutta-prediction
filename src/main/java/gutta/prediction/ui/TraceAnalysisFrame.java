@@ -323,7 +323,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         private static final long serialVersionUID = 6131227781604948634L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Outcome", "Entity Type", "Entity ID", "Status");
+        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Entity Type", "Entity ID", "Outcome", "Status");
         
         public WriteChangeTableModel(List<WriteChangeView> values) {
             super(COLUMN_NAMES, values);
@@ -333,9 +333,9 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         protected Object fieldOf(WriteChangeView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.timestamp();
-            case 1 -> object.outcome().displayName();
-            case 2 -> object.affectedEntityType();
-            case 3 -> object.affectedEntityId();            
+            case 1 -> object.affectedEntityType();
+            case 2 -> object.affectedEntityId();
+            case 3 -> object.outcome().displayName();
             case 4 -> object.status().displayName();
             default -> "";
             };

@@ -44,12 +44,12 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         
     @Override
     public void onTransactionCommit(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        this.handleCompletionOfTransaction(transaction, this.committedWrites::addAll);
+        transaction.forEach(tx -> this.handleCompletionOfTransaction(tx, this.committedWrites::addAll));
     }
     
     @Override
     public void onTransactionAbort(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
-        this.handleCompletionOfTransaction(transaction, this.abortedWrites::addAll);
+        transaction.forEach(tx -> this.handleCompletionOfTransaction(tx, this.abortedWrites::addAll));
     }
     
     private void handleCompletionOfTransaction(Transaction transaction, Consumer<Set<EntityWriteEvent>> eventConsumer) {
@@ -99,22 +99,18 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-        var currentTransaction = context.currentTransaction();
-        if (currentTransaction == null) {
-            return;
-        }
-                
+        var currentTransaction = context.currentTransaction();                
         var entity = event.entity();
 
         if (this.hasConflict(entity, currentTransaction)) {
             var issue = new WriteConflictIssue(entity, event);
             this.foundIssues.add(issue);
-        } else {       
+        } else if (currentTransaction != null) {       
             var pendingWritesInTransaction = this.pendingWritesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<EntityWriteEvent>());
             pendingWritesInTransaction.add(event);
         
             this.pendingEntitiesToTransaction.put(entity, currentTransaction);
         }
-    }
+    }   
     
 }
