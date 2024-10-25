@@ -17,6 +17,7 @@ import gutta.prediction.event.ServiceCandidateExitEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.SyntheticLocation;
+import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
@@ -86,6 +87,72 @@ class ConsistencyIssuesAnalysisTest {
 
         var expectedResult = new ConsistencyAnalysisResult(0, 0, Set.of(), Set.of(), Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of(), Set.of(), Set.of(expectedUnchangedRevertedWrite));
         
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: A write conflict is resolved by internalizing the component.
+     */
+    @Test
+    void resolutionOfWriteConflict() {
+        var traceId = 1234;
+        
+        var location1 = new ObservedLocation("test1", 123, 1);
+        var location2 = new ObservedLocation("test2", 123, 1);
+        
+        var entityType = new EntityType("et1");
+        var entity1 = new Entity(entityType, "1");
+        var entity2 = new Entity(entityType, "2");
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location1, "uc"),
+                new TransactionStartEvent(traceId, 200, location1, "tx1"),
+                new EntityWriteEvent(traceId, 300, location1, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 400, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 400, location2, "sc1"),
+                new EntityWriteEvent(traceId, 600, location2, entity1),
+                new EntityWriteEvent(traceId, 700, location2, entity2),
+                new ServiceCandidateExitEvent(traceId, 800, location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 800, location1, "sc1"),
+                new TransactionCommitEvent(traceId, 1000, location1, "tx1"),
+                new UseCaseEndEvent(traceId, 1100, location1, "uc")                
+                );
+        
+        var useCase = new UseCase("uc");
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        
+        var component1 = new Component("c1");
+        var component2 = new Component("c2");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component1)
+                .assignServiceCandidate(serviceCandidate, component2)
+                .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
+                .build();
+        
+        var modifiedDeploymentModel = deploymentModel.applyModifications()
+                .addLocalConnection(component1, component2)
+                .build();
+        
+        var analysis = new ConsistencyIssuesAnalysis();
+        var result = analysis.analyzeTrace(trace, deploymentModel, modifiedDeploymentModel);
+     
+        var expectedUnchangedCommittedWrite = new EntityWriteEvent(traceId, 300, location1, entity1);
+        var expectedNowCommittedWrite1 = new EntityWriteEvent(traceId, 600, location1, entity1);
+        var expectedNowCommittedWrite2 = new EntityWriteEvent(traceId, 700, location1, entity2);
+        
+        var expectedObsoleteIssue = new WriteConflictIssue(entity1, new EntityWriteEvent(traceId, 600, location2, entity1));                
+        
+        var expectedResult = new ConsistencyAnalysisResult(1, // One issue in the original trace
+                0, // No issues in the modified trace
+                Set.of(), // No new issues
+                Set.of(expectedObsoleteIssue), // The write conflict is now obsolete
+                Set.of(), // No unchanged issues
+                Set.of(expectedNowCommittedWrite1, expectedNowCommittedWrite2), // Two now-committed writes
+                Set.of(), // No now-reverted writes
+                Set.of(expectedUnchangedCommittedWrite), // The first write is always committed 
+                Set.of()); // No unchanged reverted writes
+                
         assertEquals(expectedResult, result);
     }
 

@@ -501,6 +501,6 @@ class ConsistencyIssuesAnalyzerTest {
         var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite), Set.of(expectedRevertedWrite));
         
         assertEquals(expectedResult, result);
-    }
+    }        
 
 }

@@ -106,6 +106,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
             // If the write conflicts with another transaction, raise an appropriate issue
             var issue = new WriteConflictIssue(entity, event);
             this.foundIssues.add(issue);
+            this.abortedWrites.add(event);
             
             if (currentTransaction != null) {
                 currentTransaction.setAbortOnly();
