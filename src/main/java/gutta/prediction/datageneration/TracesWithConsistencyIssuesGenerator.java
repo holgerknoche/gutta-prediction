@@ -123,6 +123,7 @@ public class TracesWithConsistencyIssuesGenerator {
         
         var entityType = new EntityType("et1");
         var entity1 = new Entity(entityType, "1");
+        var entity2 = new Entity(entityType, "2");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
@@ -131,6 +132,7 @@ public class TracesWithConsistencyIssuesGenerator {
                 new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"),
                 new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity1),
+                new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity2),
                 new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
                 new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
