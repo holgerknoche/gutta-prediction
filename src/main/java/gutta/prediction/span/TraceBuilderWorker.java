@@ -24,6 +24,8 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
@@ -32,6 +34,8 @@ class TraceBuilderWorker implements TraceSimulationListener {
     private final Deque<SpanState> stack = new ArrayDeque<>();
     
     private final Map<Transaction, SpanState> pendingSuspendedStates = new HashMap<>();
+    
+    private Map<MonitoringEvent, ConsistencyIssue<?>> eventToIssue;
            
     private long traceId;
     
@@ -44,9 +48,19 @@ class TraceBuilderWorker implements TraceSimulationListener {
     private TransactionOverlay currentTransactionOverlay;
     
     public Trace buildTrace(EventTrace eventTrace, DeploymentModel deploymentModel, Set<ConsistencyIssue<?>> consistencyIssues) {
+        this.eventToIssue = createIssueLookup(consistencyIssues);
+        
         runSimulationOf(eventTrace, deploymentModel, this);
 
         return new Trace(this.traceId, this.traceName, this.rootSpan);
+    }
+    
+    private static Map<MonitoringEvent, ConsistencyIssue<?>> createIssueLookup(Set<ConsistencyIssue<?>> consistencyIssues) {
+        if (consistencyIssues == null) {
+            return Map.of();
+        } else {
+            return consistencyIssues.stream().collect(Collectors.toMap(ConsistencyIssue::event, Function.identity()));
+        }
     }
 
     @Override
@@ -175,12 +189,24 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
+        var issue = this.eventToIssue.get(event);
+        
+        if (issue != null) {
+            this.currentSpan.addEvent(new ConsistencyIssueEvent(issue));
+        } else {        
+            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
+        }
     }
     
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
+        var issue = this.eventToIssue.get(event);
+        
+        if (issue != null) {
+            this.currentSpan.addEvent(new ConsistencyIssueEvent(issue));
+        } else {
+            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
+        }
         
         if (this.currentTransactionOverlay == null || this.currentTransactionOverlay.isDirty()) {
             // If there is no transaction overlay or it is already marked as dirty, nothing needs to be done

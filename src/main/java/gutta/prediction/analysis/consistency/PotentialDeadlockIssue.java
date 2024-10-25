@@ -17,6 +17,11 @@ public class PotentialDeadlockIssue extends ConsistencyIssue<EntityReadEvent> {
     }
     
     @Override
+    public String description() {
+        return "Potential Deadlock";
+    }
+    
+    @Override
     public int hashCode() {
         return super.hashCode();
     }

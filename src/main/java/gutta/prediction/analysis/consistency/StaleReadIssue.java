@@ -17,6 +17,11 @@ public class StaleReadIssue extends ConsistencyIssue<EntityReadEvent> {
     }
     
     @Override
+    public String description() {
+        return "Stale Read";
+    }
+    
+    @Override
     public int hashCode() {
         return super.hashCode();
     }

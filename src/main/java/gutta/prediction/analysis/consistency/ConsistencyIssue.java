@@ -44,4 +44,6 @@ public abstract class ConsistencyIssue<T extends MonitoringEvent> {
     
     public abstract <R> R accept(ConsistencyIssueVisitor<R> visitor);
 
+    public abstract String description();
+    
 }

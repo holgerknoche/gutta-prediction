@@ -23,7 +23,7 @@ public class ConsistencyIssuesAnalysis {
 
         return this.diffAnalyzerResults(originalTraceResult, rewrittenTraceResult, rewrittenTrace::obtainOriginalEvent);
     }
-    
+
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         return new ConsistencyIssuesAnalyzer().analyzeTrace(trace, deploymentModel);
     }
@@ -41,13 +41,17 @@ public class ConsistencyIssuesAnalysis {
         var unchangedIssues = new HashSet<ConsistencyIssue<?>>();
 
         this.diffIssues(originalResult.issues(), rewrittenResult.issues(), eventMap, newIssues::add, obsoleteIssues::add, unchangedIssues::add);
-        
+
         var nowCommittedWrites = new HashSet<EntityWriteEvent>();
         var nowRevertedWrites = new HashSet<EntityWriteEvent>();
-        
-        this.diffWrites(originalResult.committedWrites(), originalResult.abortedWrites(), rewrittenResult.committedWrites(), rewrittenResult.abortedWrites(), eventMap, nowCommittedWrites::add, nowRevertedWrites::add);
+        var unchangedCommittedWrites = new HashSet<EntityWriteEvent>();
+        var unchangedRevertedWrites = new HashSet<EntityWriteEvent>();
 
-        return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, unchangedIssues, nowCommittedWrites, nowRevertedWrites);
+        this.diffWrites(originalResult.committedWrites(), originalResult.abortedWrites(), rewrittenResult.committedWrites(), rewrittenResult.abortedWrites(),
+                eventMap, nowCommittedWrites::add, nowRevertedWrites::add, unchangedCommittedWrites::add, unchangedRevertedWrites::add);
+
+        return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, unchangedIssues,
+                nowCommittedWrites, nowRevertedWrites, unchangedCommittedWrites, unchangedRevertedWrites);
     }
 
     private void diffIssues(Set<ConsistencyIssue<?>> theseIssues, Set<ConsistencyIssue<?>> thoseIssues, EventMap eventMap, IssueCollector newIssuesCollector,
@@ -77,20 +81,20 @@ public class ConsistencyIssuesAnalysis {
                 missingIssuesCollector.collect(issue);
             }
         }
-        
+
         matchingIssues.forEach(unchangedIssuesCollector::collect);
     }
 
     private void diffWrites(Set<EntityWriteEvent> theseCommittedWrites, Set<EntityWriteEvent> theseRevertedWrites, Set<EntityWriteEvent> thoseCommittedWrites,
             Set<EntityWriteEvent> thoseRevertedWrites, EventMap eventMap, WritesCollector nowCommittedWritesCollector,
-            WritesCollector nowRevertedWritesCollector) {
+            WritesCollector nowRevertedWritesCollector, WritesCollector unchangedCommittedWritesCollector, WritesCollector unchangedRevertedWritesCollector) {
 
         var matchingCommittedWrites = new HashSet<EntityWriteEvent>();
         var matchingRevertedWrites = new HashSet<EntityWriteEvent>();
-        
+
         for (var write : thoseCommittedWrites) {
             var mappedWrite = requireNonNull(eventMap.map(write));
-            
+
             if (theseCommittedWrites.contains(mappedWrite)) {
                 // If the write is committed in both results, record a match
                 matchingCommittedWrites.add(mappedWrite);
@@ -102,12 +106,12 @@ public class ConsistencyIssuesAnalysis {
                 throw new IllegalStateException("Undefined state of write '" + write + "'.");
             }
         }
-        
+
         for (var write : thoseRevertedWrites) {
             var mappedWrite = requireNonNull(eventMap.map(write));
-            
+
             if (theseRevertedWrites.contains(mappedWrite)) {
-             // If the write is reverted in both results, record a match
+                // If the write is reverted in both results, record a match
                 matchingRevertedWrites.add(mappedWrite);
             } else if (theseCommittedWrites.contains(mappedWrite)) {
                 // If the write used to be committed, record it as "now reverted"
@@ -116,8 +120,11 @@ public class ConsistencyIssuesAnalysis {
                 // Otherwise, the write is "lost", which should not happen
                 throw new IllegalStateException("Undefined state of write '" + write + "'.");
             }
-        }               
-    }        
+        }
+
+        matchingCommittedWrites.forEach(unchangedCommittedWritesCollector::collect);
+        matchingRevertedWrites.forEach(unchangedRevertedWritesCollector::collect);
+    }
 
     public interface EventMap {
 

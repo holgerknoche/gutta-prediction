@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
@@ -179,35 +178,37 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         var diff = analysis.diffAnalyzerResults(originalTraceIssues, rewrittenTraceIssues, rewrittenTrace::obtainOriginalEvent);
         
-        var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifiedDeploymentModel, Set.of());
+        var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifiedDeploymentModel, rewrittenTraceIssues.issues());
         this.traceView.get().trace(spanTrace);
         
         var consistencyIssueViews = new ArrayList<ConsistencyIssueView>();
-        createIssueViews(diff.newIssues(), "new", consistencyIssueViews::add);
-        createIssueViews(diff.obsoleteIssues(), "obsolete", consistencyIssueViews::add);
-        createIssueViews(diff.unchangedIssues(), "unchanged", consistencyIssueViews::add);
+        createIssueViews(diff.newIssues(), ConsistencyIssueStatus.NEW, consistencyIssueViews::add);
+        createIssueViews(diff.obsoleteIssues(), ConsistencyIssueStatus.OBSOLETE, consistencyIssueViews::add);
+        createIssueViews(diff.unchangedIssues(), ConsistencyIssueStatus.UNCHANGED, consistencyIssueViews::add);
         
         Collections.sort(consistencyIssueViews);
         this.issuesTable.get().setModel(new ConsistencyIssuesTableModel(consistencyIssueViews));
         
         var writeChanges = new ArrayList<WriteChangeView>();
-        createWriteChangeViews(diff.nowCommittedWrites(), "now committed", writeChanges::add);
-        createWriteChangeViews(diff.nowRevertedWrites(), "now reverted", writeChanges::add);
+        createWriteChangeViews(diff.nowCommittedWrites(), WriteOutcome.COMMITTED, WriteChangeStatus.CHANGED, writeChanges::add);
+        createWriteChangeViews(diff.nowRevertedWrites(), WriteOutcome.REVERTED, WriteChangeStatus.CHANGED, writeChanges::add);
+        createWriteChangeViews(diff.unchangedCommittedWrites(), WriteOutcome.COMMITTED, WriteChangeStatus.UNCHANGED, writeChanges::add);
+        createWriteChangeViews(diff.unchangedRevertedWrites(), WriteOutcome.REVERTED, WriteChangeStatus.UNCHANGED, writeChanges::add);
         Collections.sort(writeChanges);
         
         this.writesTable.get().setModel(new WriteChangeTableModel(writeChanges));
     }
     
-    private static void createIssueViews(Collection<ConsistencyIssue<?>> issues, String type, Consumer<ConsistencyIssueView> viewConsumer) {
+    private static void createIssueViews(Collection<ConsistencyIssue<?>> issues, ConsistencyIssueStatus status, Consumer<ConsistencyIssueView> viewConsumer) {
         for (var issue : issues) {
-            var view = new ConsistencyIssueView(issue.event().timestamp(), type, issue.event().getClass().getSimpleName(), issue.entity().type().name(), issue.entity().id());            
+            var view = new ConsistencyIssueView(issue.event().timestamp(), status, issue.description(), issue.entity().type().name(), issue.entity().id());            
             viewConsumer.accept(view); 
         }
     }
     
-    private static void createWriteChangeViews(Collection<EntityWriteEvent> events, String type, Consumer<WriteChangeView> viewConsumer) {
+    private static void createWriteChangeViews(Collection<EntityWriteEvent> events, WriteOutcome outcome, WriteChangeStatus status, Consumer<WriteChangeView> viewConsumer) {
         for (var event : events) {
-            var view = new WriteChangeView(event.timestamp(), type, event.entity().type().name(), event.entity().id());
+            var view = new WriteChangeView(event.timestamp(), outcome, status, event.entity().type().name(), event.entity().id());
             viewConsumer.accept(view);
         }
     }
@@ -259,7 +260,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         return new JTable();
     }
     
-    private record ConsistencyIssueView(long timestamp, String type, String description, String affectedEntityType, String affectedEntityId) implements Comparable<ConsistencyIssueView> {
+    private record ConsistencyIssueView(long timestamp, ConsistencyIssueStatus status, String description, String affectedEntityType, String affectedEntityId) implements Comparable<ConsistencyIssueView> {
         
         @Override
         public int compareTo(ConsistencyIssueView that) {
@@ -272,7 +273,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         private static final long serialVersionUID = 6131227781604948634L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Type of Change");
+        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Issue Type", "Entity Type", "Entity ID", "Status");
         
         public ConsistencyIssuesTableModel(List<ConsistencyIssueView> values) {
             super(COLUMN_NAMES, values);
@@ -282,14 +283,34 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         protected Object fieldOf(ConsistencyIssueView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.timestamp();
-            case 1 -> object.type();
+            case 1 -> object.description();
+            case 2 -> object.affectedEntityType();
+            case 3 -> object.affectedEntityId();
+            case 4 -> object.status().displayName();
             default -> "";
             };
         }
         
     }
     
-    private record WriteChangeView(long timestamp, String type, String affectedEntityType, String affectedEntityId) implements Comparable<WriteChangeView> {
+    private enum ConsistencyIssueStatus {
+        NEW("new"),
+        UNCHANGED("unchanged"),
+        OBSOLETE("obsolete");
+        
+        private final String displayName;
+        
+        private ConsistencyIssueStatus(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String displayName() {
+            return this.displayName;
+        }
+        
+    }
+    
+    private record WriteChangeView(long timestamp, WriteOutcome outcome, WriteChangeStatus status, String affectedEntityType, String affectedEntityId) implements Comparable<WriteChangeView> {
         
         @Override
         public int compareTo(WriteChangeView that) {
@@ -302,7 +323,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         private static final long serialVersionUID = 6131227781604948634L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Type of Change");
+        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Outcome", "Entity Type", "Entity ID", "Status");
         
         public WriteChangeTableModel(List<WriteChangeView> values) {
             super(COLUMN_NAMES, values);
@@ -312,9 +333,43 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         protected Object fieldOf(WriteChangeView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.timestamp();
-            case 1 -> object.type();
+            case 1 -> object.outcome().displayName();
+            case 2 -> object.affectedEntityType();
+            case 3 -> object.affectedEntityId();            
+            case 4 -> object.status().displayName();
             default -> "";
             };
+        }
+        
+    }
+    
+    private enum WriteOutcome {
+        COMMITTED("committed"),
+        REVERTED("reverted");
+        
+        private final String displayName;
+        
+        private WriteOutcome(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String displayName() {
+            return this.displayName;
+        }
+    }
+    
+    private enum WriteChangeStatus {
+        CHANGED("changed"),
+        UNCHANGED("unchanged");
+        
+        private final String displayName;
+        
+        private WriteChangeStatus(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String displayName() {
+            return this.displayName;
         }
         
     }

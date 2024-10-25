@@ -17,6 +17,11 @@ public class WriteConflictIssue extends ConsistencyIssue<EntityWriteEvent> {
     }
     
     @Override
+    public String description() {
+        return "Write Conflict";
+    }
+    
+    @Override
     public int hashCode() {
         return super.hashCode();
     }
