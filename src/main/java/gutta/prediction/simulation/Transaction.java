@@ -52,7 +52,7 @@ public abstract class Transaction {
     
     abstract Outcome commit();
         
-    void setAbortOnly() {
+    public void setAbortOnly() {
         this.abortOnly = true;
     }
     

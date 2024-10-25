@@ -61,6 +61,7 @@ public class TracesWithConsistencyIssuesGenerator {
                 
         traces.add(this.buildTraceWithStaleRead(useCaseName, 1234));
         traces.add(this.buildTraceWithWritesInSubordinateTransaction(useCaseName, 1235));
+        traces.add(this.buildTraceWithWriteConflict(useCaseName, 1236));
         
         try (var outputStream = new FileOutputStream(fileName)) {
             new EventTraceEncoder().encodeTraces(traces, outputStream);
@@ -110,6 +111,29 @@ public class TracesWithConsistencyIssuesGenerator {
                 new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
                 new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
                 new ExplicitTransactionAbortEvent(traceId, timestamps.nextStep(), location1, "tx1"),
+                new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
+                );
+    }
+    
+    private EventTrace buildTraceWithWriteConflict(String useCaseName, long traceId) {
+        var timestamps = new TimestampGenerator(20, 0, 0);
+        
+        var location1 = new ObservedLocation("test1", 123, 1);
+        var location2 = new ObservedLocation("test2", 123, 1);
+        
+        var entityType = new EntityType("et1");
+        var entity1 = new Entity(entityType, "1");
+        
+        return EventTrace.of(
+                new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
+                new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx1"),
+                new EntityWriteEvent(traceId, timestamps.nextStep(), location1, entity1),
+                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"),
+                new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity1),
+                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
+                new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
                 );
     }
