@@ -4,13 +4,15 @@ import gutta.prediction.event.EventTrace;
 import gutta.prediction.span.ObservedTraceBuilder;
 
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
+
+import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineDuration;
+import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineLatency;
 
 class TracesViewFrame extends UIFrameTemplate {
 
@@ -27,11 +29,30 @@ class TracesViewFrame extends UIFrameTemplate {
     private final List<TraceView> traceViews;
     
     public TracesViewFrame(String useCaseName, Collection<EventTrace> traces) {
-        this.traceViews = traces.stream().map(TraceView::new).collect(Collectors.toList());
+        this.traceViews = buildViews(traces);
         
         this.initialize(useCaseName);
         this.initializeControls();
         this.initializeData();
+    }
+    
+    private static List<TraceView> buildViews(Collection<EventTrace> traces) {
+        var views = new ArrayList<TraceView>(traces.size());
+        
+        var traceNumber = 0;
+        for (var trace : traces) {
+            var duration = determineDuration(trace);
+            var latency = determineLatency(trace);
+            
+            var latencyPercentage = (duration > 0) ? (double) latency / (double) duration : 0.0;
+            
+            var view = new TraceView("Trace #" + traceNumber, duration, latencyPercentage, trace);
+            views.add(view);
+            
+            traceNumber++;
+        }
+        
+        return views;
     }
     
     protected void initialize(String useCaseName) {
@@ -46,7 +67,7 @@ class TracesViewFrame extends UIFrameTemplate {
     }
     
     private void initializeData() {
-        this.tracesTable.get().setModel(new TracesListModel());
+        this.tracesTable.get().setModel(new TracesListModel(this.traceViews));
     }
     
     private JScrollPane createTracesListPane() {
@@ -83,43 +104,29 @@ class TracesViewFrame extends UIFrameTemplate {
         return new TraceViewComponent();
     }
     
-    private class TracesListModel extends AbstractTableModel {
+    private class TracesListModel extends SimpleTableModel<TraceView> {
 
         private static final long serialVersionUID = -16840755840867050L;
 
-        @Override
-        public int getRowCount() {
-            return TracesViewFrame.this.traceViews.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return 3;
+        private static final List<String> COLUMN_NAMES = List.of("Trace #", "Duration", "Latency %");
+        
+        public TracesListModel(List<TraceView> values) {
+            super(COLUMN_NAMES, values);
         }
         
         @Override
-        public String getColumnName(int column) {
-            return switch (column) {
-            case 0 -> "Trace #";
-            case 1 -> "Duration";
-            case 2 -> "Latency %";
+        protected Object fieldOf(TraceView object, int columnIndex) {
+            return switch (columnIndex) {
+            case 0 -> object.name();
+            case 1 -> object.duration();
+            case 2 -> String.format("%.02f", object.latencyPercentage());
             default -> "";
             };
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            if (columnIndex == 0) {
-                return "Trace #" + (rowIndex + 1);
-            } else {
-                return "";
-            }
         }
         
     }
     
-    private record TraceView(EventTrace trace) {                
-        
+    private record TraceView(String name, long duration, double latencyPercentage, EventTrace trace) {                
     }
 
 }
