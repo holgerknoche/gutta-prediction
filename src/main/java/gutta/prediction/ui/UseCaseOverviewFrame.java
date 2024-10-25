@@ -8,6 +8,7 @@ import gutta.prediction.event.codec.EventTraceDecoder;
 
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
@@ -130,25 +131,29 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private JTable createUseCasesTable() {
         var table = new JTable();
 
-        table.addMouseListener(new MouseBaseListener() {
+        table.addMouseListener(new MouseAdapter() {
             
             @Override
             public void mouseClicked(MouseEvent event) {
                 if (event.getClickCount() == 2) {                    
-                    var table = useCasesTable.get();
-                    
-                    var row = table.rowAtPoint(event.getPoint());
-                    var useCaseName = (String) table.getValueAt(row, 0);
-                    var traces = tracesPerUseCase.get(useCaseName);
-                    
-                    var tracesFrame = new TracesViewFrame(useCaseName, traces);
-                    tracesFrame.setVisible(true);
+                    UseCaseOverviewFrame.this.showTracesViewFrame(event);
                 }
             }
             
         });
         
         return table;
+    }
+    
+    private void showTracesViewFrame(MouseEvent event) {
+        var table = this.useCasesTable.get();
+        
+        var row = table.rowAtPoint(event.getPoint());
+        var useCaseName = (String) table.getValueAt(row, 0);
+        var traces = this.tracesPerUseCase.get(useCaseName);
+        
+        var tracesFrame = new TracesViewFrame(useCaseName, this.deploymentModelSpec, this.deploymentModel, traces);
+        tracesFrame.setVisible(true);
     }
     
     private JScrollPane createDeploymentModelPane() {

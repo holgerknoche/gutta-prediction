@@ -1,13 +1,18 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.span.ObservedTraceBuilder;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
@@ -28,8 +33,14 @@ class TracesViewFrame extends UIFrameTemplate {
         
     private final List<TraceView> traceViews;
     
-    public TracesViewFrame(String useCaseName, Collection<EventTrace> traces) {
+    private final String originalDeploymentModelSpec;
+    
+    private final DeploymentModel originalDeploymentModel;
+    
+    public TracesViewFrame(String useCaseName, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, Collection<EventTrace> traces) {
         this.traceViews = buildViews(traces);
+        this.originalDeploymentModelSpec = originalDeploymentModelSpec;
+        this.originalDeploymentModel = originalDeploymentModel;
         
         this.initialize(useCaseName);
         this.initializeControls();
@@ -46,7 +57,7 @@ class TracesViewFrame extends UIFrameTemplate {
             
             var latencyPercentage = (duration > 0) ? (double) latency / (double) duration : 0.0;
             
-            var view = new TraceView("Trace #" + traceNumber, duration, latencyPercentage, trace);
+            var view = new TraceView("Trace #" + (traceNumber + 1), duration, latencyPercentage, trace);
             views.add(view);
             
             traceNumber++;
@@ -77,7 +88,7 @@ class TracesViewFrame extends UIFrameTemplate {
     private JTable createTracesTable() {
         var table = new JTable();
                 
-        table.addMouseListener(new MouseBaseListener() {
+        table.addMouseListener(new MouseAdapter() {
             
             @Override
             public void mouseClicked(MouseEvent event) {
@@ -87,21 +98,46 @@ class TracesViewFrame extends UIFrameTemplate {
                 var view = TracesViewFrame.this.traceViews.get(rowIndex);
                 var trace = view.trace();
                 
-                var spanTrace = new ObservedTraceBuilder(trace).buildTrace();
-                TracesViewFrame.this.traceView.get().trace(spanTrace);
+                if (event.isPopupTrigger()) {
+                    if (!table.isRowSelected(rowIndex)) {
+                        var columnIndex = table.columnAtPoint(event.getPoint());                        
+                        table.changeSelection(rowIndex, columnIndex, false, false);
+                    }
+                } else {
+                    var spanTrace = new ObservedTraceBuilder(trace).buildTrace();
+                    TracesViewFrame.this.traceView.get().trace(spanTrace);
+                }
             }
             
         });
         
+        var popupMenu = new JPopupMenu();
+        var analyzeTraceItem = new JMenuItem("Analyze Trace...");
+        analyzeTraceItem.addActionListener(this::analyzeTraceAction);
+        popupMenu.add(analyzeTraceItem);
+        
+        table.setComponentPopupMenu(popupMenu);
+        
         return table;
     }
-    
+        
     private JScrollPane createTraceViewPane() {
         return new JScrollPane(this.traceView.get());
     }
     
     private TraceViewComponent createTraceView() {
         return new TraceViewComponent();
+    }
+    
+    private void analyzeTraceAction(ActionEvent event) {
+        var table = this.tracesTable.get();
+        var rowIndex = table.getSelectedRow();
+        
+        var selectedView = this.traceViews.get(rowIndex);
+        var trace = selectedView.trace();
+        
+        var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec, this.originalDeploymentModel);
+        frame.setVisible(true);
     }
     
     private class TracesListModel extends SimpleTableModel<TraceView> {

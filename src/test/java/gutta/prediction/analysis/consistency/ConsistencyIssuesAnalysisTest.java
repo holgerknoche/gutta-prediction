@@ -82,7 +82,7 @@ class ConsistencyIssuesAnalysisTest {
         var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 400, syntheticLocation, entity2);
         var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 500, syntheticLocation, entity3);
 
-        var expectedResult = new ConsistencyAnalysisResult(0, 0, Set.of(), Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of());
+        var expectedResult = new ConsistencyAnalysisResult(0, 0, Set.of(), Set.of(), Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of());
         
         assertEquals(expectedResult, result);
     }

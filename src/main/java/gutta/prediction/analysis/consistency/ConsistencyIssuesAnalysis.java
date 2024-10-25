@@ -16,37 +16,42 @@ import static java.util.Objects.requireNonNull;
 public class ConsistencyIssuesAnalysis {
 
     public ConsistencyAnalysisResult analyzeTrace(EventTrace trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        var originalTraceResult = new ConsistencyIssuesAnalyzer().analyzeTrace(trace, originalDeploymentModel);
+        var originalTraceResult = this.analyzeTrace(trace, originalDeploymentModel);
 
         var rewrittenTrace = this.rewriteTrace(trace, modifiedDeploymentModel);
-        var rewrittenTraceResult = new ConsistencyIssuesAnalyzer().analyzeTrace(rewrittenTrace, modifiedDeploymentModel);
+        var rewrittenTraceResult = this.analyzeTrace(rewrittenTrace, modifiedDeploymentModel);
 
         return this.diffAnalyzerResults(originalTraceResult, rewrittenTraceResult, rewrittenTrace::obtainOriginalEvent);
     }
+    
+    public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
+        return new ConsistencyIssuesAnalyzer().analyzeTrace(trace, deploymentModel);
+    }
 
-    private RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
+    public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
         var latencyRewriter = new LatencyRewriter(modifiedDeploymentModel);
         var transactionRewriter = new TransactionContextRewriter(modifiedDeploymentModel);
         return transactionRewriter.rewriteTrace(latencyRewriter.rewriteTrace(trace));
     }
 
-    private ConsistencyAnalysisResult diffAnalyzerResults(ConsistencyAnalyzerResult originalResult, ConsistencyAnalyzerResult rewrittenResult,
+    public ConsistencyAnalysisResult diffAnalyzerResults(ConsistencyAnalyzerResult originalResult, ConsistencyAnalyzerResult rewrittenResult,
             EventMap eventMap) {
         var newIssues = new HashSet<ConsistencyIssue<?>>();
         var obsoleteIssues = new HashSet<ConsistencyIssue<?>>();
+        var unchangedIssues = new HashSet<ConsistencyIssue<?>>();
 
-        this.diffIssues(originalResult.issues(), rewrittenResult.issues(), eventMap, newIssues::add, obsoleteIssues::add);
+        this.diffIssues(originalResult.issues(), rewrittenResult.issues(), eventMap, newIssues::add, obsoleteIssues::add, unchangedIssues::add);
         
         var nowCommittedWrites = new HashSet<EntityWriteEvent>();
         var nowRevertedWrites = new HashSet<EntityWriteEvent>();
         
         this.diffWrites(originalResult.committedWrites(), originalResult.abortedWrites(), rewrittenResult.committedWrites(), rewrittenResult.abortedWrites(), eventMap, nowCommittedWrites::add, nowRevertedWrites::add);
 
-        return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, nowCommittedWrites, nowRevertedWrites);
+        return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, unchangedIssues, nowCommittedWrites, nowRevertedWrites);
     }
 
     private void diffIssues(Set<ConsistencyIssue<?>> theseIssues, Set<ConsistencyIssue<?>> thoseIssues, EventMap eventMap, IssueCollector newIssuesCollector,
-            IssueCollector missingIssuesCollector) {
+            IssueCollector missingIssuesCollector, IssueCollector unchangedIssuesCollector) {
         var matchingIssues = new HashSet<ConsistencyIssue<?>>(theseIssues.size());
 
         // We have to start at "those issues", since the map maps them back to "these issues"
@@ -72,6 +77,8 @@ public class ConsistencyIssuesAnalysis {
                 missingIssuesCollector.collect(issue);
             }
         }
+        
+        matchingIssues.forEach(unchangedIssuesCollector::collect);
     }
 
     private void diffWrites(Set<EntityWriteEvent> theseCommittedWrites, Set<EntityWriteEvent> theseRevertedWrites, Set<EntityWriteEvent> thoseCommittedWrites,
@@ -112,7 +119,7 @@ public class ConsistencyIssuesAnalysis {
         }               
     }        
 
-    private interface EventMap {
+    public interface EventMap {
 
         <T extends MonitoringEvent> T map(T event);
 
