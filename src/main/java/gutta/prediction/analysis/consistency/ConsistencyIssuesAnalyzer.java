@@ -103,13 +103,18 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         var entity = event.entity();
 
         if (this.hasConflict(entity, currentTransaction)) {
+            // If the write conflicts with another transaction, raise an appropriate issue
             var issue = new WriteConflictIssue(entity, event);
             this.foundIssues.add(issue);
         } else if (currentTransaction != null) {       
+            // If a transaction is available, record the pending write
             var pendingWritesInTransaction = this.pendingWritesPerTransaction.computeIfAbsent(currentTransaction, tx -> new HashSet<EntityWriteEvent>());
             pendingWritesInTransaction.add(event);
         
             this.pendingEntitiesToTransaction.put(entity, currentTransaction);
+        } else {
+            // No transaction available, so the event is auto-committed
+            this.committedWrites.add(event);
         }
     }   
     

@@ -422,6 +422,40 @@ class ConsistencyIssuesAnalyzerTest {
         assertEquals(expectedResult, result);   
     }
     
-    // TODO Test case for subordinate transactions
+    /**
+     * Test case: An auto-committed write (i.e., without a surrounding transaction), is recorded.
+     */
+    @Test
+    void autoCommittedWrite() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity = new Entity(entityType, "e1");
+
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new EntityWriteEvent(traceId, 200, location, entity),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+
+        var useCase = new UseCase("uc");
+        var component = new Component("c1");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedCommittedWrite = new EntityWriteEvent(traceId, 200, location, entity); 
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(expectedCommittedWrite), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+   
 
 }
