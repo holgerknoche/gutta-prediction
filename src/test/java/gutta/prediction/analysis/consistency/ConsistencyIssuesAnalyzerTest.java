@@ -101,6 +101,52 @@ class ConsistencyIssuesAnalyzerTest {
     }
     
     /**
+     * Test case: If an entity is changed in an uncommitted transaction, and a read to the same entity occurs outside of a transaction, a "stale read" is raised.
+     */
+    @Test
+    void staleReadWithoutSurroundingTransaction() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        var entity = new Entity(entityType, "e1");
+
+        var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
+        var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
+
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 100, location, "uc"),
+                new TransactionStartEvent(traceId, 200, location, "tx1"),
+                committedEvent,                
+                new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 300, location, "sc1"),
+                conflictCausingEvent,
+                new ServiceCandidateExitEvent(traceId, 800, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 800, location, "sc1"),
+                new TransactionCommitEvent(traceId, 900, location, "tx1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc")
+                );
+
+        var useCase = new UseCase("uc");        
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
+        
+        var component = new Component("c1");       
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .assignEntityType(entityType, dataStore)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(new StaleReadIssue(entity, conflictCausingEvent)), Set.of(committedEvent), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
      * Test case: If an entity is changed in an uncommitted transaction, and the same entity is read in a nested transaction, a "potential deadlock" issue is created given the corresponding behavior of the data store.
      */
     @Test

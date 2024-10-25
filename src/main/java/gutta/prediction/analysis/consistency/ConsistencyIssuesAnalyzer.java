@@ -6,6 +6,7 @@ import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
@@ -69,16 +70,11 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-        var currentTransaction = context.currentTransaction();
-        if (currentTransaction == null) {
-            return;
-        }
-                
+        var currentTransaction = context.currentTransaction();                
         var entity = event.entity();
         var dataStore = this.deploymentModel.getDataStoreForEntityType(entity.type()).orElseThrow(() -> new IllegalStateException("Entity type '" + entity.type() + "' is not assigned to a data store."));
 
         if (this.hasConflict(entity, currentTransaction)) {
-
             ConsistencyIssue<EntityReadEvent> issue;            
             if (dataStore.readWriteConflictBehavior() == ReadWriteConflictBehavior.STALE_READ) {
                 issue = new StaleReadIssue(entity, event);
@@ -92,7 +88,14 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private boolean hasConflict(Entity entity, Transaction currentTransaction) {
         var changingTransaction = this.pendingEntitiesToTransaction.get(entity);
-        return (changingTransaction != null && !(changingTransaction.equals(currentTransaction)));     
+        
+        if (changingTransaction == null) {
+            return false;
+        } else if (currentTransaction == null) {
+            return true;
+        } else {
+            return !(changingTransaction.equals(currentTransaction));
+        }
     }
     
     @Override
@@ -113,6 +116,6 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         
             this.pendingEntitiesToTransaction.put(entity, currentTransaction);
         }
-    }         
-
+    }
+    
 }
