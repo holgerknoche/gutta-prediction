@@ -456,6 +456,51 @@ class ConsistencyIssuesAnalyzerTest {
         assertEquals(expectedResult, result);
     }
     
-   
+    /**
+     * Test case: A write conflict aborts the current transaction.
+     */
+    @Test
+    void writeConflictAbortsTransaction() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity1 = new Entity(entityType, "e1");
+        var entity2 = new Entity(entityType, "e2");
+
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new TransactionStartEvent(traceId, 100, location, "tx1"),
+                new EntityWriteEvent(traceId, 200, location, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 400, location, "sc1"),
+                new EntityWriteEvent(traceId, 500, location, entity1),
+                new EntityWriteEvent(traceId, 600, location, entity2),
+                new ServiceCandidateExitEvent(traceId, 600, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 700, location, "sc1"),
+                new TransactionCommitEvent(traceId, 800, location, "tx1"),
+                new UseCaseEndEvent(traceId, 900, location, "uc")
+                );
+
+        var useCase = new UseCase("uc");
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRES_NEW);
+        var component = new Component("c1");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCase(useCase, component)
+                .assignServiceCandidate(serviceCandidate, component)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedIssue = new WriteConflictIssue(entity1, new EntityWriteEvent(traceId, 500, location, entity1));
+        var expectedCommittedWrite = new EntityWriteEvent(traceId, 200, location, entity1);
+        var expectedRevertedWrite = new EntityWriteEvent(traceId, 600, location, entity2);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite), Set.of(expectedRevertedWrite));
+        
+        assertEquals(expectedResult, result);
+    }
 
 }
