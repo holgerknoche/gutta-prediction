@@ -26,6 +26,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -163,6 +164,13 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         
         textArea.setFont(MONOSPACED_FONT);
         textArea.setEditable(false);
+        
+        var popupMenu = new JPopupMenu();
+        var loadModelMenuItem = new JMenuItem("Load model...");        
+        loadModelMenuItem.addActionListener(this::loadTracesAction);
+        popupMenu.add(loadModelMenuItem);
+        
+        textArea.setComponentPopupMenu(popupMenu);
         
         return textArea;
     }
