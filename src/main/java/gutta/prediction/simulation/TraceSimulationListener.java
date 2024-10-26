@@ -29,8 +29,24 @@ public interface TraceSimulationListener {
         // Do nothing by default
     }
 
+    default void onReadWriteConflict(EntityReadEvent event, TraceSimulationContext context) {
+        // Do nothing by default
+    }
+    
     default void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
         // Do nothing by default
+    }
+    
+    default void onWriteWriteConflict(EntityWriteEvent event, TraceSimulationContext context) {
+        // Do nothing by default
+    }
+    
+    default void onCommittedWrite(EntityWriteEvent event, TraceSimulationContext context) {
+        // Do nothing by default        
+    }
+    
+    default void onRevertedWrite(EntityWriteEvent event, TraceSimulationContext context) {
+     // Do nothing by default
     }
 
     default void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {

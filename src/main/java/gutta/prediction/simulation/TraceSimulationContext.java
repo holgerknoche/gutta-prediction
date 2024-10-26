@@ -2,12 +2,18 @@ package gutta.prediction.simulation;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.ServiceCandidate;
+import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.Location;
 import gutta.prediction.event.MonitoringEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class TraceSimulationContext {
 
@@ -15,7 +21,11 @@ public class TraceSimulationContext {
         
     private final EventStream eventStream;
     
-    private Deque<StackEntry> stack = new ArrayDeque<>();
+    private final Deque<StackEntry> stack = new ArrayDeque<>();
+    
+    private final Map<Transaction, Set<EntityWriteEvent>> pendingWritesPerTransaction = new HashMap<>();
+    
+    private final Map<Entity, Transaction> pendingEntitiesToTransaction = new HashMap<>(); 
 
     private ServiceCandidate currentServiceCandidate;
     
@@ -91,6 +101,31 @@ public class TraceSimulationContext {
         this.currentTransaction = entry.transaction();
         
         return entry;
+    }
+    
+    Transaction getTransactionWithPendingWriteTo(Entity entity) {
+        return this.pendingEntitiesToTransaction.get(entity);
+    }
+    
+    void registerPendingWrite(EntityWriteEvent event) {
+        var pendingWritesInTransaction = this.pendingWritesPerTransaction.computeIfAbsent(this.currentTransaction, tx -> new HashSet<EntityWriteEvent>());
+        pendingWritesInTransaction.add(event);
+        
+        this.pendingEntitiesToTransaction.put(event.entity(), this.currentTransaction);
+    }
+    
+    Set<EntityWriteEvent> getAndRemovePendingWritesFor(Transaction transaction) {
+        var pendingWrites = this.pendingWritesPerTransaction.remove(transaction);
+        if (pendingWrites == null) {
+            return Set.of();
+        }
+        
+        // Remove the changed entities from the appropriate map
+        pendingWrites.stream()
+                .map(EntityWriteEvent::entity)
+                .forEach(this.pendingEntitiesToTransaction::remove);
+        
+        return pendingWrites;
     }
         
 }

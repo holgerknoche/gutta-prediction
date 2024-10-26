@@ -3,6 +3,7 @@ package gutta.prediction.simulation;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
@@ -96,11 +97,47 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
     @Override
     protected void handleEntityReadEvent(EntityReadEvent event) {
         this.listeners.forEach(listener -> listener.onEntityReadEvent(event, this.context));
+        
+        var currentTransaction = this.currentTransaction();                
+        var entity = event.entity();
+
+        if (this.hasConflict(entity, currentTransaction)) {
+            this.listeners.forEach(listener -> listener.onReadWriteConflict(event, this.context));
+        }
+    }
+    
+    private boolean hasConflict(Entity entity, Transaction currentTransaction) {
+        var changingTransaction = this.context.getTransactionWithPendingWriteTo(entity);
+        
+        if (changingTransaction == null) {
+            return false;
+        } else if (currentTransaction == null) {
+            return true;
+        } else {
+            return !(changingTransaction.equals(currentTransaction));
+        }
     }
 
     @Override
     protected void handleEntityWriteEvent(EntityWriteEvent event) {
         this.listeners.forEach(listener -> listener.onEntityWriteEvent(event, this.context));
+        
+        var currentTransaction = this.currentTransaction();                
+        var entity = event.entity();
+        
+        if (this.hasConflict(entity, currentTransaction)) {
+            this.listeners.forEach(listener -> listener.onWriteWriteConflict(event, this.context));
+            
+            if (currentTransaction != null) {
+                currentTransaction.setAbortOnly();
+            }
+        } else if (currentTransaction != null) {       
+            // If a transaction is available, record the pending write
+            this.context.registerPendingWrite(event);
+        } else {
+            // No transaction available, so the event is auto-committed
+            this.listeners.forEach(listener -> listener.onCommittedWrite(event, this.context));
+        }
     }
 
     @Override
@@ -157,17 +194,33 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
     }
     
     private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
-        var outcome = transaction.commit();
+        var outcome = transaction.commit();       
         
         if (outcome == Outcome.COMMITTED) {
             transaction.forEach(tx -> this.notifyListenersOfCommitOf(tx, event));
-        } else {
+            transaction.forEach(this::notifyListenersOfCommittedWrites);            
+        } else {            
             transaction.forEach(tx -> this.notifyListenersOfAbortOf(tx, event));
+            transaction.forEach(this::notifyListenersOfRevertedWrites);
         }
+    }
+    
+    private void notifyListenersOfCommittedWrites(Transaction transaction) {
+        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
+        pendingWrites.forEach(
+                writeEvent -> this.listeners.forEach(listener -> listener.onCommittedWrite(writeEvent, this.context))
+                );
     }
     
     private void notifyListenersOfCommitOf(Transaction transaction, MonitoringEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
+    }
+    
+    private void notifyListenersOfRevertedWrites(Transaction transaction) {
+        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
+        pendingWrites.forEach(
+                writeEvent -> this.listeners.forEach(listener -> listener.onRevertedWrite(writeEvent, this.context))
+                );
     }
     
     private void notifyListenersOfAbortOf(Transaction transaction, MonitoringEvent event) {
@@ -375,8 +428,9 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         var transaction = this.currentTransaction();
         if (transaction != null) {
             transaction.abort();
-            
+                        
             this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
+            transaction.forEach(this::notifyListenersOfRevertedWrites);
         }
     }
 
