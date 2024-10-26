@@ -37,6 +37,10 @@ abstract class SimpleTableModel<T> extends AbstractTableModel {
         return this.values.size();
     }
     
+    public T getValue(int rowIndex) {
+        return this.values.get(rowIndex);
+    }
+    
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         T object = this.values.get(rowIndex);

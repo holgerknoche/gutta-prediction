@@ -36,6 +36,14 @@ public class EventTrace {
         this.events.forEach(action);
     }
     
+    public long traceId() {
+        if (this.events().isEmpty()) {
+            return 0;
+        } else {
+            return this.events().get(0).traceId();
+        }
+    }
+    
     @Override
     public int hashCode() {
         return this.events.hashCode();

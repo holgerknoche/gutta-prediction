@@ -5,6 +5,8 @@ import gutta.prediction.dsl.DeploymentModelReader;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -108,11 +110,39 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
     }
     
     private JTable createResultsTable() {
-        return new JTable();
+        var table = new JTable();
+        
+        table.addMouseListener(new MouseAdapter() {
+            
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2) {
+                    var table = AnalysisFrameTemplate.this.resultsTable.get();
+                    
+                    var rowIndex = table.rowAtPoint(event.getPoint());
+                    AnalysisFrameTemplate.this.onRowSelection(table, rowIndex);
+                }                
+            }
+            
+        });
+        
+        return table;
     }
 
+    protected void onRowSelection(JTable table, int rowIndex) {
+        // Do nothing by default
+    }
+    
     protected void setResultsTableModel(TableModel tableModel) {
         this.resultsTable.get().setModel(tableModel);
+    }
+    
+    protected String originalDeploymentModelSpec() {
+        return this.originalDeploymentModelSpec;
+    }
+    
+    protected DeploymentModel originalDeploymentModel() {
+        return this.originalDeploymentModel;
     }
     
     private JToolBar createToolBar() {
@@ -158,5 +188,5 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
     private void resetScenarioAction(ActionEvent event) {
         this.modifiedDeploymentModelArea.get().setText("");
     }
-    
+        
 }

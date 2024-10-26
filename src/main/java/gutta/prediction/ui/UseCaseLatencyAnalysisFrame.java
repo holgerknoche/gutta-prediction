@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.table.TableModel;
@@ -52,6 +53,17 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
     protected void addSpecificItemsToToolBar(JToolBar toolBar) {
         toolBar.add(this.significanceLevelLabel.get());
         toolBar.add(this.significanceLevelField.get());
+    }
+    
+    @Override
+    protected void onRowSelection(JTable table, int rowIndex) {
+        var useCaseName = (String) table.getValueAt(rowIndex, 0);
+        var traces = this.tracesPerUseCase.get(useCaseName);
+        
+        if (traces != null) {
+            var frame = new TracesPerUseCaseLatencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            frame.setVisible(true);
+        }
     }
             
     @Override

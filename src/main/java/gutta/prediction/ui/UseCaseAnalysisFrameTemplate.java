@@ -15,7 +15,7 @@ abstract class UseCaseAnalysisFrameTemplate<T extends Comparable<T>> extends Ana
     
     private static final long serialVersionUID = 5209108354998887792L;
            
-    private final Map<String, Collection<EventTrace>> tracesPerUseCase;
+    protected final Map<String, Collection<EventTrace>> tracesPerUseCase;
     
     protected UseCaseAnalysisFrameTemplate(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
         super(originalDeploymentModelSpec, originalDeploymentModel);
