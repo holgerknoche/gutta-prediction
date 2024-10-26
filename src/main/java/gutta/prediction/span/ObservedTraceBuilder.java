@@ -90,8 +90,8 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
     
         if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
             if (locationChange(event, entryEvent)) {
-                var newSpan = new Span(formatLocation(event.location(), event.name()), entryEvent.timestamp(), this.currentSpan);
-                this.stack.push(newSpan);
+                var newSpan = new Span(formatLocation(entryEvent.location(), entryEvent.name()), entryEvent.timestamp(), this.currentSpan);
+                this.stack.push(this.currentSpan);
                 this.currentSpan = newSpan;
 
                 var latency = calculateLatency(event, entryEvent);
@@ -117,15 +117,17 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
         var nextEvent = this.events.lookahead(1);
         
         if (nextEvent instanceof ServiceCandidateReturnEvent returnEvent) {
-            if (locationChange(event, returnEvent)) {
-                var span = this.stack.pop();
-                span.endTimestamp(event.timestamp());
+            if (locationChange(event, returnEvent)) {                
+                this.currentSpan.endTimestamp(event.timestamp());                
                         
                 var latency = calculateLatency(event, returnEvent);
                 if (latency > 0) {
-                    span.addOverlay(new LatencyOverlay(event.timestamp(), returnEvent.timestamp()));
+                    this.currentSpan.addOverlay(new LatencyOverlay(event.timestamp(), returnEvent.timestamp()));
                 }
-            }
+                
+                var span = this.stack.pop();
+                this.currentSpan = span;
+            }                        
         } else {
             throw new IllegalStateException("Candidate exit event '" + event + "' is not followed by a candidate return event.");
         }                
