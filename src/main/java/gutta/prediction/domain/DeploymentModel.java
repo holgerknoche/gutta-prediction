@@ -84,9 +84,9 @@ public class DeploymentModel {
         return Optional.ofNullable(this.entityTypeAllocation.get(entityType));
     }
     
-    public Optional<ComponentConnection> getConnection(Component source, Component target, boolean syntheticAllocation) {
+    public Optional<ComponentConnection> getConnection(Component source, Component target, boolean modifiedAllocation) {
         if (source.equals(target)) {
-            return Optional.of(new LocalComponentConnection(source, target, syntheticAllocation));
+            return Optional.of(new LocalComponentConnection(source, target, modifiedAllocation));
         } else {
             var searchKey = new ConnectionKey(source, target);
             return Optional.ofNullable(this.componentConnections.get(searchKey));

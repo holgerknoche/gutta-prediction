@@ -10,12 +10,12 @@ public abstract class ComponentConnection {
     
     private final Component target;
     
-    private final boolean synthetic;
+    private final boolean modified;
         
-    protected ComponentConnection(Component source, Component target, boolean synthetic) {
+    protected ComponentConnection(Component source, Component target, boolean modified) {
         this.source = source;
         this.target = target;
-        this.synthetic = synthetic;        
+        this.modified = modified;        
     }
     
     public Component source() {
@@ -26,8 +26,8 @@ public abstract class ComponentConnection {
         return this.target;
     }        
     
-    public boolean isSynthetic() {
-        return this.synthetic;
+    public boolean isModified() {
+        return this.modified;
     }
     
     public abstract long latency();
@@ -53,7 +53,7 @@ public abstract class ComponentConnection {
     protected boolean equalsInternal(ComponentConnection that) {
         return Objects.equals(this.source, that.source) &&
                 Objects.equals(this.target, that.target) &&
-                (this.synthetic == that.synthetic);
+                (this.modified == that.modified);
     }
 
 }

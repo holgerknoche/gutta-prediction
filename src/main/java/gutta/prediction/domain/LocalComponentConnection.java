@@ -4,8 +4,8 @@ import gutta.prediction.util.EqualityUtil;
 
 public final class LocalComponentConnection extends ComponentConnection {
     
-    public LocalComponentConnection(Component source, Component target, boolean synthetic) {
-        super(source, target, synthetic);
+    public LocalComponentConnection(Component source, Component target, boolean modified) {
+        super(source, target, modified);
     }
     
     @Override

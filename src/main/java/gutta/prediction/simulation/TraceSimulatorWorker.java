@@ -123,7 +123,7 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
             var candidateAllocation = this.deploymentModel.getComponentAllocationForServiceCandidate(currentCandidate)
                     .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + currentCandidate + "' is not assigned to a component."));
             
-            var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.synthetic())
+            var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.modified())
                     .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
 
             this.performComponentReturn(event, returnEvent, connection);
@@ -198,7 +198,7 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
                 .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + invokedCandidate + "' is not assigned to a component."));
         
         var targetComponent = candidateAllocation.component();
-        return this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.synthetic())
+        return this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.modified())
                 .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
     }
     
@@ -238,8 +238,8 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         var targetLocation = entryEvent.location();
 
         if (connection.isRemote()) {
-            if (connection.isSynthetic() && !targetLocation.isSynthetic()) {
-                // For transitions along synthetic remote connections, a synthetic target location is required.
+            if (connection.isModified() && !targetLocation.isSynthetic()) {
+                // For transitions along modified remote connections, a synthetic target location is required.
                 // If the target location is not already synthetic (for instance, due to a previous rewrite), it is created.
                 targetLocation = this.createSyntheticLocation();                
             }

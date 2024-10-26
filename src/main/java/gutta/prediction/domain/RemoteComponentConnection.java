@@ -8,8 +8,8 @@ public final class RemoteComponentConnection extends ComponentConnection {
     
     private final TransactionPropagation transactionPropagation;
     
-    public RemoteComponentConnection(Component source, Component target, long latency, TransactionPropagation transactionPropagation, boolean synthetic) {
-        super(source, target, synthetic);
+    public RemoteComponentConnection(Component source, Component target, long latency, TransactionPropagation transactionPropagation, boolean modified) {
+        super(source, target, modified);
         
         this.latency = latency;
         this.transactionPropagation = transactionPropagation;

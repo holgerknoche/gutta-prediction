@@ -83,8 +83,8 @@ public class LatencyRewriter implements TraceRewriter {
         }
         
         private void adjustLatency(MonitoringEvent startEvent, MonitoringEvent endEvent, ComponentConnection connection) {
-            if (connection.isSynthetic()) {
-                // For transitions over synthetic connections, we may need to adjust the time offset as we do not preserve the latency
+            if (connection.isModified()) {
+                // For transitions over modified connections, we may need to adjust the time offset as we do not preserve the latency
                 var observedLatency = (endEvent.timestamp() - startEvent.timestamp());
                 var newLatency = connection.latency();
 
