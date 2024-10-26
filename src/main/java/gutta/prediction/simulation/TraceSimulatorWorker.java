@@ -117,7 +117,13 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
             var sourceComponent = this.currentComponent();
             // Determine the component to return to from the top of the stack
             var targetComponent = this.context.peek().component();
-            var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent)
+            
+            // If the allocation of the current service candidate is synthetic, we need to take this into account for the connection
+            var currentCandidate = this.context.currentServiceCandidate();
+            var candidateAllocation = this.deploymentModel.getComponentAllocationForServiceCandidate(currentCandidate)
+                    .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + currentCandidate + "' is not assigned to a component."));
+            
+            var connection = this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.synthetic())
                     .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
 
             this.performComponentReturn(event, returnEvent, connection);
@@ -188,9 +194,11 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
     private ComponentConnection findConnectionForCandidateEntry(String candidateName, Component sourceComponent, MonitoringEvent event) {
         var invokedCandidate = this.deploymentModel.resolveServiceCandidateByName(candidateName)
                 .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + candidateName + "' does not exist."));
-        var targetComponent = this.deploymentModel.getComponentForServiceCandidate(invokedCandidate)
+        var candidateAllocation = this.deploymentModel.getComponentAllocationForServiceCandidate(invokedCandidate)
                 .orElseThrow(() -> new TraceProcessingException(event, "Service candidate '" + invokedCandidate + "' is not assigned to a component."));
-        return this.deploymentModel.getConnection(sourceComponent, targetComponent)
+        
+        var targetComponent = candidateAllocation.component();
+        return this.deploymentModel.getConnection(sourceComponent, targetComponent, candidateAllocation.synthetic())
                 .orElseThrow(() -> new TraceProcessingException(event, "No connection from '" + sourceComponent + "' to '" + targetComponent + "'."));
     }
     
@@ -408,11 +416,11 @@ class TraceSimulatorWorker extends MonitoringEventVisitor {
         // Determine the component providing the given use case
         var useCase = new UseCase(event.name());
         
-        var component = this.deploymentModel.getComponentForUseCase(useCase)
+        var componentAllocation = this.deploymentModel.getComponentAllocationForUseCase(useCase)
                 .orElseThrow(() -> new TraceProcessingException(event, "Use case '" + useCase + "' is not assigned to a component."));
         
 
-        this.context.currentComponent(component);
+        this.context.currentComponent(componentAllocation.component());
         this.context.currentLocation(event.location());
 
         this.listeners.forEach(listener -> listener.onUseCaseStartEvent(event, this.context));

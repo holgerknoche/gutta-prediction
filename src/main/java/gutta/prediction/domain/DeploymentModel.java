@@ -12,9 +12,9 @@ import java.util.stream.Stream;
 
 public class DeploymentModel {
     
-    private final Map<UseCase, Component> useCaseAllocation;
+    private final Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation;
     
-    private final Map<ServiceCandidate, Component> serviceCandidateAllocation;
+    private final Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation;
     
     private final Map<ConnectionKey, ComponentConnection> componentConnections;
     
@@ -34,13 +34,15 @@ public class DeploymentModel {
         return new Builder();
     }
     
-    private DeploymentModel(Map<UseCase, Component> useCaseAllocation, Map<ServiceCandidate, Component> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+    private DeploymentModel(Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation, Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
         this.useCaseAllocation = useCaseAllocation;
         this.serviceCandidateAllocation = serviceCandidateAllocation;        
         this.entityTypeAllocation = entityTypeAllocation;
         this.componentConnections = componentConnections;
         
-        var allComponents = Stream.concat(this.serviceCandidateAllocation.values().stream(), this.useCaseAllocation.values().stream()).collect(Collectors.toSet());
+        var allComponents = Stream.concat(this.serviceCandidateAllocation.values().stream(), this.useCaseAllocation.values().stream())
+                .map(ComponentAllocation::component)
+                .collect(Collectors.toSet());        
         
         // Build name-based lookups
         this.useCaseLookup = useCaseAllocation.keySet().stream().collect(Collectors.toMap(UseCase::name, Function.identity()));
@@ -70,11 +72,11 @@ public class DeploymentModel {
         return Optional.ofNullable(this.entityTypeLookup.get(entityTypeName));
     }
     
-    public Optional<Component> getComponentForUseCase(UseCase useCase) {
+    public Optional<ComponentAllocation<UseCase>> getComponentAllocationForUseCase(UseCase useCase) {
         return Optional.ofNullable(this.useCaseAllocation.get(useCase));
     }
     
-    public Optional<Component> getComponentForServiceCandidate(ServiceCandidate serviceCandidate) {
+    public Optional<ComponentAllocation<ServiceCandidate>> getComponentAllocationForServiceCandidate(ServiceCandidate serviceCandidate) {
         return Optional.ofNullable(this.serviceCandidateAllocation.get(serviceCandidate));
     }
     
@@ -82,9 +84,9 @@ public class DeploymentModel {
         return Optional.ofNullable(this.entityTypeAllocation.get(entityType));
     }
     
-    public Optional<ComponentConnection> getConnection(Component source, Component target) {
+    public Optional<ComponentConnection> getConnection(Component source, Component target, boolean syntheticAllocation) {
         if (source.equals(target)) {
-            return Optional.of(new LocalComponentConnection(source, target, false));
+            return Optional.of(new LocalComponentConnection(source, target, syntheticAllocation));
         } else {
             var searchKey = new ConnectionKey(source, target);
             return Optional.ofNullable(this.componentConnections.get(searchKey));
@@ -122,11 +124,11 @@ public class DeploymentModel {
     
     public static class Builder {
         
-        private final Map<UseCase, Component> useCaseAllocation;
+        private final Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation;
         
         private final Map<String, ServiceCandidate> nameToServiceCandidate;
         
-        private final Map<ServiceCandidate, Component> serviceCandidateAllocation;
+        private final Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation;
         
         private final Map<EntityType, DataStore> entityTypeAllocation;
         
@@ -143,7 +145,7 @@ public class DeploymentModel {
             this.modificationInProgress = false;
         }
         
-        private Builder(Map<UseCase, Component> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, Map<ServiceCandidate, Component> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+        private Builder(Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
             this.useCaseAllocation = new HashMap<>(useCaseAllocation);
             this.nameToServiceCandidate = new HashMap<>(nameToServiceCandidate);
             this.serviceCandidateAllocation = new HashMap<>(serviceCandidateAllocation);
@@ -153,7 +155,8 @@ public class DeploymentModel {
         }
         
         public Builder assignUseCase(UseCase useCase, Component component) {
-            this.useCaseAllocation.put(useCase, component);
+            var componentAllocation = new ComponentAllocation<>(useCase, this.modificationInProgress, component);
+            this.useCaseAllocation.put(useCase, componentAllocation);
             return this;
         }
         
@@ -164,7 +167,8 @@ public class DeploymentModel {
                 this.serviceCandidateAllocation.remove(previousCandidate);
             }
             
-            this.serviceCandidateAllocation.put(candidate, component);
+            var componentAllocation = new ComponentAllocation<>(candidate, this.modificationInProgress, component);
+            this.serviceCandidateAllocation.put(candidate, componentAllocation);
             return this;
         }
         
