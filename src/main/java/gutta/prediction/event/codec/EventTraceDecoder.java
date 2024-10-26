@@ -20,6 +20,7 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,13 +50,16 @@ public class EventTraceDecoder {
 
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
+    private static final int BUFFER_SIZE = 65536;
+    
     private Map<String, EntityType> entityTypes;
 
     public Collection<EventTrace> decodeTraces(InputStream inputStream) throws IOException {
         this.entityTypes = new HashMap<>();
         
-        try (var dataStream = new DataInputStream(inputStream)) {
-            var numberOfTraces = dataStream.readInt();
+        try (var bufferedStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
+             var dataStream = new DataInputStream(bufferedStream)) {
+            var numberOfTraces = dataStream.readInt();            
             var traces = new ArrayList<EventTrace>(numberOfTraces);
 
             var stringTable = this.readStringTable(dataStream);
