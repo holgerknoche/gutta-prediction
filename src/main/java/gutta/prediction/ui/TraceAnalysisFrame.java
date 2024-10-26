@@ -6,6 +6,7 @@ import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.dsl.DeploymentModelReader;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.span.TraceBuilder;
 
 import java.awt.BorderLayout;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -44,6 +46,10 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     private final InitializeOnce<JScrollPane> traceViewPane = new InitializeOnce<>(this::createTraceViewPane);
     
     private final InitializeOnce<TraceViewComponent> traceView = new InitializeOnce<>(this::createTraceView);
+    
+    private final InitializeOnce<JScrollPane> eventsTablePane = new InitializeOnce<>(this::createEventsTablePane);
+    
+    private final InitializeOnce<JTable> eventsTable = new InitializeOnce<>(this::createEventsTable);
     
     private final InitializeOnce<JScrollPane> issuesTablePane = new InitializeOnce<>(this::createIssuesTablePane); 
     
@@ -181,6 +187,12 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifiedDeploymentModel, rewrittenTraceIssues.issues());
         this.traceView.get().trace(spanTrace);
         
+        var eventViews = rewrittenTrace.events().stream()
+                .map(EventView::new)
+                .sorted()
+                .collect(Collectors.toList());        
+        this.eventsTable.get().setModel(new EventTableModel(eventViews));
+        
         var consistencyIssueViews = new ArrayList<ConsistencyIssueView>();
         createIssueViews(diff.newIssues(), ConsistencyIssueStatus.NEW, consistencyIssueViews::add);
         createIssueViews(diff.obsoleteIssues(), ConsistencyIssueStatus.OBSOLETE, consistencyIssueViews::add);
@@ -197,7 +209,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         Collections.sort(writeChanges);
         
         this.writesTable.get().setModel(new WriteChangeTableModel(writeChanges));
-    }
+    }    
     
     private static void createIssueViews(Collection<ConsistencyIssue<?>> issues, ConsistencyIssueStatus status, Consumer<ConsistencyIssueView> viewConsumer) {
         for (var issue : issues) {
@@ -230,6 +242,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         var tabbedPane = new JTabbedPane();
         
         tabbedPane.addTab("Trace View", this.traceViewPane.get());
+        tabbedPane.addTab("Events", this.eventsTablePane.get());
         tabbedPane.addTab("Consistency Issues", this.issuesTablePane.get());
         tabbedPane.addTab("Entity Writes", this.writesTablePane.get());
         
@@ -258,6 +271,48 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     
     private JTable createWritesTable() {
         return new JTable();
+    }
+    
+    private JScrollPane createEventsTablePane() {
+        return new JScrollPane(this.eventsTable.get());
+    }
+    
+    private JTable createEventsTable() {
+        return new JTable();
+    }
+    
+    private record EventView(long timestamp, String eventType) implements Comparable<EventView> {
+        
+        public EventView(MonitoringEvent event) {
+            this(event.timestamp(), event.getClass().getSimpleName());
+        }
+        
+        @Override
+        public int compareTo(EventView that) {
+            return Long.compare(this.timestamp(), that.timestamp());
+        }
+        
+    }
+    
+    private static class EventTableModel extends SimpleTableModel<EventView> {
+        
+        private static final long serialVersionUID = 6841554776149973447L;
+        
+        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Event Type");
+        
+        public EventTableModel(List<EventView> values) {
+            super(COLUMN_NAMES, values);
+        }
+
+        @Override
+        protected Object fieldOf(EventView object, int columnIndex) {
+            return switch (columnIndex) {
+            case 0 -> object.timestamp();
+            case 1 -> object.eventType();
+            default -> "";
+            };
+        }
+        
     }
     
     private record ConsistencyIssueView(long timestamp, ConsistencyIssueStatus status, String description, String affectedEntityType, String affectedEntityId) implements Comparable<ConsistencyIssueView> {
