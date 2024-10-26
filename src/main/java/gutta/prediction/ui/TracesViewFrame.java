@@ -21,7 +21,9 @@ import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determi
 
 class TracesViewFrame extends UIFrameTemplate {
 
-    private static final long serialVersionUID = 1786288002124789312L;        
+    private static final long serialVersionUID = 1786288002124789312L;
+    
+    private static final int MAX_EVENTS_FOR_VISUALIZATION = 2000;
     
     private final InitializeOnce<JScrollPane> tracesListPane = new InitializeOnce<>(this::createTracesListPane);
     
@@ -103,7 +105,7 @@ class TracesViewFrame extends UIFrameTemplate {
                         var columnIndex = table.columnAtPoint(event.getPoint());                        
                         table.changeSelection(rowIndex, columnIndex, false, false);
                     }
-                } else {
+                } else if (trace.size() < MAX_EVENTS_FOR_VISUALIZATION) {
                     var spanTrace = new ObservedTraceBuilder(trace).buildTrace();
                     TracesViewFrame.this.traceView.get().trace(spanTrace);
                 }

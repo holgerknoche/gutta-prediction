@@ -29,6 +29,10 @@ import javax.swing.JToolBar;
 
 class TraceAnalysisFrame extends UIFrameTemplate {
 
+    private static final int MAX_EVENTS_FOR_VISUALIZATION = 2000;
+    
+    private static final int MAX_EVENTS_FOR_LIST = 100000;
+    
     private static final long serialVersionUID = -5946710894820989364L;
     
     private final InitializeOnce<JPanel> mainPanel = new InitializeOnce<>(this::createMainPanel);
@@ -184,14 +188,18 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         var diff = analysis.diffAnalyzerResults(originalTraceIssues, rewrittenTraceIssues, rewrittenTrace::obtainOriginalEvent);
         
-        var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifiedDeploymentModel, rewrittenTraceIssues.issues());
-        this.traceView.get().trace(spanTrace);
+        if (rewrittenTrace.size() < MAX_EVENTS_FOR_VISUALIZATION) {
+            var spanTrace = new TraceBuilder().buildTrace(rewrittenTrace, modifiedDeploymentModel, rewrittenTraceIssues.issues());
+            this.traceView.get().trace(spanTrace);
+        }
         
-        var eventViews = rewrittenTrace.events().stream()
-                .map(EventView::new)
-                .sorted()
-                .collect(Collectors.toList());        
-        this.eventsTable.get().setModel(new EventTableModel(eventViews));
+        if (rewrittenTrace.size() < MAX_EVENTS_FOR_LIST) {
+            var eventViews = rewrittenTrace.events().stream()
+                    .map(EventView::new)
+                    .sorted()
+                    .collect(Collectors.toList());        
+            this.eventsTable.get().setModel(new EventTableModel(eventViews));
+        }
         
         var consistencyIssueViews = new ArrayList<ConsistencyIssueView>();
         createIssueViews(diff.newIssues(), ConsistencyIssueStatus.NEW, consistencyIssueViews::add);
