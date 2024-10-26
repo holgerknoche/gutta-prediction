@@ -108,6 +108,10 @@ class TracesViewFrame extends UIFrameTemplate {
                 } else if (trace.size() < MAX_EVENTS_FOR_VISUALIZATION) {
                     var spanTrace = new ObservedTraceBuilder(trace).buildTrace();
                     TracesViewFrame.this.traceView.get().trace(spanTrace);
+                } 
+                
+                if (event.getClickCount() == 2) {
+                    TracesViewFrame.this.analyzeTraceAction(null);
                 }
             }
             
