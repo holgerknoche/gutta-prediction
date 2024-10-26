@@ -1,5 +1,7 @@
 package gutta.prediction.span;
 
+import gutta.prediction.event.EntityReadEvent;
+import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ExplicitTransactionAbortEvent;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
@@ -17,6 +19,7 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.EventStream;
+import gutta.prediction.span.EntityEvent.EntityEventType;
 import gutta.prediction.span.TransactionEvent.TransactionEventType;
 
 import java.util.ArrayDeque;
@@ -131,6 +134,16 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
         } else {
             throw new IllegalStateException("Candidate exit event '" + event + "' is not followed by a candidate return event.");
         }                
+    }
+    
+    @Override
+    protected void handleEntityReadEvent(EntityReadEvent event) {
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
+    }
+    
+    @Override
+    protected void handleEntityWriteEvent(EntityWriteEvent event) {
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
     }
     
     private static String formatLocation(Location location, String name) {
