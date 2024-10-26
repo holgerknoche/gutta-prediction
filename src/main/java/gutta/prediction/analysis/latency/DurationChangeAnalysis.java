@@ -7,11 +7,12 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.inference.TTest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class DurationChangeAnalysis {
 
-    public Result analyzeTraces(Iterable<EventTrace> traces, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel, double significanceLevel) {
+    public Result analyzeTraces(Collection<EventTrace> traces, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel, double significanceLevel) {
         var originalDurationsList = new ArrayList<Double>();
         var modifiedDurationsList = new ArrayList<Double>();
         
@@ -29,7 +30,7 @@ public class DurationChangeAnalysis {
         var modifiedDurations = toDoubleArray(modifiedDurationsList);
         
         // Perform a heteroscedastic t-Test for the durations
-        var pValue = new TTest().tTest(originalDurations, modifiedDurations); 
+        var pValue = (traces.size() < 2) ? 1.0 : new TTest().tTest(originalDurations, modifiedDurations); 
         var originalMean = StatUtils.mean(originalDurations);
         var modifiedMean = StatUtils.mean(modifiedDurations); 
         
