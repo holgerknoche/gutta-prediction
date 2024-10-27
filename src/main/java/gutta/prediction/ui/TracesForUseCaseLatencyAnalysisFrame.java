@@ -10,11 +10,11 @@ import java.util.List;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 
-class TracesPerUseCaseLatencyAnalysisFrame extends TracesForUseCaseAnalysisFrameTemplate<TraceLatencyAnalysisResultView> {
+class TracesForUseCaseLatencyAnalysisFrame extends TracesForUseCaseAnalysisFrameTemplate<TraceLatencyAnalysisResultView> {
 
     private static final long serialVersionUID = -8761502500290812925L;
 
-    public TracesPerUseCaseLatencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
+    public TracesForUseCaseLatencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
         super(traces, originalDeploymentModelSpec, originalDeploymentModel);
         
         this.initialize("Latency Analysis for Use Case '" + useCaseName + "'");

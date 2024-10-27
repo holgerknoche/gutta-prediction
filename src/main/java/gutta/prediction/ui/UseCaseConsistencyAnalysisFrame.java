@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JTable;
 import javax.swing.table.TableModel;
 
 class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseConsistencyAnalysisResultView> {
@@ -27,6 +28,17 @@ class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCa
     
     private void initialize() {
         super.initialize("Consistency Change Analysis");
+    }
+    
+    @Override
+    protected void onRowSelection(JTable table, int rowIndex) {
+        var useCaseName = (String) table.getValueAt(rowIndex, 0);
+        var traces = this.tracesPerUseCase.get(useCaseName);
+        
+        if (traces != null) {
+            var frame = new TracesForUseCaseConsistencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            frame.setVisible(true);
+        }
     }
 
     @Override

@@ -61,7 +61,7 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
         var traces = this.tracesPerUseCase.get(useCaseName);
         
         if (traces != null) {
-            var frame = new TracesPerUseCaseLatencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            var frame = new TracesForUseCaseLatencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
             frame.setVisible(true);
         }
     }
