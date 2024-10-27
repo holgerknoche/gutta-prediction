@@ -2,6 +2,8 @@ package gutta.prediction.ui;
 
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.analysis.consistency.ConsistencyIssuesAnalysis;
+import gutta.prediction.analysis.overview.RemoteCall;
+import gutta.prediction.analysis.overview.RemoteCallsLister;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.dsl.DeploymentModelReader;
 import gutta.prediction.event.EntityWriteEvent;
@@ -54,6 +56,10 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     private final InitializeOnce<JScrollPane> eventsTablePane = new InitializeOnce<>(this::createEventsTablePane);
     
     private final InitializeOnce<JTable> eventsTable = new InitializeOnce<>(this::createEventsTable);
+    
+    private final InitializeOnce<JScrollPane> remoteCallsTablePane = new InitializeOnce<>(this::createRemoteCallsTablePane);
+    
+    private final InitializeOnce<JTable> remoteCallsTable = new InitializeOnce<>(this::createRemoteCallsTable);
     
     private final InitializeOnce<JScrollPane> issuesTablePane = new InitializeOnce<>(this::createIssuesTablePane); 
     
@@ -200,7 +206,10 @@ class TraceAnalysisFrame extends UIFrameTemplate {
                     .sorted()
                     .collect(Collectors.toList());        
             this.eventsTable.get().setModel(new EventTableModel(eventViews));
-        }
+            
+            var remoteCalls = new RemoteCallsLister().listRemoteCalls(rewrittenTrace, modifiedDeploymentModel);
+            this.remoteCallsTable.get().setModel(new RemoteCallsTableModel(remoteCalls));
+        }                
         
         var consistencyIssueViews = new ArrayList<ConsistencyIssueView>();
         createIssueViews(diff.newIssues(), ConsistencyIssueStatus.NEW, consistencyIssueViews::add);
@@ -252,6 +261,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         tabbedPane.addTab("Trace View", this.traceViewPane.get());
         tabbedPane.addTab("Events", this.eventsTablePane.get());
+        tabbedPane.addTab("Remote Calls", this.remoteCallsTablePane.get());
         tabbedPane.addTab("Consistency Issues", this.issuesTablePane.get());
         tabbedPane.addTab("Entity Writes", this.writesTablePane.get());
         
@@ -290,6 +300,14 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         return new JTable();
     }
     
+    private JScrollPane createRemoteCallsTablePane() {
+        return new JScrollPane(this.remoteCallsTable.get());
+    }
+    
+    private JTable createRemoteCallsTable() {
+        return new JTable();
+    }
+    
     private record EventView(long timestamp, String eventType) implements Comparable<EventView> {
         
         public EventView(MonitoringEvent event) {
@@ -321,6 +339,29 @@ class TraceAnalysisFrame extends UIFrameTemplate {
             default -> "";
             };
         }
+        
+    }
+    
+    private static class RemoteCallsTableModel extends SimpleTableModel<RemoteCall> {
+        
+        private static final long serialVersionUID = 5363025636149287928L;
+        
+        private static final List<String> COLUMN_NAMES = List.of("Timestamp", "Source Component", "Service Candidate", "Target Component");
+        
+        public RemoteCallsTableModel(List<RemoteCall> values) {
+            super(COLUMN_NAMES, values);
+        }
+        
+        @Override
+        protected Object fieldOf(RemoteCall object, int columnIndex) {
+            return switch (columnIndex) {
+            case 0 -> object.timestamp();
+            case 1 -> object.sourceComponent().name();
+            case 2 -> object.serviceCanidate().name();
+            case 3 -> object.targetComponent().name();
+            default -> "";
+            };
+        }        
         
     }
     
