@@ -13,9 +13,6 @@ import javax.swing.table.TableModel;
 
 class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseConsistencyAnalysisResultView> {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 887307194797918432L;
 
     public UseCaseConsistencyAnalysisFrame(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
@@ -36,7 +33,7 @@ class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCa
         var traces = this.tracesPerUseCase.get(useCaseName);
         
         if (traces != null) {
-            var frame = new TracesForUseCaseConsistencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            var frame = new TracesForUseCaseConsistencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.modifiedDeploymentModelSpec());
             frame.setVisible(true);
         }
     }

@@ -21,8 +21,8 @@ abstract class TracesForUseCaseAnalysisFrameTemplate <T extends Comparable<T>> e
     
     private final Map<Long, EventTrace> traceLookup;
     
-    protected TracesForUseCaseAnalysisFrameTemplate(Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
-        super(originalDeploymentModelSpec, originalDeploymentModel);
+    protected TracesForUseCaseAnalysisFrameTemplate(Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
+        super(originalDeploymentModelSpec, originalDeploymentModel, givenModifiedDeploymentModelSpec);
         
         this.traces = traces;
         this.traceLookup = traces.stream().collect(Collectors.toMap(EventTrace::traceId, Function.identity()));

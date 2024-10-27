@@ -45,9 +45,16 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
     
     private final DeploymentModel originalDeploymentModel;
     
+    private final String givenModifiedDeploymentModelSpec;
+    
     protected AnalysisFrameTemplate(String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
+        this(originalDeploymentModelSpec, originalDeploymentModel, null);
+    }
+    
+    protected AnalysisFrameTemplate(String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
         this.originalDeploymentModelSpec = originalDeploymentModelSpec;
         this.originalDeploymentModel = originalDeploymentModel;
+        this.givenModifiedDeploymentModelSpec = givenModifiedDeploymentModelSpec;
     }
     
     protected void initializeControls() {
@@ -59,6 +66,11 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
 
     protected void initializeDefaults() {
         this.originalDeploymentModelArea.get().setText(this.originalDeploymentModelSpec);
+        
+        if (this.givenModifiedDeploymentModelSpec != null) {
+            this.modifiedDeploymentModelArea.get().setText(this.givenModifiedDeploymentModelSpec);
+            this.analyzeScenario(this.givenModifiedDeploymentModelSpec);
+        }
     }
     
     private JScrollPane createOriginalDeploymentModelPane() {
@@ -145,6 +157,14 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
         return this.originalDeploymentModel;
     }
     
+    protected String givenModifiedDeploymentModelSpec() {
+        return this.givenModifiedDeploymentModelSpec;
+    }
+    
+    protected String modifiedDeploymentModelSpec() {
+        return this.modifiedDeploymentModelArea.get().getText();
+    }
+    
     private JToolBar createToolBar() {
         var toolBar = new JToolBar();
         
@@ -178,15 +198,19 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
     
     private void analyzeScenarioAction(ActionEvent event) {
         var modifiedDeploymentModelSpec = this.modifiedDeploymentModelArea.get().getText();
-        var modifiedDeploymentModel = new DeploymentModelReader().readModel(modifiedDeploymentModelSpec, this.originalDeploymentModel);
-        
+        this.analyzeScenario(modifiedDeploymentModelSpec);
+    }
+    
+    private void analyzeScenario(String modifiedDeploymentModelSpec) {
+        var modifiedDeploymentModel = new DeploymentModelReader().readModel(modifiedDeploymentModelSpec, this.originalDeploymentModel);        
         this.performScenarioAnalysis(this.originalDeploymentModel, modifiedDeploymentModel);
     }
     
     protected abstract void performScenarioAnalysis(DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel);
     
     private void resetScenarioAction(ActionEvent event) {
-        this.modifiedDeploymentModelArea.get().setText("");
+        var valueToSet = (this.givenModifiedDeploymentModelSpec != null) ? this.givenModifiedDeploymentModelSpec : "";        
+        this.modifiedDeploymentModelArea.get().setText(valueToSet);
     }
         
 }

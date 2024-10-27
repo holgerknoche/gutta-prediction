@@ -14,8 +14,8 @@ class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisF
 
     private static final long serialVersionUID = 1597680404131271009L;
 
-    public TracesForUseCaseConsistencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
-        super(traces, originalDeploymentModelSpec, originalDeploymentModel);
+    public TracesForUseCaseConsistencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
+        super(traces, originalDeploymentModelSpec, originalDeploymentModel, givenModifiedDeploymentModelSpec);
         
         this.initialize("Consistency Analysis for Use Case '" + useCaseName + "'");
         this.initializeControls();
@@ -42,7 +42,7 @@ class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisF
         var trace = this.traceWithId(traceId);              
         
         if (trace != null) {
-            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.givenModifiedDeploymentModelSpec());
             frame.setVisible(true);
         }
     }

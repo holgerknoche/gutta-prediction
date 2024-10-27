@@ -78,18 +78,18 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     private final String givenModifiedDeploymentModelSpec;
         
     public TraceAnalysisFrame(EventTrace trace, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
+        this(trace, originalDeploymentModelSpec, originalDeploymentModel, null);
+    }
+    
+    public TraceAnalysisFrame(EventTrace trace, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
         this.trace = trace;
         this.originalDeploymentModelSpec = originalDeploymentModelSpec;
         this.originalDeploymentModel = originalDeploymentModel;
-        this.givenModifiedDeploymentModelSpec = null;
+        this.givenModifiedDeploymentModelSpec = givenModifiedDeploymentModelSpec;
         
         this.initialize(trace.traceId());
         this.initializeControls();
         this.initializeDefaults();
-        
-        if (this.givenModifiedDeploymentModelSpec != null) {
-            this.performAnalysis(this.givenModifiedDeploymentModelSpec, originalDeploymentModel);
-        }
     }
     
     private void initialize(long traceId) {
@@ -108,6 +108,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         
         if (this.givenModifiedDeploymentModelSpec != null) {
             this.modifiedModelArea.get().setText(this.givenModifiedDeploymentModelSpec);
+            this.performAnalysis(this.givenModifiedDeploymentModelSpec, this.originalDeploymentModel);
         }
     }
     

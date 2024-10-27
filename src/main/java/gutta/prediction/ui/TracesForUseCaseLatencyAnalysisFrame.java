@@ -14,8 +14,8 @@ class TracesForUseCaseLatencyAnalysisFrame extends TracesForUseCaseAnalysisFrame
 
     private static final long serialVersionUID = -8761502500290812925L;
 
-    public TracesForUseCaseLatencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
-        super(traces, originalDeploymentModelSpec, originalDeploymentModel);
+    public TracesForUseCaseLatencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
+        super(traces, originalDeploymentModelSpec, originalDeploymentModel, givenModifiedDeploymentModelSpec);
         
         this.initialize("Latency Analysis for Use Case '" + useCaseName + "'");
         this.initializeControls();
@@ -28,7 +28,7 @@ class TracesForUseCaseLatencyAnalysisFrame extends TracesForUseCaseAnalysisFrame
         var trace = this.traceWithId(traceId);              
         
         if (trace != null) {
-            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel());
+            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.givenModifiedDeploymentModelSpec());
             frame.setVisible(true);
         }
     }
