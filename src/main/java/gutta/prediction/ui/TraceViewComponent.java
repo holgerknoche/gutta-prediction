@@ -46,8 +46,8 @@ class TraceViewComponent extends TraceComponent {
     private JPopupMenu createPopupMenu() {
         var menu = new JPopupMenu();
         
-        var saveToSvgItem = new JMenuItem("Save to SVG...");
-        saveToSvgItem.addActionListener(this::saveToSvgAction);
+        var saveToSvgItem = new JMenuItem("Save as SVG...");
+        saveToSvgItem.addActionListener(this::saveAsSvgAction);
         menu.add(saveToSvgItem);
         
         return menu;
@@ -90,7 +90,7 @@ class TraceViewComponent extends TraceComponent {
         this.shapes.forEach(shape -> shape.drawOn(graphics));
     }    
    
-    private void saveToSvgAction(ActionEvent event) {
+    private void saveAsSvgAction(ActionEvent event) {
         var optionalFile = this.loadFileWithDialog();
         
         optionalFile.ifPresent(this::saveToSvg);

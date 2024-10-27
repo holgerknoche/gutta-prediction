@@ -9,6 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JMenuItem;
@@ -52,18 +53,17 @@ class TracesViewFrame extends UIFrameTemplate {
     private static List<TraceView> buildViews(Collection<EventTrace> traces) {
         var views = new ArrayList<TraceView>(traces.size());
         
-        var traceNumber = 0;
         for (var trace : traces) {
             var duration = determineDuration(trace);
             var latency = determineLatency(trace);
             
             var latencyPercentage = (duration > 0) ? (double) latency / (double) duration : 0.0;
             
-            var view = new TraceView("Trace #" + (traceNumber + 1), duration, latencyPercentage, trace);
+            var view = new TraceView(trace.traceId(), duration, latencyPercentage, trace);
             views.add(view);
-            
-            traceNumber++;
         }
+        
+        Collections.sort(views);
         
         return views;
     }
@@ -116,7 +116,7 @@ class TracesViewFrame extends UIFrameTemplate {
             }
             
         });
-        
+                
         var popupMenu = new JPopupMenu();
         var analyzeTraceItem = new JMenuItem("Analyze Trace...");
         analyzeTraceItem.addActionListener(this::analyzeTraceAction);
@@ -150,7 +150,7 @@ class TracesViewFrame extends UIFrameTemplate {
 
         private static final long serialVersionUID = -16840755840867050L;
 
-        private static final List<String> COLUMN_NAMES = List.of("Trace #", "Duration", "Latency %");
+        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Duration", "Latency %");
         
         public TracesListModel(List<TraceView> values) {
             super(COLUMN_NAMES, values);
@@ -159,7 +159,7 @@ class TracesViewFrame extends UIFrameTemplate {
         @Override
         protected Object fieldOf(TraceView object, int columnIndex) {
             return switch (columnIndex) {
-            case 0 -> object.name();
+            case 0 -> object.traceId();
             case 1 -> object.duration();
             case 2 -> String.format("%.02f", object.latencyPercentage());
             default -> "";
@@ -168,7 +168,13 @@ class TracesViewFrame extends UIFrameTemplate {
         
     }
     
-    private record TraceView(String name, long duration, double latencyPercentage, EventTrace trace) {                
+    private record TraceView(long traceId, long duration, double latencyPercentage, EventTrace trace) implements Comparable<TraceView> {
+        
+        @Override
+        public int compareTo(TraceView that) {
+            return Long.compare(this.traceId(), that.traceId());
+        }
+        
     }
 
 }

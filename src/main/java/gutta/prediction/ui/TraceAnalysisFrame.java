@@ -83,7 +83,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         this.originalDeploymentModel = originalDeploymentModel;
         this.givenModifiedDeploymentModelSpec = null;
         
-        this.initialize();
+        this.initialize(trace.traceId());
         this.initializeControls();
         this.initializeDefaults();
         
@@ -92,8 +92,8 @@ class TraceAnalysisFrame extends UIFrameTemplate {
         }
     }
     
-    private void initialize() {
-        super.initialize("Event Trace Analysis");
+    private void initialize(long traceId) {
+        super.initialize("Event Trace Analysis of Trace " + traceId);
     }
     
     private void initializeControls() {
