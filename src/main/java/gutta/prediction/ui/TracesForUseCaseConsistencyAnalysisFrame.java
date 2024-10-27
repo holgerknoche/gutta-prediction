@@ -66,10 +66,10 @@ class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisF
         protected Object fieldOf(TraceConsistencyAnalysisResultView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.traceId();
-            case 1 -> object.issuesChanged();
+            case 1 -> asYesNo(object.issuesChanged());
             case 2 -> object.numberOfChangedIssues();
             case 3 -> object.numberOfUnchangedIssues();
-            case 4 -> object.writesChanged();
+            case 4 -> asYesNo(object.writesChanged());
             case 5 -> object.numberOfChangedWrites();
             case 6 -> object.numberOfUnchangedWrites();
             default -> "";

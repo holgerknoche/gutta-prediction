@@ -212,5 +212,5 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
         var valueToSet = (this.givenModifiedDeploymentModelSpec != null) ? this.givenModifiedDeploymentModelSpec : "";        
         this.modifiedDeploymentModelArea.get().setText(valueToSet);
     }
-        
+            
 }

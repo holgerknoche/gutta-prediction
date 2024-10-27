@@ -161,7 +161,7 @@ class TracesViewFrame extends UIFrameTemplate {
             return switch (columnIndex) {
             case 0 -> object.traceId();
             case 1 -> object.duration();
-            case 2 -> String.format("%.02f", object.latencyPercentage());
+            case 2 -> formatPercentage(object.latencyPercentage());
             default -> "";
             };
         }

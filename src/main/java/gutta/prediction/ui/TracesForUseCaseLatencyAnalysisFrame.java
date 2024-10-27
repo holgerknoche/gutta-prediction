@@ -64,9 +64,9 @@ class TracesForUseCaseLatencyAnalysisFrame extends TracesForUseCaseAnalysisFrame
         protected Object fieldOf(TraceLatencyAnalysisResultView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.traceId();
-            case 1 -> String.format("%.02f", object.originalDuration());
-            case 2 -> String.format("%.02f", object.newDuration());
-            case 3 -> String.format("%.02f", object.changePercentage());
+            case 1 -> formatAverage(object.originalDuration());
+            case 2 -> formatAverage(object.newDuration());
+            case 3 -> formatPercentage(object.changePercentage());
             default -> "";
             };
         }

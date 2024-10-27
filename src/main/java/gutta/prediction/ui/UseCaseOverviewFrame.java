@@ -284,8 +284,8 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             return switch(columnIndex) {
             case 0 -> object.useCaseName();
             case 1 -> object.numberOfTraces();
-            case 2 -> String.format("%.02f", object.averageDuration());
-            case 3 -> String.format("%.02f", object.latencyPercentage());
+            case 2 -> formatAverage(object.averageDuration());
+            case 3 -> formatPercentage(object.latencyPercentage());
             default -> "";
             };
         }

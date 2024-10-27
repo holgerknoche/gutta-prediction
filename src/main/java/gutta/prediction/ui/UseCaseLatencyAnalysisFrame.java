@@ -96,10 +96,10 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
         protected Object fieldOf(UseCaseLatencyAnalysisResultView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.useCaseName();
-            case 1 -> String.format("%.02f", object.originalDuration());
-            case 2 -> String.format("%.02f", object.newDuration());
-            case 3 -> object.significant();
-            case 4 -> String.format("%.04f", object.pValue());
+            case 1 -> formatAverage(object.originalDuration());
+            case 2 -> formatAverage(object.newDuration());
+            case 3 -> asYesNo(object.significant());
+            case 4 -> formatPValue(object.pValue());
             default -> "";
             };
         }

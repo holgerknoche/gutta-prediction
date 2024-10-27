@@ -83,9 +83,9 @@ class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCa
             return switch (columnIndex) {
             case 0 -> object.useCaseName();
             case 1 -> object.numberOfTracesWithChangeInIssues();
-            case 2 -> String.format("%.02f", object.percentageWithChangeInIssues());
+            case 2 -> formatPercentage(object.percentageWithChangeInIssues());
             case 3 -> object.numberOfTracesWithChangeInWrites();
-            case 4 -> String.format("%.02f", object.percentageWithChangeInWrites());
+            case 4 -> formatPercentage(object.percentageWithChangeInWrites());
             default -> "";
             };
         }

@@ -16,5 +16,21 @@ abstract class UIFrameTemplate extends JFrame {
         this.setSize(new Dimension(1024, 768));
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);        
     }
+    
+    protected static String formatPValue(double value) {
+        return String.format("%.04f", value);
+    }
+    
+    protected static String formatAverage(double value) {
+        return String.format("%.02f", value);
+    }
+    
+    protected static String formatPercentage(double value) {
+        return String.format("%.02f", (value * 100.0));
+    }
+    
+    protected static String asYesNo(boolean value) {
+        return (value) ? "Yes" : "No";
+    }
         
 }
