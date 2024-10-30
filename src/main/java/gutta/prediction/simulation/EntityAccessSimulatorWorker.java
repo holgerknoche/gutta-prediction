@@ -58,4 +58,18 @@ class EntityAccessSimulatorWorker extends TransactionTraceSimulatorWorker {
         }
     }
     
+    protected void notifyListenersOfCommittedWrites(Transaction transaction) {
+        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
+        pendingWrites.forEach(
+                writeEvent -> this.listeners.forEach(listener -> listener.onCommittedWrite(writeEvent, this.context))
+                );
+    }
+    
+    protected void notifyListenersOfRevertedWrites(Transaction transaction) {
+        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
+        pendingWrites.forEach(
+                writeEvent -> this.listeners.forEach(listener -> listener.onRevertedWrite(writeEvent, this.context))
+                );
+    }
+    
 }

@@ -5,6 +5,7 @@ import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
+import gutta.prediction.simulation.TraceSimulationMode;
 
 public class TransactionContextRewriter implements TraceRewriter {
 
@@ -21,6 +22,11 @@ public class TransactionContextRewriter implements TraceRewriter {
     
     private static class TransactionContextRewriterWorker extends TraceRewriterWorker {                        
                                 
+        @Override
+        protected TraceSimulationMode requiredSimulationMode() {
+            return TraceSimulationMode.WITH_TRANSACTIONS;
+        }
+        
         // TODO Affinities (potentially same transaction on revisit)           
     
         @Override

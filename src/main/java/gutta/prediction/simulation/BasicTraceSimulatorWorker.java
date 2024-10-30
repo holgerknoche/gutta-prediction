@@ -4,7 +4,6 @@ import gutta.prediction.domain.Component;
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
-import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
@@ -23,8 +22,6 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.simulation.Transaction.Demarcation;
-import gutta.prediction.simulation.Transaction.Outcome;
 
 import java.util.List;
 
@@ -38,9 +35,7 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
     
     private final EventStream events;
     
-    private int syntheticLocationIdCount = 0;
-    
-    private int syntheticTransactionIdCount = 0;
+    private int syntheticLocationIdCount = 0;        
 
     public BasicTraceSimulatorWorker(TraceSimulationListener listener, EventTrace trace, DeploymentModel deploymentModel) {
         this(List.of(listener), trace, deploymentModel);
@@ -77,18 +72,10 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
         return new SyntheticLocation(this.syntheticLocationIdCount++);
     }
     
-    private String createSyntheticTransactionId() {
-        return "synthetic-" + this.syntheticTransactionIdCount++;
-    }
-
     protected Component currentComponent() {
         return this.context.currentComponent();
     }
-    
-    protected Transaction currentTransaction() {
-        return this.context.currentTransaction();
-    }
-    
+        
     protected Location currentLocation() {
         return this.context.currentLocation();
     }
@@ -147,59 +134,21 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
     private void performComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection) {
         this.listeners.forEach(listener -> listener.beforeComponentReturn(exitEvent, returnEvent, connection, this.context));
         
-        var transaction = this.currentTransaction();
-        var stackEntry = this.context.peek();
-        
-        var implicitTopLevelTransactionAvailable = (transaction != null && transaction.demarcation() == Demarcation.IMPLICIT && transaction.isTopLevel());        
-        if (implicitTopLevelTransactionAvailable && !transaction.equals(stackEntry.transaction())) {
-            // If a top-level transaction was implicitly created on entry, we need to complete it
-            this.completeTransactionAndNotifyListeners(exitEvent, transaction);
-        }
+        this.handlePossibleTransactionCompletionOnCandidateExit(exitEvent);
         
         // Restore the state from the stack (including location, etc.)
-        this.context.popCurrentState();
+        this.context.popCurrentState();                
 
         this.listeners.forEach(listener -> listener.afterComponentReturn(exitEvent, returnEvent, connection, this.context));
-        
-        // If we return to a different transaction, notify the listeners that it is resumed
-        var restoredTransaction = this.context.currentTransaction();
-        if (restoredTransaction != null && restoredTransaction != transaction) {
-            this.listeners.forEach(listener -> listener.onTransactionResume(returnEvent, restoredTransaction, this.context));
-        }                
+        this.handlePossibleTransactionResumeOnCandidateReturn(returnEvent);
     }
     
-    private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
-        var outcome = transaction.commit();       
-        
-        if (outcome == Outcome.COMMITTED) {
-            transaction.forEach(tx -> this.notifyListenersOfCommitOf(tx, event));
-            transaction.forEach(this::notifyListenersOfCommittedWrites);            
-        } else {            
-            transaction.forEach(tx -> this.notifyListenersOfAbortOf(tx, event));
-            transaction.forEach(this::notifyListenersOfRevertedWrites);
-        }
+    protected void handlePossibleTransactionCompletionOnCandidateExit(ServiceCandidateExitEvent exitEvent) {        
+        // Do nothing by default
     }
     
-    private void notifyListenersOfCommittedWrites(Transaction transaction) {
-        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
-        pendingWrites.forEach(
-                writeEvent -> this.listeners.forEach(listener -> listener.onCommittedWrite(writeEvent, this.context))
-                );
-    }
-    
-    private void notifyListenersOfCommitOf(Transaction transaction, MonitoringEvent event) {
-        this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
-    }
-    
-    private void notifyListenersOfRevertedWrites(Transaction transaction) {
-        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
-        pendingWrites.forEach(
-                writeEvent -> this.listeners.forEach(listener -> listener.onRevertedWrite(writeEvent, this.context))
-                );
-    }
-    
-    private void notifyListenersOfAbortOf(Transaction transaction, MonitoringEvent event) {
-        this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
+    protected void handlePossibleTransactionResumeOnCandidateReturn(ServiceCandidateReturnEvent returnEvent) {
+        // Do nothing by default                
     }
             
     @Override
@@ -235,13 +184,7 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
         var enteredServiceCandidate = this.deploymentModel.resolveServiceCandidateByName(entryEvent.name())
                 .orElseThrow(() -> new TraceProcessingException(entryEvent, "Service candidate '" + enteredCandidateName + "' does not exist."));
 
-        var currentTransaction = this.context.currentTransaction();
-        var newTransaction = this.determineTransactionAfterTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
-
-        if (currentTransaction != null && newTransaction != currentTransaction) {
-            // If an existing transaction is suspended, notify the listeners (in the old state, and before notifying the listeners of the transition)
-            this.listeners.forEach(listener -> listener.onTransactionSuspend(invocationEvent, currentTransaction, this.context));
-        }
+        this.handlePossibleTransactionSuspensionOnCandidateInvocation(invocationEvent, entryEvent, enteredServiceCandidate, connection);
 
         // Save the current state on the stack before making changes
         this.context.pushCurrentState();
@@ -250,15 +193,10 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
         
         // Update the current location and transaction state
         this.updateLocationOnTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
-        this.registerTransactionAndSetAsCurrent(newTransaction);
-        
-        if (newTransaction != null && newTransaction != currentTransaction) {
-            // If a new transaction is created, notify the listeners (in the new state)
-            this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
-        }
+        this.handlePossibleTransactionCreationOnCandidateEntry(entryEvent);
         
         this.listeners.forEach(listener -> listener.afterComponentTransition(invocationEvent, entryEvent, connection, this.context));
-    }
+    }        
      
     private void updateLocationOnTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var targetComponent = connection.target();
@@ -295,90 +233,13 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
             throw new TraceProcessingException(event, "Change of location with non-remote invocation detected.");
         }
     }
-        
-    private Transaction determineTransactionAfterTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
-        var currentTransaction = this.currentTransaction();
-        var propagationType = connection.transactionPropagation();
-        
-        // We only have a readily usable transaction if it is propagated to the new component 
-        var usableTransactionAvailable = (currentTransaction != null && propagationType != TransactionPropagation.NONE);
-        var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
-        
-        switch (action) {
-        case CREATE_NEW: 
-            // Create a new top-level transaction if required by the action
-            var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId() : this.createSyntheticTransactionId();
-            return new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
-            
-        case KEEP:            
-            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, entryEvent.location());        
-            
-        case SUSPEND:
-            // If the current transaction is to be suspended, just clear the current transaction
-            return null;
-            
-        default:
-            throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
-        } 
-    }
-        
-    private TransactionAction determineTransactionActionFor(ServiceCandidate serviceCandidate, boolean transactionAvailable, MonitoringEvent contextEvent) {
-        var transactionBehavior = serviceCandidate.transactionBehavior();
-        
-        switch (transactionBehavior) {
-        case MANDATORY:
-            if (!transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "No active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
-            }
-            
-            return TransactionAction.KEEP; 
-            
-        case NEVER:
-            if (transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "Active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
-            }
-            
-            return TransactionAction.KEEP;
-            
-        case NOT_SUPPORTED:
-            return TransactionAction.SUSPEND;
-            
-        case SUPPORTED:
-            return TransactionAction.KEEP;
-            
-        case REQUIRED:
-            return (transactionAvailable) ? TransactionAction.KEEP : TransactionAction.CREATE_NEW;
-            
-        case REQUIRES_NEW:
-            return TransactionAction.CREATE_NEW;
-            
-        default:
-            throw new UnsupportedOperationException("Unsupported transaction behavior '" + transactionBehavior + "'.");
-        }            
+    
+    protected void handlePossibleTransactionSuspensionOnCandidateInvocation(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+        // Do nothing by default
     }
     
-    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event, Location location) {
-        if (propagatedTransaction == null) {
-            return null;
-        }
-        
-        switch (propagationType) {
-        case IDENTICAL:
-            return propagatedTransaction;
-            
-        case SUBORDINATE:
-            return new SubordinateTransaction(this.createSyntheticTransactionId(), event, location, propagatedTransaction);
-            
-        case NONE:                
-            return null;
-            
-        default:
-            throw new IllegalArgumentException("Unsupported propagation type '" + propagationType + "'.");
-        }
-    }
-    
-    private void registerTransactionAndSetAsCurrent(Transaction transaction) {
-        this.context.currentTransaction(transaction);
+    protected void handlePossibleTransactionCreationOnCandidateEntry(ServiceCandidateEntryEvent entryEvent) {
+        // Do nothing by default
     }
 
     @Override
@@ -390,55 +251,45 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
     protected void handleImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onImplicitTransactionAbortEvent(event, this.context));
         
-        var transaction = this.currentTransaction();
-        if (transaction != null) {
-            transaction.registerImplicitAbort(event);
-        }
+        this.handleImplicitAbortOfTransaction(event);
+    }
+    
+    protected void handleImplicitAbortOfTransaction(ImplicitTransactionAbortEvent event) {
+        // Do nothing by default
     }
     
     @Override
     protected void handleExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event) {
         this.listeners.forEach(listener -> listener.onExplicitTransactionAbortEvent(event, this.context));
         
-        var transaction = this.currentTransaction();
-        if (transaction != null) {
-            transaction.abort();
-                        
-            this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
-            transaction.forEach(this::notifyListenersOfRevertedWrites);
-        }
+        this.handleExplicitAbortOfTransaction(event);
     }
 
+    protected void handleExplicitAbortOfTransaction(ExplicitTransactionAbortEvent event) {
+        // Do nothing by default
+    }
+    
     @Override
     protected void handleTransactionCommitEvent(TransactionCommitEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionCommitEvent(event, this.context));
         
-        var transaction = this.currentTransaction();                
-        if (transaction != null) {
-            // If a transaction is present, it must be a top-level transaction with explicit demarcation
-            if (transaction.isTopLevel() && transaction.demarcation() == Demarcation.EXPLICIT) {
-                this.completeTransactionAndNotifyListeners(event, transaction);
-            } else {
-                throw new IllegalStateException("An invalid transaction '" + transaction + "' was found for explicit commit.");
-            }            
-            
-            this.context.currentTransaction(null);
-        }
+        this.handleExplicitCommitOfTransaction(event);
+    }
+    
+    protected void handleExplicitCommitOfTransaction(TransactionCommitEvent event) {
+        // Do nothing by default
     }
 
     @Override
     protected void handleTransactionStartEvent(TransactionStartEvent event) {
-        if (this.context.currentTransaction() != null) {
-            throw new TraceProcessingException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
-        }
-        
-        var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location(), Demarcation.EXPLICIT);
-        this.listeners.forEach(listener -> listener.onTransactionStart(event, newTransaction, this.context));
-        
-        this.registerTransactionAndSetAsCurrent(newTransaction);                        
+        this.handleExplicitStartOfTransaction(event);
         
         this.listeners.forEach(listener -> listener.onTransactionStartEvent(event, this.context));
-    }    
+    }
+    
+    protected void handleExplicitStartOfTransaction(TransactionStartEvent event) {
+        // Do nothing by default
+    }
 
     @Override
     protected void handleUseCaseStartEvent(UseCaseStartEvent event) {
@@ -462,12 +313,6 @@ class BasicTraceSimulatorWorker extends MonitoringEventVisitor implements TraceS
         this.context.currentServiceCandidate(null);
         this.context.currentComponent(null);
         this.context.currentLocation(null);
-    }
-    
-    private enum TransactionAction {
-        CREATE_NEW,
-        KEEP,
-        SUSPEND        
-    }
+    }    
 
 }
