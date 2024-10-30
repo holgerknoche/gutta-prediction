@@ -12,10 +12,10 @@ public class TraceSimulator {
     
     private final DeploymentModel deploymentModel;
 
-    public static void runSimulationOf(EventTrace trace, DeploymentModel deploymentModel, TraceSimulationListener listener) {
+    public static void runSimulationOf(EventTrace trace, DeploymentModel deploymentModel, TraceSimulationMode mode, TraceSimulationListener listener) {
         new TraceSimulator(deploymentModel)
             .addListener(listener)
-            .processEvents(trace);
+            .processEvents(trace, mode);
     }
     
     public TraceSimulator(DeploymentModel deploymentModel) {
@@ -28,8 +28,21 @@ public class TraceSimulator {
         return this;
     }
     
-    public void processEvents(EventTrace trace) {
-        new TraceSimulatorWorker(List.copyOf(this.listeners), trace, this.deploymentModel).processEvents();
+    public void processEvents(EventTrace trace, TraceSimulationMode mode) {
+        WorkerCreator workerCreator = switch (mode) {
+        case BASIC -> BasicTraceSimulatorWorker::new;
+        case WITH_TRANSACTIONS -> TransactionTraceSimulatorWorker::new;
+        case WITH_ENTITY_ACCESS -> EntityAccessSimulatorWorker::new;        
+        };
+        
+        var worker = workerCreator.createWorker(List.copyOf(this.listeners), trace, this.deploymentModel);
+        worker.processEvents();
+    }
+    
+    private interface WorkerCreator {
+        
+        TraceSimulatorWorker createWorker(List<TraceSimulationListener> listeners, EventTrace trace, DeploymentModel deploymentModel);
+        
     }
     
 }

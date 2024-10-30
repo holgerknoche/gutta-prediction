@@ -12,6 +12,7 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulationMode;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
@@ -24,7 +25,7 @@ class LatencyAnalyzer implements TraceSimulationListener {
     private long totalLatency = 0;
     
     public Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
-        runSimulationOf(trace, deploymentModel, this);
+        runSimulationOf(trace, deploymentModel, TraceSimulationMode.BASIC, this);
         
         var duration = (this.endTime - this.startTime);
         var latencyPercentage = (duration == 0) ? 0 : (float) (this.totalLatency) / (float) duration; 

@@ -15,6 +15,7 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulationMode;
 import gutta.prediction.simulation.Transaction;
 import gutta.prediction.span.EntityEvent.EntityEventType;
 import gutta.prediction.span.TransactionEvent.TransactionEventType;
@@ -50,7 +51,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     public Trace buildTrace(EventTrace eventTrace, DeploymentModel deploymentModel, Set<ConsistencyIssue<?>> consistencyIssues) {
         this.eventToIssue = createIssueLookup(consistencyIssues);
         
-        runSimulationOf(eventTrace, deploymentModel, this);
+        runSimulationOf(eventTrace, deploymentModel, TraceSimulationMode.WITH_TRANSACTIONS, this);
 
         return new Trace(this.traceId, this.traceName, this.rootSpan);
     }

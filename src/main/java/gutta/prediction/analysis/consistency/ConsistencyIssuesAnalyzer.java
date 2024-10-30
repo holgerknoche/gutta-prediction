@@ -7,6 +7,7 @@ import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulationMode;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +27,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
         
-        runSimulationOf(trace, deploymentModel, this);
+        runSimulationOf(trace, deploymentModel, TraceSimulationMode.WITH_ENTITY_ACCESS, this);
         
         return new ConsistencyAnalyzerResult(this.foundIssues, this.committedWrites, this.revertedWrites);
     }

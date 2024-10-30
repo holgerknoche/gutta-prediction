@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
- * Test cases for the class {@link TraceSimulatorWorker}.
+ * Test cases for the class {@link BasicTraceSimulatorWorker}.
  */
 class TraceSimulatorWorkerTest {
     
@@ -96,7 +96,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
@@ -165,7 +165,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the expected states match the actually assumed states
@@ -247,7 +247,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -343,7 +343,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -442,7 +442,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -545,7 +545,7 @@ class TraceSimulatorWorkerTest {
         
         // Perform the simulation
         var listener = new StateMonitoringListener();
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         
         if (expectedOutcome == ExpectedOutcome.ERROR) {
             // If an error is expected, ensure that it occurs
@@ -616,7 +616,7 @@ class TraceSimulatorWorkerTest {
                 .build();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(Collections.emptyList(), inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(Collections.emptyList(), inputTrace, deploymentModel); 
         var exception = assertThrows(TraceProcessingException.class, () -> worker.processEvents());
         
         // Make sure that the exception has the expected message and occurs at the expected event
@@ -658,7 +658,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -706,7 +706,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -751,7 +751,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -802,7 +802,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -855,7 +855,7 @@ class TraceSimulatorWorkerTest {
         var listener = new TransactionEventListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, deploymentModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, deploymentModel); 
         worker.processEvents();
                 
         // Ensure that the transaction was committed at the expected event
@@ -924,7 +924,7 @@ class TraceSimulatorWorkerTest {
         var listener = new StateMonitoringListener();
         
         // Perform the simulation
-        var worker = new TraceSimulatorWorker(listener, inputTrace, modifiedModel); 
+        var worker = new BasicTraceSimulatorWorker(listener, inputTrace, modifiedModel); 
         worker.processEvents();
         
         // Ensure that the expected states match the actually assumed states

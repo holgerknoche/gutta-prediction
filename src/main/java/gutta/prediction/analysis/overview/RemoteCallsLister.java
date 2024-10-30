@@ -7,6 +7,7 @@ import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulationMode;
 import gutta.prediction.simulation.TraceSimulator;
 
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class RemoteCallsLister {
         }
         
         public List<RemoteCall> findCalls(EventTrace trace) {
-            TraceSimulator.runSimulationOf(trace, this.deploymentModel, this);
+            TraceSimulator.runSimulationOf(trace, this.deploymentModel, TraceSimulationMode.BASIC, this);
             return this.calls;
         }
         

@@ -17,6 +17,7 @@ import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
+import gutta.prediction.simulation.TraceSimulationMode;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
@@ -41,9 +42,13 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
             this.rewrittenEventCollector = new SimpleRewrittenEventCollector();
         }
         
-        runSimulationOf(trace, deploymentModel, this);
+        runSimulationOf(trace, deploymentModel, this.requiredSimulationMode(), this);
         
         return this.rewrittenEventCollector.createTrace();
+    }
+    
+    protected TraceSimulationMode requiredSimulationMode() {
+        return TraceSimulationMode.BASIC;
     }
     
     protected void onStartOfRewrite() {
