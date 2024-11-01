@@ -115,8 +115,8 @@ class DurationChangeAnalysisTest {
     
     private static DeploymentModel buildTestDeploymentModel() {
         return new DeploymentModel.Builder()
-                .assignUseCase(USE_CASE, COMPONENT_1)
-                .assignServiceCandidate(SERVICE_CANIDATE, COMPONENT_2)
+                .assignUseCaseToComponent(USE_CASE, COMPONENT_1)
+                .assignServiceCandidateToComponent(SERVICE_CANIDATE, COMPONENT_2)
                 .addLocalConnection(COMPONENT_1, COMPONENT_2)
                 .build();
     }

@@ -93,7 +93,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         this.knownUseCases.add(name);
 
         // Assign the use case to the current component
-        this.builder.assignUseCase(useCase, this.currentComponent);
+        this.builder.assignUseCaseToComponent(useCase, this.currentComponent);
 
         return null;
     }
@@ -113,7 +113,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var transactionBehavior = determineTransactionBehavior(properties);
         var serviceCandidate = this.buildServiceCandidate(name, transactionBehavior);
 
-        this.builder.assignServiceCandidate(serviceCandidate, this.currentComponent);
+        this.builder.assignServiceCandidateToComponent(serviceCandidate, this.currentComponent);
 
         return null;
     }
@@ -267,7 +267,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         this.knownEntityTypes.add(name);
         
         var entityType = this.buildEntityType(name);
-        this.builder.assignEntityType(entityType, this.currentDataStore);
+        this.builder.assignEntityTypeToDataStore(entityType, this.currentDataStore);
         
         return null;
     }

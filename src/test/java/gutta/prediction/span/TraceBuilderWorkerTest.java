@@ -57,8 +57,8 @@ class TraceBuilderWorkerTest {
         var component = new Component("component");
         
         var deploymentModel = new DeploymentModel.Builder() //
-                .assignUseCase(useCase, component) //
-                .assignServiceCandidate(serviceCandidate, component) //
+                .assignUseCaseToComponent(useCase, component) //
+                .assignServiceCandidateToComponent(serviceCandidate, component) //
                 .build();
         
         var worker = new TraceBuilderWorker();
@@ -100,9 +100,9 @@ class TraceBuilderWorkerTest {
         var component2 = new Component("component2");
         
         var deploymentModel = new DeploymentModel.Builder() //
-                .assignUseCase(useCase, component1) //
-                .assignServiceCandidate(serviceCandidate1, component1) //
-                .assignServiceCandidate(serviceCandidate2, component2) //
+                .assignUseCaseToComponent(useCase, component1) //
+                .assignServiceCandidateToComponent(serviceCandidate1, component1) //
+                .assignServiceCandidateToComponent(serviceCandidate2, component2) //
                 .addSymmetricRemoteConnection(component1, component2, 20, TransactionPropagation.NONE) //
                 .build();
         
@@ -144,8 +144,8 @@ class TraceBuilderWorkerTest {
         var component = new Component("component");
         
         var deploymentModel = new DeploymentModel.Builder() //
-                .assignUseCase(useCase, component) //
-                .assignEntityType(entityType, dataStore) //
+                .assignUseCaseToComponent(useCase, component) //
+                .assignEntityTypeToDataStore(entityType, dataStore) //
                 .build();
         
         var worker = new TraceBuilderWorker();
@@ -192,9 +192,9 @@ class TraceBuilderWorkerTest {
         var component2 = new Component("component2");
         
         var deploymentModel = new DeploymentModel.Builder() //
-                .assignUseCase(useCase, component1) //
-                .assignServiceCandidate(serviceCandidate, component2) //
-                .assignEntityType(entityType, dataStore) //
+                .assignUseCaseToComponent(useCase, component1) //
+                .assignServiceCandidateToComponent(serviceCandidate, component2) //
+                .assignEntityTypeToDataStore(entityType, dataStore) //
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE) //
                 .build();
         

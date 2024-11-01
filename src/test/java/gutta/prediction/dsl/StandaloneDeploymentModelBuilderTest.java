@@ -49,9 +49,9 @@ class StandaloneDeploymentModelBuilderTest {
         var component2 = new Component("component2");
         
         var expectedModel = DeploymentModel.builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(serviceCandidate, component1)
-                .assignEntityType(entityType, dataStore)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(serviceCandidate, component1)
+                .assignEntityTypeToDataStore(entityType, dataStore)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.NONE)
                 .build();
         

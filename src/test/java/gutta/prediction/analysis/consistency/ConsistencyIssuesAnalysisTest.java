@@ -66,12 +66,12 @@ class ConsistencyIssuesAnalysisTest {
         var component2 = new Component("c2");
         
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(serviceCandidate, component1)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(serviceCandidate, component1)
                 .build();
         
         var modifiedDeploymentModel = deploymentModel.applyModifications()
-                .assignServiceCandidate(serviceCandidate, component2)
+                .assignServiceCandidateToComponent(serviceCandidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
                 .build();
         
@@ -125,8 +125,8 @@ class ConsistencyIssuesAnalysisTest {
         var component2 = new Component("c2");
         
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(serviceCandidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(serviceCandidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
                 .build();
         

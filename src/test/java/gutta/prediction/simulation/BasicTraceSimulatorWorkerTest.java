@@ -69,9 +69,9 @@ class BasicTraceSimulatorWorkerTest {
         var candidate2 = new ServiceCandidate("sc2");
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate1, component2)
-                .assignServiceCandidate(candidate2, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate1, component2)
+                .assignServiceCandidateToComponent(candidate2, component2)
                 .build();
         
         // Apply a modification to obtain a synthetic connection

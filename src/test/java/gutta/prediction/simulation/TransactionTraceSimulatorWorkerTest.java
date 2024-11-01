@@ -83,8 +83,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Perform the simulation
@@ -152,8 +152,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Perform the simulation
@@ -234,8 +234,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", behavior);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Perform the simulation
@@ -330,8 +330,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", behavior);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Perform the simulation
@@ -428,8 +428,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", behavior);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
                 .build();
         
@@ -531,8 +531,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", behavior);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
                 .build();
         
@@ -605,7 +605,7 @@ class TransactionTraceSimulatorWorkerTest {
         var useCase = new UseCase("uc1");        
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
+                .assignUseCaseToComponent(useCase, component)
                 .build();
         
         // Perform the simulation
@@ -644,7 +644,7 @@ class TransactionTraceSimulatorWorkerTest {
         var useCase = new UseCase("uc1");        
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
+                .assignUseCaseToComponent(useCase, component)
                 .build();
         
         // Build a listener to inspect the commit
@@ -692,7 +692,7 @@ class TransactionTraceSimulatorWorkerTest {
         var useCase = new UseCase("uc1");        
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
+                .assignUseCaseToComponent(useCase, component)
                 .build();
         
         // Build a listener to inspect the commit
@@ -737,7 +737,7 @@ class TransactionTraceSimulatorWorkerTest {
         var useCase = new UseCase("uc1");        
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
+                .assignUseCaseToComponent(useCase, component)
                 .build();
         
         // Build a listener to inspect the commit
@@ -787,8 +787,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Build a listener to inspect the commit
@@ -840,8 +840,8 @@ class TransactionTraceSimulatorWorkerTest {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
 
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();
         
         // Build a listener to inspect the commit

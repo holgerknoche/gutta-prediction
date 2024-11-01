@@ -15,10 +15,12 @@ public class DeploymentModel {
     private final ComponentAllocation<UseCase> useCaseAllocation;
     
     private final ComponentAllocation<ServiceCandidate> serviceCandidateAllocation;
+    
+    private final ComponentAllocation<EntityType> entityTypeAllocation;
         
     private final Map<ConnectionKey, ComponentConnection> componentConnections;
     
-    private final Map<EntityType, DataStore> entityTypeAllocation;
+    private final Map<EntityType, DataStore> entityToDataStore;
     
     private final Map<String, UseCase> useCaseLookup;
     
@@ -34,10 +36,11 @@ public class DeploymentModel {
         return new Builder();
     }
     
-    private DeploymentModel(ComponentAllocation<UseCase> useCaseAllocation, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+    private DeploymentModel(ComponentAllocation<UseCase> useCaseAllocation, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, ComponentAllocation<EntityType> entityTypeAllocation, Map<EntityType, DataStore> entityToDataStore, Map<ConnectionKey, ComponentConnection> componentConnections) {
         this.useCaseAllocation = useCaseAllocation;
-        this.serviceCandidateAllocation = serviceCandidateAllocation;        
+        this.serviceCandidateAllocation = serviceCandidateAllocation;
         this.entityTypeAllocation = entityTypeAllocation;
+        this.entityToDataStore = entityToDataStore;
         this.componentConnections = componentConnections;
         
         var allComponents = Stream.concat(this.serviceCandidateAllocation.values().stream(), this.useCaseAllocation.values().stream())
@@ -48,8 +51,8 @@ public class DeploymentModel {
         this.useCaseLookup = useCaseAllocation.keySet().stream().collect(Collectors.toMap(UseCase::name, Function.identity()));
         this.serviceCandidateLookup = serviceCandidateAllocation.keySet().stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));                
         this.componentLookup = allComponents.stream().collect(Collectors.toMap(Component::name, Function.identity()));
-        this.dataStoreLookup = this.entityTypeAllocation.values().stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
-        this.entityTypeLookup = this.entityTypeAllocation.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
+        this.dataStoreLookup = this.entityToDataStore.values().stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
+        this.entityTypeLookup = this.entityToDataStore.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
     }
             
     public Optional<ServiceCandidate> resolveServiceCandidateByName(String candidateName) {
@@ -81,7 +84,7 @@ public class DeploymentModel {
     }
     
     public Optional<DataStore> getDataStoreForEntityType(EntityType entityType) {
-        return Optional.ofNullable(this.entityTypeAllocation.get(entityType));
+        return Optional.ofNullable(this.entityToDataStore.get(entityType));
     }
     
     public Optional<ComponentConnection> getConnection(Component source, Component target, boolean modifiedAllocation) {
@@ -94,12 +97,12 @@ public class DeploymentModel {
     }
     
     public Builder applyModifications() {
-        return new Builder(this.useCaseAllocation, this.serviceCandidateLookup, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+        return new Builder(this.useCaseAllocation, this.serviceCandidateLookup, this.serviceCandidateAllocation, this.entityTypeLookup, this.entityTypeAllocation, this.entityToDataStore, this.componentConnections);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+        return Objects.hash(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.entityToDataStore, this.componentConnections);
     }
     
     @Override
@@ -111,6 +114,7 @@ public class DeploymentModel {
         return Objects.equals(this.useCaseAllocation, that.useCaseAllocation) &&
                 Objects.equals(this.serviceCandidateAllocation, that.serviceCandidateAllocation) &&
                 Objects.equals(this.entityTypeAllocation, that.entityTypeAllocation) &&
+                Objects.equals(this.entityToDataStore, that.entityToDataStore) &&
                 Objects.equals(this.componentConnections, that.componentConnections);
     }
     
@@ -129,8 +133,12 @@ public class DeploymentModel {
         private final Map<String, ServiceCandidate> nameToServiceCandidate;
         
         private final ComponentAllocation<ServiceCandidate> serviceCandidateAllocation;
+                
+        private final Map<String, EntityType> nameToEntityType;
         
-        private final Map<EntityType, DataStore> entityTypeAllocation;
+        private final ComponentAllocation<EntityType> entityTypeAllocation;
+        
+        private final Map<EntityType, DataStore> entityToDataStore;
         
         private final Map<ConnectionKey, ComponentConnection> componentConnections;
         
@@ -140,36 +148,48 @@ public class DeploymentModel {
             this.useCaseAllocation = new ComponentAllocation<>();
             this.nameToServiceCandidate = new HashMap<>();
             this.serviceCandidateAllocation = new ComponentAllocation<>();
-            this.entityTypeAllocation = new HashMap<>();
+            this.nameToEntityType = new HashMap<>();
+            this.entityTypeAllocation = new ComponentAllocation<>();
+            this.entityToDataStore = new HashMap<>();
             this.componentConnections = new HashMap<>();            
             this.modificationInProgress = false;
         }
         
-        private Builder(ComponentAllocation<UseCase> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+        private Builder(ComponentAllocation<UseCase> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, Map<String, EntityType> nameToEntityType, ComponentAllocation<EntityType> entityTypeAllocation, Map<EntityType, DataStore> entityToDataStore, Map<ConnectionKey, ComponentConnection> componentConnections) {
             this.useCaseAllocation = new ComponentAllocation<>(useCaseAllocation);
             this.nameToServiceCandidate = new HashMap<>(nameToServiceCandidate);
             this.serviceCandidateAllocation = new ComponentAllocation<>(serviceCandidateAllocation);
-            this.entityTypeAllocation = new HashMap<>(entityTypeAllocation);
+            this.nameToEntityType = new HashMap<>(nameToEntityType);
+            this.entityTypeAllocation = new ComponentAllocation<>(entityTypeAllocation);            
+            this.entityToDataStore = new HashMap<>(entityToDataStore);
             this.componentConnections = new HashMap<>(componentConnections);
             this.modificationInProgress = true;
         }
         
-        public Builder assignUseCase(UseCase useCase, Component component) {
-            var componentAllocation = new ComponentAllocationEntry<>(useCase, this.modificationInProgress, component);
-            this.useCaseAllocation.addAllocation(useCase, componentAllocation);
+        public Builder assignUseCaseToComponent(UseCase useCase, Component component) {
+            var componentAllocationEntry = new ComponentAllocationEntry<>(useCase, this.modificationInProgress, component);
+            this.useCaseAllocation.addAllocation(useCase, componentAllocationEntry);
             return this;
         }
         
-        public Builder assignServiceCandidate(ServiceCandidate candidate, Component component) {
+        public Builder assignServiceCandidateToComponent(ServiceCandidate candidate, Component component) {
             var previousCandidate = this.nameToServiceCandidate.put(candidate.name(), candidate);
                         
-            var componentAllocation = new ComponentAllocationEntry<>(candidate, this.modificationInProgress, component);
-            this.serviceCandidateAllocation.replaceOrAddAllocation(previousCandidate, candidate, componentAllocation);
+            var componentAllocationEntry = new ComponentAllocationEntry<>(candidate, this.modificationInProgress, component);
+            this.serviceCandidateAllocation.replaceOrAddAllocation(previousCandidate, candidate, componentAllocationEntry);
             return this;
         }
         
-        public Builder assignEntityType(EntityType entityType, DataStore dataStore) {
-            this.entityTypeAllocation.put(entityType, dataStore);
+        public Builder assignEntityTypeToComponent(EntityType entityType, Component component) {
+            var previousEntityType = this.nameToEntityType.put(entityType.name(), entityType);
+            
+            var componentAllocationEntry = new ComponentAllocationEntry<>(entityType, this.modificationInProgress, component);
+            this.entityTypeAllocation.replaceOrAddAllocation(previousEntityType, entityType, componentAllocationEntry);            
+            return this;
+        }
+        
+        public Builder assignEntityTypeToDataStore(EntityType entityType, DataStore dataStore) {
+            this.entityToDataStore.put(entityType, dataStore);
             return this;
         }
 
@@ -196,7 +216,7 @@ public class DeploymentModel {
         }
         
         public DeploymentModel build() {
-            return new DeploymentModel(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.componentConnections);
+            return new DeploymentModel(this.useCaseAllocation, this.serviceCandidateAllocation, this.entityTypeAllocation, this.entityToDataStore, this.componentConnections);
         }
         
     }

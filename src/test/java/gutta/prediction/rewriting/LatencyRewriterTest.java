@@ -72,8 +72,8 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.NONE)
                 .build();
         
@@ -147,8 +147,8 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addLocalConnection(component1, component2)
                 .build();
         
@@ -221,13 +221,13 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1");
 
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 50, TransactionPropagation.NONE)
                 .build();
         
         var modifiedDeploymentModel = originalDeploymentModel.applyModifications()
-                .assignServiceCandidate(candidate, component1)
+                .assignServiceCandidateToComponent(candidate, component1)
                 .build();                
         
         var rewriter = new LatencyRewriter(modifiedDeploymentModel);

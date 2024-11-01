@@ -69,8 +69,8 @@ abstract class TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
         
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(candidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(candidate, component)
                 .build();        
         
         var correspondence = new HashMap<MonitoringEvent, MonitoringEvent>();

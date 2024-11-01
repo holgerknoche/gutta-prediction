@@ -60,8 +60,8 @@ class LatencyAnalyzerTest {
         var component = new Component("c1");        
         
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(serviceCandidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
                 .build();
         
         var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
@@ -92,8 +92,8 @@ class LatencyAnalyzerTest {
         var component = new Component("c1");        
         
         var deploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component)
-                .assignServiceCandidate(serviceCandidate, component)
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
                 .build();
         
         var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);

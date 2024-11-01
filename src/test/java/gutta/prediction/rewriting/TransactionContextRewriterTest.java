@@ -81,8 +81,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED); 
         
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addLocalConnection(component1, component2)
                 .build();
         
@@ -170,9 +170,9 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var candidate2 = new ServiceCandidate("sc2", TransactionBehavior.REQUIRED);
 
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate1, component2)
-                .assignServiceCandidate(candidate2, component1)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate1, component2)
+                .assignServiceCandidateToComponent(candidate2, component1)
                 .addLocalConnection(component1, component2)
                 .build();
         
@@ -265,8 +265,8 @@ class TransactionContextRewriterTest extends TraceRewriterTestTemplate {
         var candidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
 
         var originalDeploymentModel = new DeploymentModel.Builder()
-                .assignUseCase(useCase, component1)
-                .assignServiceCandidate(candidate, component2)
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(candidate, component2)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.SUBORDINATE)
                 .build();
         
