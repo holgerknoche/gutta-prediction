@@ -2,6 +2,7 @@ package gutta.prediction.ui.shape;
 
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.analysis.consistency.ConsistencyIssueVisitor;
+import gutta.prediction.analysis.consistency.CrossComponentAccessIssue;
 import gutta.prediction.analysis.consistency.PotentialDeadlockIssue;
 import gutta.prediction.analysis.consistency.StaleReadIssue;
 import gutta.prediction.analysis.consistency.WriteConflictIssue;
@@ -198,6 +199,11 @@ public class SpanComponentsCreator implements TraceElementVisitor<Void> {
         @Override
         public IssueType handleWriteConflictIssue(WriteConflictIssue issue) {
             return IssueType.CONFLICTING_WRITE;
+        }
+        
+        @Override
+        public IssueType handleCrossComponentAccessIssue(CrossComponentAccessIssue issue) {
+            return IssueType.CROSS_COMPONENT_ACCESS;
         }
         
     }

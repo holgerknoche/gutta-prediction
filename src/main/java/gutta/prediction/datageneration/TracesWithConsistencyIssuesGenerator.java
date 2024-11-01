@@ -42,6 +42,7 @@ public class TracesWithConsistencyIssuesGenerator {
                 "}\n" +
                 "Component c2 {\n" +
                 "    ServiceCandidate sc1\n" +
+                "    EntityType et1\n" +
                 "}\n" +
                 "remote c1 -> c2 [\n" +
                 "    latency = 20\n" +

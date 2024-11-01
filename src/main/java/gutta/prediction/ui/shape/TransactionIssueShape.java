@@ -44,7 +44,12 @@ class TransactionIssueShape extends Path2D.Float implements DrawableShape {
         /**
          * Marker color for a conflicting write issue.
          */
-        CONFLICTING_WRITE(Color.BLUE);
+        CONFLICTING_WRITE(Color.BLUE),
+        /**
+         * Marker color for cross-component accesses.
+         */
+        CROSS_COMPONENT_ACCESS(Color.LIGHT_GRAY)
+        ;
 
         private final Color color;
 
