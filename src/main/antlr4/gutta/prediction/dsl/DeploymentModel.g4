@@ -20,7 +20,8 @@ componentDeclaration:
 
 componentDeclarationElement:
 	useCaseDeclaration |
-	serviceCandidateDeclaration
+	serviceCandidateDeclaration |
+	entityTypeDeclaration
 ;
 
 componentConnectionDeclaration:
@@ -47,11 +48,15 @@ serviceCandidateDeclaration:
 dataStoreDeclaration:
 	refToken='DataStore' name properties=propertiesDeclaration?
 	'{'
-		elements+=entityTypeDeclaration*
+		elements+=entityTypeReference*
 	'}'
 ;
 
 entityTypeDeclaration:
+	refToken='EntityType' name
+;
+
+entityTypeReference:
 	refToken='EntityType' name
 ;
 

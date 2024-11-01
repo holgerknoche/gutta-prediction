@@ -31,9 +31,11 @@ class StandaloneDeploymentModelBuilderTest {
                 "        transactionBehavior = REQUIRED\n" +
                 "    ]\n" +
                 "}\n" +
-                "Component component2 {}\n" +
+                "Component component2 {\n" +
+                "    EntityType entityType\n" +                
+                "}\n" +
                 "DataStore store {\n" +
-                "    EntityType type\n" +
+                "    EntityType entityType\n" +
                 "}\n" +
                 "remote component1 -> component2 [\n" +
                 "    latency = 10\n" +
@@ -44,13 +46,14 @@ class StandaloneDeploymentModelBuilderTest {
         var useCase = new UseCase("usecase");
         var serviceCandidate = new ServiceCandidate("candidate", TransactionBehavior.REQUIRED);
         var dataStore = new DataStore("store", ReadWriteConflictBehavior.STALE_READ);
-        var entityType = new EntityType("type");
+        var entityType = new EntityType("entityType");
         var component1 = new Component("component1");
         var component2 = new Component("component2");
         
         var expectedModel = DeploymentModel.builder()
                 .assignUseCaseToComponent(useCase, component1)
                 .assignServiceCandidateToComponent(serviceCandidate, component1)
+                .assignEntityTypeToComponent(entityType, component2)
                 .assignEntityTypeToDataStore(entityType, dataStore)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.NONE)
                 .build();

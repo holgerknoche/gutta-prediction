@@ -12,6 +12,7 @@ import gutta.prediction.domain.UseCase;
 import gutta.prediction.dsl.DeploymentModelParser.ComponentDeclarationContext;
 import gutta.prediction.dsl.DeploymentModelParser.DataStoreDeclarationContext;
 import gutta.prediction.dsl.DeploymentModelParser.EntityTypeDeclarationContext;
+import gutta.prediction.dsl.DeploymentModelParser.EntityTypeReferenceContext;
 import gutta.prediction.dsl.DeploymentModelParser.LocalComponentConnectionDeclarationContext;
 import gutta.prediction.dsl.DeploymentModelParser.NameContext;
 import gutta.prediction.dsl.DeploymentModelParser.PropertiesDeclarationContext;
@@ -36,6 +37,8 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     private static final ReadWriteConflictBehavior DEFAULT_RW_CONFLICT_BEHAVIOR = ReadWriteConflictBehavior.STALE_READ;
 
     private final Map<String, Component> nameToComponent = new HashMap<>();
+    
+    private final Map<String, EntityType> nameToEntityType = new HashMap<>();
     
     private final Set<ComponentPair> knownConnections = new HashSet<>();
     
@@ -144,6 +147,19 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         }
 
         return component;
+    }
+    
+    protected EntityType resolveEntityTypeByName(String name) {
+        return this.nameToEntityType.get(name);
+    }
+    
+    private EntityType resolveEntityType(String name, Token refToken) {
+        var entityType = this.resolveEntityTypeByName(name);
+        if (entityType == null) {
+            throw new DeploymentModelParseException(refToken, "Entity type '" + name + "' does not exist.");
+        }
+
+        return entityType;
     }
 
     private Void processComponentConnection(NameContext sourceName, NameContext targetName, BiConsumer<Component, Component> specificAction) {
@@ -267,13 +283,25 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         this.knownEntityTypes.add(name);
         
         var entityType = this.buildEntityType(name);
-        this.builder.assignEntityTypeToDataStore(entityType, this.currentDataStore);
+        this.builder.assignEntityTypeToComponent(entityType, this.currentComponent);
+        
+        this.nameToEntityType.put(name, entityType);
         
         return null;
     }
     
     protected abstract EntityType buildEntityType(String name);
 
+    @Override
+    public Void visitEntityTypeReference(EntityTypeReferenceContext context) {
+        var name = nameToString(context.name());
+        var entityType = this.resolveEntityType(name, context.refToken);
+        
+        this.builder.assignEntityTypeToDataStore(entityType, this.currentDataStore);
+        
+        return null;
+    }
+    
     private static Map<String, PropertyValue> toPropertyMap(PropertiesDeclarationContext context) {
         if (context == null || context.properties.isEmpty()) {
             // If no properties have been specified, return an empty map
