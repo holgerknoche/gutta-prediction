@@ -512,6 +512,45 @@ class ConsistencyIssuesAnalyzerTest {
         var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite), Set.of(expectedRevertedWrite1, expectedRevertedWrite2));
         
         assertEquals(expectedResult, result);
-    }        
+    }
+    
+    /**
+     * Test case: Entity accesses across components raise the appropriate issues.
+     */
+    @Test
+    void crossComponentAccesses() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity = new Entity(entityType, "e1");
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new EntityReadEvent(traceId, 100, location, entity),
+                new EntityWriteEvent(traceId, 200, location, entity),
+                new UseCaseEndEvent(traceId, 300, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");        
+        var component1 = new Component("c1");
+        var component2 = new Component("c2");
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component1)
+                .assignEntityTypeToComponent(entityType, component2)
+                .build();
+        
+        var analyzer = new ConsistencyIssuesAnalyzer();
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedIssue1 = new CrossComponentAccessIssue(entity, new EntityReadEvent(traceId, 100, location, entity));
+        var expectedIssue2 = new CrossComponentAccessIssue(entity, new EntityWriteEvent(traceId, 200, location, entity));
+        var expectedCommittedWrite = new EntityWriteEvent(traceId, 200, location, entity);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue1, expectedIssue2), Set.of(expectedCommittedWrite), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
 
 }
