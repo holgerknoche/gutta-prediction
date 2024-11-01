@@ -12,10 +12,10 @@ import java.util.stream.Stream;
 
 public class DeploymentModel {
     
-    private final Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation;
+    private final ComponentAllocation<UseCase> useCaseAllocation;
     
-    private final Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation;
-    
+    private final ComponentAllocation<ServiceCandidate> serviceCandidateAllocation;
+        
     private final Map<ConnectionKey, ComponentConnection> componentConnections;
     
     private final Map<EntityType, DataStore> entityTypeAllocation;
@@ -34,14 +34,14 @@ public class DeploymentModel {
         return new Builder();
     }
     
-    private DeploymentModel(Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation, Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+    private DeploymentModel(ComponentAllocation<UseCase> useCaseAllocation, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
         this.useCaseAllocation = useCaseAllocation;
         this.serviceCandidateAllocation = serviceCandidateAllocation;        
         this.entityTypeAllocation = entityTypeAllocation;
         this.componentConnections = componentConnections;
         
         var allComponents = Stream.concat(this.serviceCandidateAllocation.values().stream(), this.useCaseAllocation.values().stream())
-                .map(ComponentAllocation::component)
+                .map(ComponentAllocationEntry::component)
                 .collect(Collectors.toSet());        
         
         // Build name-based lookups
@@ -72,12 +72,12 @@ public class DeploymentModel {
         return Optional.ofNullable(this.entityTypeLookup.get(entityTypeName));
     }
     
-    public Optional<ComponentAllocation<UseCase>> getComponentAllocationForUseCase(UseCase useCase) {
-        return Optional.ofNullable(this.useCaseAllocation.get(useCase));
+    public Optional<ComponentAllocationEntry<UseCase>> getComponentAllocationForUseCase(UseCase useCase) {
+        return this.useCaseAllocation.get(useCase);
     }
     
-    public Optional<ComponentAllocation<ServiceCandidate>> getComponentAllocationForServiceCandidate(ServiceCandidate serviceCandidate) {
-        return Optional.ofNullable(this.serviceCandidateAllocation.get(serviceCandidate));
+    public Optional<ComponentAllocationEntry<ServiceCandidate>> getComponentAllocationForServiceCandidate(ServiceCandidate serviceCandidate) {
+        return this.serviceCandidateAllocation.get(serviceCandidate);
     }
     
     public Optional<DataStore> getDataStoreForEntityType(EntityType entityType) {
@@ -124,11 +124,11 @@ public class DeploymentModel {
     
     public static class Builder {
         
-        private final Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation;
+        private final ComponentAllocation<UseCase> useCaseAllocation;
         
         private final Map<String, ServiceCandidate> nameToServiceCandidate;
         
-        private final Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation;
+        private final ComponentAllocation<ServiceCandidate> serviceCandidateAllocation;
         
         private final Map<EntityType, DataStore> entityTypeAllocation;
         
@@ -137,38 +137,34 @@ public class DeploymentModel {
         private final boolean modificationInProgress;
         
         public Builder() {
-            this.useCaseAllocation = new HashMap<>();
+            this.useCaseAllocation = new ComponentAllocation<>();
             this.nameToServiceCandidate = new HashMap<>();
-            this.serviceCandidateAllocation = new HashMap<>();
+            this.serviceCandidateAllocation = new ComponentAllocation<>();
             this.entityTypeAllocation = new HashMap<>();
             this.componentConnections = new HashMap<>();            
             this.modificationInProgress = false;
         }
         
-        private Builder(Map<UseCase, ComponentAllocation<UseCase>> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, Map<ServiceCandidate, ComponentAllocation<ServiceCandidate>> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
-            this.useCaseAllocation = new HashMap<>(useCaseAllocation);
+        private Builder(ComponentAllocation<UseCase> useCaseAllocation, Map<String, ServiceCandidate> nameToServiceCandidate, ComponentAllocation<ServiceCandidate> serviceCandidateAllocation, Map<EntityType, DataStore> entityTypeAllocation, Map<ConnectionKey, ComponentConnection> componentConnections) {
+            this.useCaseAllocation = new ComponentAllocation<>(useCaseAllocation);
             this.nameToServiceCandidate = new HashMap<>(nameToServiceCandidate);
-            this.serviceCandidateAllocation = new HashMap<>(serviceCandidateAllocation);
+            this.serviceCandidateAllocation = new ComponentAllocation<>(serviceCandidateAllocation);
             this.entityTypeAllocation = new HashMap<>(entityTypeAllocation);
             this.componentConnections = new HashMap<>(componentConnections);
             this.modificationInProgress = true;
         }
         
         public Builder assignUseCase(UseCase useCase, Component component) {
-            var componentAllocation = new ComponentAllocation<>(useCase, this.modificationInProgress, component);
-            this.useCaseAllocation.put(useCase, componentAllocation);
+            var componentAllocation = new ComponentAllocationEntry<>(useCase, this.modificationInProgress, component);
+            this.useCaseAllocation.addAllocation(useCase, componentAllocation);
             return this;
         }
         
         public Builder assignServiceCandidate(ServiceCandidate candidate, Component component) {
             var previousCandidate = this.nameToServiceCandidate.put(candidate.name(), candidate);
-            
-            if (previousCandidate != null) {
-                this.serviceCandidateAllocation.remove(previousCandidate);
-            }
-            
-            var componentAllocation = new ComponentAllocation<>(candidate, this.modificationInProgress, component);
-            this.serviceCandidateAllocation.put(candidate, componentAllocation);
+                        
+            var componentAllocation = new ComponentAllocationEntry<>(candidate, this.modificationInProgress, component);
+            this.serviceCandidateAllocation.replaceOrAddAllocation(previousCandidate, candidate, componentAllocation);
             return this;
         }
         
