@@ -36,20 +36,20 @@ public class TracesWithConsistencyIssuesGenerator {
     
     private void writeDeploymentModel(String fileName) throws IOException {
         var modelSpec = 
-                "Component c1 {\n" +
-                "    UseCase \"Consistency Issues\"\n" +
-                "    ServiceCandidate sc2 [transactionBehavior=REQUIRES_NEW]" +
+                "component \"Component 1\" {\n" +
+                "    useCase \"Consistency Issues\"\n" +
+                "    serviceCandidate Sc2 [transactionBehavior=REQUIRES_NEW]" +
                 "}\n" +
-                "Component c2 {\n" +
-                "    ServiceCandidate sc1\n" +
-                "    EntityType et1\n" +
+                "component \"Component 2\" {\n" +
+                "    serviceCandidate Sc1\n" +
+                "    entityType EntityType1\n" +
                 "}\n" +
-                "remote c1 -> c2 [\n" +
+                "remote \"Component 1\" -> \"Component 2\" [\n" +
                 "    latency = 20\n" +
                 "    transactionPropagation = SUBORDINATE\n" +
                 "]\n" +
-                "DataStore ds {\n" +
-                "    EntityType et1\n" +
+                "dataStore DataStore {\n" +
+                "    entityType EntityType1\n" +
                 "}";
         
         try (var writer = new FileWriter(fileName)) {
@@ -78,18 +78,18 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
+        var entityType = new EntityType("EntityType1");
         var entity = new Entity(entityType, "1");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
                 new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location1, entity),
-                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"),
+                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
+                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
                 new EntityReadEvent(traceId, timestamps.nextStep(), location2, entity),
-                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
+                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
+                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
                 new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)
                 );
@@ -101,7 +101,7 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
+        var entityType = new EntityType("EntityType1");
         var entity1 = new Entity(entityType, "1");
         var entity2 = new Entity(entityType, "2"); 
         
@@ -109,11 +109,11 @@ public class TracesWithConsistencyIssuesGenerator {
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
                 new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location1, entity1),
-                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"),
+                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
+                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity2),
-                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
+                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
+                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
                 new ExplicitTransactionAbortEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
                 );
@@ -125,7 +125,7 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
+        var entityType = new EntityType("EntityType1");
         var entity1 = new Entity(entityType, "1");
         var entity2 = new Entity(entityType, "2");
         
@@ -133,12 +133,12 @@ public class TracesWithConsistencyIssuesGenerator {
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
                 new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location1, entity1),
-                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"),
-                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"),
+                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
+                new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity1),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity2),
-                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"),
-                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"),
+                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "Sc1"),
+                new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "Sc1"),
                 new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
                 );
@@ -150,7 +150,7 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
+        var entityType = new EntityType("EntityType1");
         var entity1 = new Entity(entityType, "1");
         var entity2 = new Entity(entityType, "2");
         
@@ -158,12 +158,12 @@ public class TracesWithConsistencyIssuesGenerator {
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
                 new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location1, entity1),
-                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc2"),
-                new ServiceCandidateEntryEvent(traceId, timestamps.noStep(), location2, "sc2", true, "tx2"),
+                new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "Sc2"),
+                new ServiceCandidateEntryEvent(traceId, timestamps.noStep(), location2, "Sc2", true, "tx2"),
                 new EntityWriteEvent(traceId, timestamps.nextStep(), location2, entity2),
                 new ImplicitTransactionAbortEvent(traceId, timestamps.nextStep(), location2, "tx2", "some error"),
-                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc2"),
-                new ServiceCandidateReturnEvent(traceId, timestamps.noStep(), location1, "sc2"),
+                new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "Sc2"),
+                new ServiceCandidateReturnEvent(traceId, timestamps.noStep(), location1, "Sc2"),
                 new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
                 );

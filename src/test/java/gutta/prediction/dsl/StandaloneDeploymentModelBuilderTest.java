@@ -25,30 +25,30 @@ class StandaloneDeploymentModelBuilderTest {
     
     @Test
     void simpleModel() {
-        var input = "Component component1 {\n" +
-                "    UseCase usecase\n" +
-                "    ServiceCandidate candidate [\n" +
+        var input = "component Component1 {\n" +
+                "    useCase UseCase\n" +
+                "    serviceCandidate Candidate [\n" +
                 "        transactionBehavior = REQUIRED\n" +
                 "    ]\n" +
                 "}\n" +
-                "Component component2 {\n" +
-                "    EntityType entityType\n" +                
+                "component Component2 {\n" +
+                "    entityType EntityType\n" +                
                 "}\n" +
-                "DataStore store {\n" +
-                "    EntityType entityType\n" +
+                "dataStore DataStore {\n" +
+                "    entityType EntityType\n" +
                 "}\n" +
-                "remote component1 -> component2 [\n" +
+                "remote Component1 -> Component2 [\n" +
                 "    latency = 10\n" +
                 "]";
         
         var parsedModel = this.parse(input);
         
-        var useCase = new UseCase("usecase");
-        var serviceCandidate = new ServiceCandidate("candidate", TransactionBehavior.REQUIRED);
-        var dataStore = new DataStore("store", ReadWriteConflictBehavior.STALE_READ);
-        var entityType = new EntityType("entityType");
-        var component1 = new Component("component1");
-        var component2 = new Component("component2");
+        var useCase = new UseCase("UseCase");
+        var serviceCandidate = new ServiceCandidate("Candidate", TransactionBehavior.REQUIRED);
+        var dataStore = new DataStore("DataStore", ReadWriteConflictBehavior.STALE_READ);
+        var entityType = new EntityType("EntityType");
+        var component1 = new Component("Component1");
+        var component2 = new Component("Component2");
         
         var expectedModel = DeploymentModel.builder()
                 .assignUseCaseToComponent(useCase, component1)
@@ -66,11 +66,11 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateComponent() {
-        var input = "Component test {}\n"
-                + "Component \"test\" {}";
+        var input = "component Test {}\n"
+                + "component \"Test\" {}";
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
-        assertEquals("2,0: Duplicate component 'test'.", exception.getMessage());
+        assertEquals("2,0: Duplicate component 'Test'.", exception.getMessage());
     }
     
     /**
@@ -78,15 +78,15 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateUseCase() {
-        var input = "Component test1 {\n" +
-                "    UseCase test\n" +
+        var input = "component Test1 {\n" +
+                "    useCase Test\n" +
                 "}\n" +
-                "Component test2 {\n" +
-                "    UseCase \"test\"\n" +
+                "component Test2 {\n" +
+                "    useCase \"Test\"\n" +
                 "}\n";
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
-        assertEquals("5,4: Duplicate use case 'test'.", exception.getMessage());
+        assertEquals("5,4: Duplicate use case 'Test'.", exception.getMessage());
     }
     
     /**
@@ -94,9 +94,9 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateProperty() {
-        var input = "Component component1 {}\n" +
-                "Component \"component2\" {}\n" +
-                "remote component1 -> component2 [\n" +
+        var input = "component Component1 {}\n" +
+                "component \"Component2\" {}\n" +
+                "remote Component1 -> Component2 [\n" +
                 "    property = 123\n" +
                 "    \"property\" = 456\n" +
                 "]";
@@ -110,9 +110,9 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void unsupportedTransactionBehavior() {
-        var input = "Component component {\n" +
-                "    UseCase usecase\n" +
-                "    ServiceCandidate candidate [\n" +
+        var input = "component Component {\n" +
+                "    useCase UseCase\n" +
+                "    serviceCandidate Candidate [\n" +
                 "        transactionBehavior = DOESNOTEXIST\n" +
                 "    ]\n" +
                 "}";
@@ -126,12 +126,12 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void missingSourceComponent() {
-        var input = "Component component1 {}\n" +
-                "Component component2 {}\n" +
-                "local componentX -> component2";
+        var input = "component Component1 {}\n" +
+                "component Component2 {}\n" +
+                "local ComponentX -> Component2";
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
-        assertEquals("3,6: Component 'componentX' does not exist.", exception.getMessage());
+        assertEquals("3,6: Component 'ComponentX' does not exist.", exception.getMessage());
     }
     
     /**
@@ -139,12 +139,12 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void missingTargetComponent() {
-        var input = "Component component1 {}\n" +
-                "Component component2 {}\n" +
-                "local component1 -> componentX";
+        var input = "component Component1 {}\n" +
+                "component Component2 {}\n" +
+                "local Component1 -> ComponentX";
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
-        assertEquals("3,20: Component 'componentX' does not exist.", exception.getMessage());
+        assertEquals("3,20: Component 'ComponentX' does not exist.", exception.getMessage());
     }
 
         

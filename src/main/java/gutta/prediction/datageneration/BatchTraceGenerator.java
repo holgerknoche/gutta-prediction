@@ -31,19 +31,16 @@ public class BatchTraceGenerator {
     
     private void writeDeploymentModel(String fileName) throws IOException {
         var modelSpec = 
-                "Component c1 {\n" +
-                "    UseCase \"Batch Traces\"\n" +
+                "component \"Component 1\" {\n" +
+                "    useCase \"Batch Traces\"\n" +
                 "}\n" +
-                "Component c2 {\n" +
-                "    ServiceCandidate sc1\n" +
+                "component \"Component 2\" {\n" +
+                "    serviceCandidate Sc1\n" +
                 "}\n" +
-                "remote c1 -> c2 [\n" +
+                "remote \"Component 1\" -> \"Component 2\" [\n" +
                 "    latency = 20\n" +
                 "    transactionPropagation = SUBORDINATE\n" +
-                "]\n" +
-                "DataStore ds {\n" +
-                "    EntityType et1\n" +
-                "}";
+                "]\n";
         
         try (var writer = new FileWriter(fileName)) {
             writer.write(modelSpec);
@@ -79,10 +76,10 @@ public class BatchTraceGenerator {
                 //events.add(new TransactionStartEvent(traceId, timestamps.nextStep(), location1, "tx" + (invocationIndex / COMMIT_INTERVAL)));
             }
             
-            events.add(new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "sc1"));
-            events.add(new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "sc1"));
-            events.add(new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "sc1"));
-            events.add(new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "sc1"));
+            events.add(new ServiceCandidateInvocationEvent(traceId, timestamps.nextStep(), location1, "Sc1"));
+            events.add(new ServiceCandidateEntryEvent(traceId, timestamps.nextStep(), location2, "Sc1"));
+            events.add(new ServiceCandidateExitEvent(traceId, timestamps.nextStep(), location2, "Sc1"));
+            events.add(new ServiceCandidateReturnEvent(traceId, timestamps.nextStep(), location1, "Sc1"));
             
             if (commitIntervalReached && invocationIndex > 0) {
                 //events.add(new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx" + (invocationIndex / COMMIT_INTERVAL)));

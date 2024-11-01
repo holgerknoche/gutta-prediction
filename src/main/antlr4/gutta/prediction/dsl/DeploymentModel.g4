@@ -13,7 +13,7 @@ deploymentModelElement:
 ;	
 
 componentDeclaration:
-	refToken='Component' name '{'
+	refToken='component' name '{'
 		elements+=componentDeclarationElement*
 	'}'
 ;
@@ -38,26 +38,26 @@ remoteComponentConnectionDeclaration:
 ;
 
 useCaseDeclaration:
-	refToken='UseCase' name
+	refToken='useCase' name
 ;
 
 serviceCandidateDeclaration:
-	refToken='ServiceCandidate' name properties=propertiesDeclaration?
+	refToken='serviceCandidate' name properties=propertiesDeclaration?
 ;
 
 dataStoreDeclaration:
-	refToken='DataStore' name properties=propertiesDeclaration?
+	refToken='dataStore' name properties=propertiesDeclaration?
 	'{'
 		elements+=entityTypeReference*
 	'}'
 ;
 
 entityTypeDeclaration:
-	refToken='EntityType' name
+	refToken='entityType' name
 ;
 
 entityTypeReference:
-	refToken='EntityType' name
+	refToken='entityType' name
 ;
 
 propertiesDeclaration:
