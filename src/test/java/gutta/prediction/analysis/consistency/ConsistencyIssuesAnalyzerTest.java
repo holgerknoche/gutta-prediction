@@ -90,6 +90,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .assignEntityTypeToDataStore(entityType, dataStore)
                 .build();
         
@@ -136,6 +137,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .assignEntityTypeToDataStore(entityType, dataStore)
                 .build();
         
@@ -184,6 +186,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .assignEntityTypeToDataStore(entityType, dataStore)
                 .build();
         
@@ -231,6 +234,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
@@ -279,6 +283,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
@@ -325,15 +330,16 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component1)
                 .assignServiceCandidateToComponent(serviceCandidate, component2)
+                .assignEntityTypeToComponent(entityType, component1)
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
                 .build();
         
-        var analyzer = new ConsistencyIssuesAnalyzer();
+        var analyzer = new ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses.NO);
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 300, location1, entity1);
         var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 600, location2, entity2);
-        
+                
         var expectedResult = new ConsistencyAnalyzerResult(Set.of(), Set.of(expectedCommittedWrite1, expectedCommittedWrite2), Set.of());
         
         assertEquals(expectedResult, result);
@@ -370,6 +376,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
@@ -412,6 +419,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
@@ -444,6 +452,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();
@@ -489,6 +498,7 @@ class ConsistencyIssuesAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
                 .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
                 .build();
         
         var analyzer = new ConsistencyIssuesAnalyzer();

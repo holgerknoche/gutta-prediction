@@ -75,7 +75,7 @@ class ConsistencyIssuesAnalysisTest {
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.NONE)
                 .build();
         
-        var analysis = new ConsistencyIssuesAnalysis();
+        var analysis = new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.NO);
         var result = analysis.analyzeTrace(inputTrace, deploymentModel, modifiedDeploymentModel);
         
         var syntheticLocation = new SyntheticLocation(0);
@@ -134,7 +134,7 @@ class ConsistencyIssuesAnalysisTest {
                 .addLocalConnection(component1, component2)
                 .build();
         
-        var analysis = new ConsistencyIssuesAnalysis();
+        var analysis = new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.NO);
         var result = analysis.analyzeTrace(trace, deploymentModel, modifiedDeploymentModel);
      
         var expectedUnchangedCommittedWrite = new EntityWriteEvent(traceId, 300, location1, entity1);

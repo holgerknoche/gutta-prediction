@@ -1,5 +1,6 @@
 package gutta.prediction.ui;
 
+import gutta.prediction.analysis.consistency.CheckCrossComponentAccesses;
 import gutta.prediction.analysis.consistency.ConsistencyIssuesAnalysis;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
@@ -46,7 +47,7 @@ class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCa
         var numberOfTracesWithChangeInWrites = 0;
         
         for (var trace : traces) {
-            var traceResult = new ConsistencyIssuesAnalysis().analyzeTrace(trace, originalDeploymentModel, modifiedDeploymentModel);
+            var traceResult = new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.YES).analyzeTrace(trace, originalDeploymentModel, modifiedDeploymentModel);
             
             if (!traceResult.newIssues().isEmpty() || !traceResult.obsoleteIssues().isEmpty()) {
                 numberOfTracesWithChangeInIssues++;

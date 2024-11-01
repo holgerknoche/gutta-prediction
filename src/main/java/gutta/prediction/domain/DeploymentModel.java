@@ -83,6 +83,10 @@ public class DeploymentModel {
         return this.serviceCandidateAllocation.get(serviceCandidate);
     }
     
+    public Optional<ComponentAllocationEntry<EntityType>> getComponentAllocationForEntityType(EntityType entityType) {
+        return this.entityTypeAllocation.get(entityType);
+    }
+    
     public Optional<DataStore> getDataStoreForEntityType(EntityType entityType) {
         return Optional.ofNullable(this.entityToDataStore.get(entityType));
     }

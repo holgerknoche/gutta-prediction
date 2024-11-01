@@ -16,5 +16,10 @@ public interface ConsistencyIssueVisitor<R> {
         // Do nothing by default
         return null;
     }
+    
+    default R handleCrossComponentAccessIssue(CrossComponentAccessIssue issue) {
+        // Do nothing by default
+        return null;
+    }
 
 }

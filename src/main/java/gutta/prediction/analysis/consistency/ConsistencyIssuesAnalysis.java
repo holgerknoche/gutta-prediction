@@ -14,6 +14,16 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 public class ConsistencyIssuesAnalysis {
+    
+    private final CheckCrossComponentAccesses checkCrossComponentAccesses;
+    
+    ConsistencyIssuesAnalysis() {
+        this(CheckCrossComponentAccesses.YES);
+    }
+    
+    public ConsistencyIssuesAnalysis(CheckCrossComponentAccesses checkCrossComponentAccesses) {
+        this.checkCrossComponentAccesses = checkCrossComponentAccesses;
+    }
 
     public ConsistencyAnalysisResult analyzeTrace(EventTrace trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
         var originalTraceResult = this.analyzeTrace(trace, originalDeploymentModel);
@@ -25,7 +35,7 @@ public class ConsistencyIssuesAnalysis {
     }
 
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
-        return new ConsistencyIssuesAnalyzer().analyzeTrace(trace, deploymentModel);
+        return new ConsistencyIssuesAnalyzer(this.checkCrossComponentAccesses).analyzeTrace(trace, deploymentModel);
     }
 
     public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
