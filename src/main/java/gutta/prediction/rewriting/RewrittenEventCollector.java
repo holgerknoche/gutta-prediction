@@ -9,9 +9,14 @@ import java.util.Map;
 
 abstract class RewrittenEventCollector {
 
-    private final List<MonitoringEvent> rewrittenEvents = new ArrayList<>();
+    private final List<MonitoringEvent> rewrittenEvents;
     
-    private final Map<MonitoringEvent, MonitoringEvent> eventCorrespondence = new HashMap<>();
+    private final Map<MonitoringEvent, MonitoringEvent> eventCorrespondence;
+    
+    protected RewrittenEventCollector(int expectedSize) {
+        this.rewrittenEvents = new ArrayList<>(expectedSize);
+        this.eventCorrespondence = new HashMap<>(expectedSize);
+    }
     
     public abstract void addRewrittenEvent(MonitoringEvent rewrittenEvent, MonitoringEvent originalEvent);
     

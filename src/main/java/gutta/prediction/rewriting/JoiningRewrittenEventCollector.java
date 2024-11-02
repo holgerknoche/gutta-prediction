@@ -8,7 +8,9 @@ class JoiningRewrittenEventCollector extends RewrittenEventCollector {
 
     private final Function<MonitoringEvent, MonitoringEvent> existingCorrespondence;
     
-    public JoiningRewrittenEventCollector(Function<MonitoringEvent, MonitoringEvent> existingCorrespondence) {
+    public JoiningRewrittenEventCollector(int expectedSize, Function<MonitoringEvent, MonitoringEvent> existingCorrespondence) {
+        super(expectedSize);
+        
         this.existingCorrespondence = existingCorrespondence;
     }
     

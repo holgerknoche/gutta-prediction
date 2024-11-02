@@ -12,4 +12,9 @@ import gutta.prediction.domain.Entity;
  */
 public record EntityWriteEvent(long traceId, long timestamp, Location location, Entity entity) implements EntityAccessEvent {
 
+    @Override
+    public int hashCode() {
+        return (int) (this.traceId() + this.timestamp());
+    }
+    
 }

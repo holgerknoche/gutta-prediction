@@ -36,10 +36,12 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
     }
     
     public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel deploymentModel) {
+        var expectedSize = trace.size();
+        
         if (trace instanceof RewrittenEventTrace rewrittenTrace) {
-            this.rewrittenEventCollector = new JoiningRewrittenEventCollector(rewrittenTrace::obtainOriginalEvent);
+            this.rewrittenEventCollector = new JoiningRewrittenEventCollector(expectedSize, rewrittenTrace::obtainOriginalEvent);
         } else {
-            this.rewrittenEventCollector = new SimpleRewrittenEventCollector();
+            this.rewrittenEventCollector = new SimpleRewrittenEventCollector(expectedSize);
         }
         
         runSimulationOf(trace, deploymentModel, this.requiredSimulationMode(), this);
@@ -56,7 +58,7 @@ abstract class TraceRewriterWorker implements TraceSimulationListener {
     }
     
     protected void onEndOfRewrite() {
-     // Do nothing by default
+        // Do nothing by default
     }
         
     protected void addRewrittenEvent(MonitoringEvent rewrittenEvent, MonitoringEvent originalEvent) {

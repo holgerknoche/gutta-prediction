@@ -6,4 +6,9 @@ public record ServiceCandidateEntryEvent(long traceId, long timestamp, Location 
         this(traceId, timestamp, location, name, false, null);
     }
     
+    @Override
+    public int hashCode() {
+        return (int) (this.traceId() + this.timestamp());
+    }
+    
 }
