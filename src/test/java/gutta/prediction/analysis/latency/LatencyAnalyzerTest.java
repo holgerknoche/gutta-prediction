@@ -101,5 +101,37 @@ class LatencyAnalyzerTest {
         var expectedResult = new LatencyAnalyzer.Result(1000, 250, 0.25f);
         assertEquals(expectedResult, result);               
     }
+    
+    /**
+     * Test case: An invocation of a asynchronous service candidate effectively has a duration of zero.
+     */
+    @Test
+    void asynchronousInvocationHasZeroDuration() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1234, 0);
+        
+        var inputTrace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc1"),
+                new ServiceCandidateInvocationEvent(traceId, 100, location, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 200, location, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 500, location, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 600, location, "sc1"),
+                new UseCaseEndEvent(traceId, 1000, location, "uc1")
+                );
+        
+        var useCase = new UseCase("uc1");
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED, true);
+        var component = new Component("c1");        
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
+                .build();
+        
+        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        
+        var expectedResult = new LatencyAnalyzer.Result(500, 0, 0.0f);
+        assertEquals(expectedResult, result);
+    }
 
 }

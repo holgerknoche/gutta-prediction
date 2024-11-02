@@ -26,6 +26,8 @@ public class TraceSimulationContext {
     private final Map<Transaction, Set<EntityWriteEvent>> pendingWritesPerTransaction = new HashMap<>();
     
     private final Map<Entity, Transaction> pendingEntitiesToTransaction = new HashMap<>(); 
+    
+    private final Set<Entity> asynchronouslyChangedEntities = new HashSet<>();
 
     private ServiceCandidate currentServiceCandidate;
     
@@ -126,6 +128,14 @@ public class TraceSimulationContext {
                 .forEach(this.pendingEntitiesToTransaction::remove);
         
         return pendingWrites;
+    }
+    
+    boolean isAsynchronouslyChanged(Entity entity) {
+        return this.asynchronouslyChangedEntities.contains(entity);
+    }
+    
+    void registerAsynchronouslyChangedEntity(Entity entity) {
+        this.asynchronouslyChangedEntities.add(entity);
     }
         
 }

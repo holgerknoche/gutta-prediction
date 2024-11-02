@@ -79,7 +79,8 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         var implicitTopLevelTransactionAvailable = (transaction != null && transaction.demarcation() == Demarcation.IMPLICIT && transaction.isTopLevel());
         if (implicitTopLevelTransactionAvailable && !transaction.equals(stackEntry.transaction())) {
             // If a top-level transaction was implicitly created on entry, we need to complete it
-            this.completeTransactionAndNotifyListeners(exitEvent, transaction);
+            var asynchronous = this.context.currentServiceCandidate().asynchronous();
+            this.completeTransactionAndNotifyListeners(exitEvent, transaction, asynchronous);
         }
         
         this.previousTransaction = transaction;
@@ -96,19 +97,19 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         this.previousTransaction = null;
     }
 
-    private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction) {
+    private void completeTransactionAndNotifyListeners(MonitoringEvent event, Transaction transaction, boolean asynchronous) {
         var outcome = transaction.commit();
 
         if (outcome == Outcome.COMMITTED) {
             transaction.forEach(tx -> this.notifyListenersOfCommitOf(tx, event));
-            transaction.forEach(this::notifyListenersOfCommittedWrites);
+            transaction.forEach(tx -> this.notifyListenersOfCommittedWrites(tx, asynchronous));
         } else {
             transaction.forEach(tx -> this.notifyListenersOfAbortOf(tx, event));
-            transaction.forEach(this::notifyListenersOfRevertedWrites);
+            transaction.forEach(tx -> this.notifyListenersOfRevertedWrites(tx, asynchronous));
         }
     }
 
-    protected void notifyListenersOfCommittedWrites(Transaction transaction) {
+    protected void notifyListenersOfCommittedWrites(Transaction transaction, boolean asynchronous) {
         // Do nothing by default
     }
 
@@ -116,7 +117,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         this.listeners.forEach(listener -> listener.onTransactionCommit(event, transaction, this.context));
     }
 
-    protected void notifyListenersOfRevertedWrites(Transaction transaction) {
+    protected void notifyListenersOfRevertedWrites(Transaction transaction, boolean asynchronous) {
         // Do nothing by default
     }
 
@@ -142,7 +143,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         if (transaction != null) {
             // If a transaction is present, it must be a top-level transaction with explicit demarcation
             if (transaction.isTopLevel() && transaction.demarcation() == Demarcation.EXPLICIT) {
-                this.completeTransactionAndNotifyListeners(event, transaction);
+                this.completeTransactionAndNotifyListeners(event, transaction, false);
             } else {
                 throw new IllegalStateException("An invalid transaction '" + transaction + "' was found for explicit commit.");
             }            
@@ -158,7 +159,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
             transaction.abort();
                         
             this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
-            transaction.forEach(this::notifyListenersOfRevertedWrites);
+            transaction.forEach(tx -> this.notifyListenersOfRevertedWrites(tx, false));
         }
     }
     

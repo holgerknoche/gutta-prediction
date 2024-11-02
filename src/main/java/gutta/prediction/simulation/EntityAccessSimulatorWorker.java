@@ -58,18 +58,33 @@ class EntityAccessSimulatorWorker extends TransactionTraceSimulatorWorker {
         }
     }
     
-    protected void notifyListenersOfCommittedWrites(Transaction transaction) {
-        var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
-        pendingWrites.forEach(
-                writeEvent -> this.listeners.forEach(listener -> listener.onCommittedWrite(writeEvent, this.context))
-                );
+    @Override
+    protected void notifyListenersOfCommittedWrites(Transaction transaction, boolean asynchronous) {
+        this.notifyListenersOfWrite(transaction, asynchronous, TraceSimulationListener::onCommittedWrite);
     }
     
-    protected void notifyListenersOfRevertedWrites(Transaction transaction) {
+    @Override
+    protected void notifyListenersOfRevertedWrites(Transaction transaction, boolean asynchronous) {
+        this.notifyListenersOfWrite(transaction, asynchronous, TraceSimulationListener::onRevertedWrite);
+    }
+    
+    private void notifyListenersOfWrite(Transaction transaction, boolean asynchronous, WriteListenerNotifier notifier) {
         var pendingWrites = this.context.getAndRemovePendingWritesFor(transaction);
         pendingWrites.forEach(
-                writeEvent -> this.listeners.forEach(listener -> listener.onRevertedWrite(writeEvent, this.context))
+                writeEvent -> this.listeners.forEach(listener -> notifier.notifyListener(listener, writeEvent, this.context))
                 );
+        
+        if (asynchronous) {
+            pendingWrites.stream()
+                .map(EntityWriteEvent::entity)
+                .forEach(this.context::registerAsynchronouslyChangedEntity);
+        }
+    }
+    
+    private interface WriteListenerNotifier {
+        
+        void notifyListener(TraceSimulationListener listener, EntityWriteEvent event, TraceSimulationContext context);
+        
     }
     
 }

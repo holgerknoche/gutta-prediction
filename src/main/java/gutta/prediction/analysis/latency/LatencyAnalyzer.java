@@ -14,6 +14,9 @@ import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulationMode;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
 class LatencyAnalyzer implements TraceSimulationListener {
@@ -24,10 +27,14 @@ class LatencyAnalyzer implements TraceSimulationListener {
     
     private long totalLatency = 0;
     
+    private long totalTimeInAsyncInvocations = 0;
+    
+    private Deque<ServiceCandidateInvocationEvent> asyncStack = new ArrayDeque<>();
+    
     public Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         runSimulationOf(trace, deploymentModel, TraceSimulationMode.BASIC, this);
         
-        var duration = (this.endTime - this.startTime);
+        var duration = (this.endTime - this.startTime) - this.totalTimeInAsyncInvocations;
         var latencyPercentage = (duration == 0) ? 0 : (float) (this.totalLatency) / (float) duration; 
         
         return new Result(duration, this.totalLatency, latencyPercentage);
@@ -39,16 +46,36 @@ class LatencyAnalyzer implements TraceSimulationListener {
     }
     
     @Override
-    public void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, TraceSimulationContext context) {
-        this.registerLatency(invocationEvent, entryEvent);
+    public void afterComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, TraceSimulationContext context) {
+        var serviceCandidate = context.currentServiceCandidate();
+        
+        if (serviceCandidate.asynchronous()) {
+            // If the invocation is asynchronous, push the invocation event so that the time spent in the invocation
+            // can be calculated on return
+            this.asyncStack.push(invocationEvent);
+        } else {
+            // Otherwise, simply register the latency
+            this.registerLatency(invocationEvent, entryEvent);
+        }
     }
     
     @Override
     public void beforeComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection, TraceSimulationContext context) {
-        this.registerLatency(exitEvent, returnEvent);
+        var serviceCandidate = context.currentServiceCandidate();
+        
+        if (serviceCandidate.asynchronous()) {
+            // If the invocation was asynchronous, pop the corresponding invocation event to calculate the time spent
+            // in the invocation
+            var invocationEvent = this.asyncStack.pop();
+            var timeSpentInAsyncInvocation = (returnEvent.timestamp() - invocationEvent.timestamp());
+            this.totalTimeInAsyncInvocations += timeSpentInAsyncInvocation;
+        } else {
+            // Otherwise, simply register the latency
+            this.registerLatency(exitEvent, returnEvent);
+        }
     }
-    
-    private void registerLatency(MonitoringEvent startEvent, MonitoringEvent endEvent) {
+        
+    private void registerLatency(MonitoringEvent startEvent, MonitoringEvent endEvent) {        
         long latency = (endEvent.timestamp() - startEvent.timestamp());
         this.totalLatency += latency;
     }
