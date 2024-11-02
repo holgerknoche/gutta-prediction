@@ -47,6 +47,10 @@ class EntityAccessSimulatorWorker extends TransactionTraceSimulatorWorker {
     }
     
     private boolean hasConflict(Entity entity, Transaction currentTransaction) {
+        if (this.context.isAsynchronouslyChanged(entity)) {
+            return true;
+        }
+        
         var changingTransaction = this.context.getTransactionWithPendingWriteTo(entity);
         
         if (changingTransaction == null) {

@@ -17,22 +17,46 @@ import gutta.prediction.event.UseCaseStartEvent;
 
 public interface TraceSimulationListener {
 
+    /**
+     * This method is invoked before the first event in the trace is processed. 
+     */
+    @RequiredSimulationMode(TraceSimulationMode.BASIC)
     default void onStartOfProcessing() {
         // Do nothing by default
     }
 
+    /**
+     * This method is invoked after the last event in the trace is processed.
+     */
+    @RequiredSimulationMode(TraceSimulationMode.BASIC)
     default void onEndOfProcessing() {
         // Do nothing by default
     }
 
+    /**
+     * This method is invoked if a {@link EntityReadEvent} is encountered in the trace. 
+     * 
+     * @param event The encountered event
+     * @param context The current simulation context
+     */
+    @RequiredSimulationMode(TraceSimulationMode.BASIC)
     default void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
 
+    /**
+     * This method is invoked if a read-write conflict is detected when processing an {@link EntityReadEvent}.
+     * The invocation occurs after that of {@link #onEntityReadEvent(EntityReadEvent, TraceSimulationContext)} for the respective event.
+     * 
+     * @param event The event at which the conflict occurred
+     * @param context The current simulation context
+     */
+    @RequiredSimulationMode(TraceSimulationMode.WITH_ENTITY_ACCESS)
     default void onReadWriteConflict(EntityReadEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
     
+    @RequiredSimulationMode(TraceSimulationMode.BASIC)
     default void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
         // Do nothing by default
     }
