@@ -32,13 +32,13 @@ class DeltaDeploymentModelBuilder extends DeploymentModelBuilder {
     }
     
     @Override
-    protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior) {
+    protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous) {
         var existingCandidate = this.originalDeploymentModel.resolveServiceCandidateByName(name);
         
-        if (existingCandidate.isPresent() && existingCandidate.get().transactionBehavior() == transactionBehavior) {
+        if (existingCandidate.isPresent() && existingCandidate.get().transactionBehavior() == transactionBehavior && existingCandidate.get().asynchronous() == asynchronous) {
             return existingCandidate.get();
         } else {
-            return new ServiceCandidate(name, transactionBehavior);
+            return new ServiceCandidate(name, transactionBehavior, asynchronous);
         }
     }
     

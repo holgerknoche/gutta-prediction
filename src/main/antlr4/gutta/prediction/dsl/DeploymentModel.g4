@@ -42,7 +42,7 @@ useCaseDeclaration:
 ;
 
 serviceCandidateDeclaration:
-	refToken='serviceCandidate' name properties=propertiesDeclaration?
+	asynchronous='async'? refToken='serviceCandidate' name properties=propertiesDeclaration?
 ;
 
 dataStoreDeclaration:

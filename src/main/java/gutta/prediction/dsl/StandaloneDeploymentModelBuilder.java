@@ -26,8 +26,8 @@ class StandaloneDeploymentModelBuilder extends DeploymentModelBuilder {
     }
     
     @Override
-    protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior) {
-        return new ServiceCandidate(name, transactionBehavior);
+    protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous) {
+        return new ServiceCandidate(name, transactionBehavior, asynchronous);
     }
 
     @Override

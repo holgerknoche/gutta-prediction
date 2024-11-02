@@ -30,6 +30,7 @@ class StandaloneDeploymentModelBuilderTest {
                 "    serviceCandidate Candidate [\n" +
                 "        transactionBehavior = REQUIRED\n" +
                 "    ]\n" +
+                "    async serviceCandidate Candidate2" +
                 "}\n" +
                 "component Component2 {\n" +
                 "    entityType EntityType\n" +                
@@ -45,7 +46,8 @@ class StandaloneDeploymentModelBuilderTest {
         var parsedModel = this.parse(input);
         
         var useCase = new UseCase("UseCase");
-        var serviceCandidate = new ServiceCandidate("Candidate", TransactionBehavior.REQUIRED);
+        var serviceCandidate1 = new ServiceCandidate("Candidate", TransactionBehavior.REQUIRED);
+        var serviceCandidate2 = new ServiceCandidate("Candidate2", TransactionBehavior.SUPPORTED, true);
         var dataStore = new DataStore("DataStore", ReadWriteConflictBehavior.STALE_READ);
         var entityType = new EntityType("EntityType");
         var component1 = new Component("Component1");
@@ -53,7 +55,8 @@ class StandaloneDeploymentModelBuilderTest {
         
         var expectedModel = DeploymentModel.builder()
                 .assignUseCaseToComponent(useCase, component1)
-                .assignServiceCandidateToComponent(serviceCandidate, component1)
+                .assignServiceCandidateToComponent(serviceCandidate1, component1)
+                .assignServiceCandidateToComponent(serviceCandidate2, component1)
                 .assignEntityTypeToComponent(entityType, component2)
                 .assignEntityTypeToDataStore(entityType, dataStore)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.NONE)

@@ -114,14 +114,15 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var properties = toPropertyMap(context.properties);
 
         var transactionBehavior = determineTransactionBehavior(properties);
-        var serviceCandidate = this.buildServiceCandidate(name, transactionBehavior);
+        var asynchronous = (context.asynchronous != null);
+        var serviceCandidate = this.buildServiceCandidate(name, transactionBehavior, asynchronous);
 
         this.builder.assignServiceCandidateToComponent(serviceCandidate, this.currentComponent);
 
         return null;
     }
     
-    protected abstract ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior);
+    protected abstract ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous);
 
     private static TransactionBehavior determineTransactionBehavior(Map<String, PropertyValue> properties) {
         var propertyValue = properties.get("transactionBehavior");
