@@ -37,6 +37,7 @@ class StandaloneDeploymentModelBuilderTest {
                 "dataStore DataStore {\n" +
                 "    entityType EntityType\n" +
                 "}\n" +
+                "// A comment\n" +
                 "remote Component1 -> Component2 [\n" +
                 "    latency = 10\n" +
                 "]";

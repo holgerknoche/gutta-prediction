@@ -87,6 +87,10 @@ INT_LITERAL:
 STRING_LITERAL:
 	'"'~["]*'"'
 ;
+
+COMMENT:
+	'//'~[\n]* -> skip
+;
 	
 WS:
 	[ \r\t\n]+ -> skip
