@@ -175,8 +175,9 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         var currentTransaction = this.currentTransaction();
         var propagationType = connection.transactionPropagation();
         
-        // We only have a readily usable transaction if it is propagated to the new component 
-        var usableTransactionAvailable = (currentTransaction != null && propagationType != TransactionPropagation.NONE);
+        // We only have a readily usable transaction if it is propagated to the new component
+        var asynchronousInvocation = enteredServiceCandidate.asynchronous();
+        var usableTransactionAvailable = (currentTransaction != null && !(propagationType == TransactionPropagation.NONE || asynchronousInvocation));
         var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
         
         switch (action) {
@@ -186,7 +187,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
             return new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
             
         case KEEP:            
-            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, entryEvent.location());        
+            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, asynchronousInvocation, entryEvent.location());        
             
         case SUSPEND:
             // If the current transaction is to be suspended, just clear the current transaction
@@ -232,8 +233,8 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         }            
     }
     
-    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event, Location location) {
-        if (propagatedTransaction == null) {
+    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event, boolean asynchronous, Location location) {
+        if (propagatedTransaction == null || asynchronous) {
             return null;
         }
         
