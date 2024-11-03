@@ -53,7 +53,7 @@ dataStoreDeclaration:
 ;
 
 entityTypeDeclaration:
-	refToken='entityType' name
+	refToken='entityType' typeName=name ('partOf' rootTypeName=name)?
 ;
 
 entityTypeReference:

@@ -33,10 +33,12 @@ class StandaloneDeploymentModelBuilderTest {
                 "    async serviceCandidate Candidate2" +
                 "}\n" +
                 "component Component2 {\n" +
-                "    entityType EntityType\n" +                
+                "    entityType EntityType\n" +
+                "    entityType SubType partOf EntityType\n" +                
                 "}\n" +
                 "dataStore DataStore {\n" +
                 "    entityType EntityType\n" +
+                "    entityType SubType\n" +
                 "}\n" +
                 "// A comment\n" +
                 "remote Component1 -> Component2 [\n" +
@@ -50,6 +52,7 @@ class StandaloneDeploymentModelBuilderTest {
         var serviceCandidate2 = new ServiceCandidate("Candidate2", TransactionBehavior.SUPPORTED, true);
         var dataStore = new DataStore("DataStore", ReadWriteConflictBehavior.STALE_READ);
         var entityType = new EntityType("EntityType");
+        var entitySubType = new EntityType("SubType", entityType);
         var component1 = new Component("Component1");
         var component2 = new Component("Component2");
         
@@ -58,7 +61,9 @@ class StandaloneDeploymentModelBuilderTest {
                 .assignServiceCandidateToComponent(serviceCandidate1, component1)
                 .assignServiceCandidateToComponent(serviceCandidate2, component1)
                 .assignEntityTypeToComponent(entityType, component2)
+                .assignEntityTypeToComponent(entitySubType, component2)
                 .assignEntityTypeToDataStore(entityType, dataStore)
+                .assignEntityTypeToDataStore(entitySubType, dataStore)
                 .addSymmetricRemoteConnection(component1, component2, 10, TransactionPropagation.NONE)
                 .build();
         

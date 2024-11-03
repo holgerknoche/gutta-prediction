@@ -9,6 +9,8 @@ import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
 
+import java.util.Objects;
+
 class DeltaDeploymentModelBuilder extends DeploymentModelBuilder {
     
     private final DeploymentModel originalDeploymentModel;
@@ -54,9 +56,15 @@ class DeltaDeploymentModelBuilder extends DeploymentModelBuilder {
     }
         
     @Override
-    protected EntityType buildEntityType(String name) {
+    protected EntityType buildEntityType(String name, String rootTypeName) {
         var existingEntityType = this.originalDeploymentModel.resolveEntityTypeByName(name);
-        return existingEntityType.orElse(new EntityType(name));
+        var rootType = (rootTypeName != null) ? this.resolveEntityTypeByName(rootTypeName) : null;
+        
+        if (existingEntityType.isPresent() && Objects.equals(rootType, existingEntityType.get().rootType())) {
+            return existingEntityType.get();
+        } else {        
+            return existingEntityType.orElse(new EntityType(name));
+        }
     }
     
     @Override

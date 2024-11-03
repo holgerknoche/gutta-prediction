@@ -275,7 +275,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     
     @Override
     public Void visitEntityTypeDeclaration(EntityTypeDeclarationContext context) {
-        var name = nameToString(context.name());
+        var name = nameToString(context.typeName);
         
         if (this.knownEntityTypes.contains(name)) {
             throw new DeploymentModelParseException(context.refToken, "Duplicate entity type '" + name + "'.");
@@ -283,7 +283,8 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         
         this.knownEntityTypes.add(name);
         
-        var entityType = this.buildEntityType(name);
+        var rootTypeName = (context.rootTypeName != null) ? nameToString(context.rootTypeName) : null;
+        var entityType = this.buildEntityType(name, rootTypeName);
         this.builder.assignEntityTypeToComponent(entityType, this.currentComponent);
         
         this.nameToEntityType.put(name, entityType);
@@ -291,7 +292,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract EntityType buildEntityType(String name);
+    protected abstract EntityType buildEntityType(String name, String rootTypeName);
 
     @Override
     public Void visitEntityTypeReference(EntityTypeReferenceContext context) {

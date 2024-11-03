@@ -36,8 +36,17 @@ class StandaloneDeploymentModelBuilder extends DeploymentModelBuilder {
     }
 
     @Override
-    protected EntityType buildEntityType(String name) {
-        return new EntityType(name);
+    protected EntityType buildEntityType(String name, String rootTypeName) {
+        if (rootTypeName != null) {
+            var rootType = this.resolveEntityTypeByName(rootTypeName);
+            if (rootType == null) {
+                throw new IllegalStateException("Root type '" + rootTypeName + "' of entity type '" + name + "' is not defined.");
+            }
+            
+            return new EntityType(name, rootType);
+        } else {
+            return new EntityType(name);
+        }                
     }
 
 }
