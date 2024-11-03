@@ -57,5 +57,10 @@ public class EventTrace {
     private boolean equalsInternal(EventTrace that) {
         return this.events.equals(that.events);
     }
+    
+    @Override
+    public String toString() {
+        return this.events.toString();
+    }
 
 }

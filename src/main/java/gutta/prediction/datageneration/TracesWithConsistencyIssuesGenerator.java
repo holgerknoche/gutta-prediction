@@ -38,7 +38,12 @@ public class TracesWithConsistencyIssuesGenerator {
         var modelSpec = 
                 "component \"Component 1\" {\n" +
                 "    useCase \"Consistency Issues\"\n" +
-                "    serviceCandidate Sc2 [transactionBehavior=REQUIRES_NEW]" +
+                "    serviceCandidate Sc2 [transactionBehavior=REQUIRES_NEW]\n" +
+                "\n" +
+                "    entityType RootType\n" +
+                "    entityType SubType1\n" +
+                "    entityType SubType2\n" +
+                "    entityType UnrelatedType\n" +
                 "}\n" +
                 "component \"Component 2\" {\n" +
                 "    serviceCandidate Sc1\n" +
@@ -50,6 +55,10 @@ public class TracesWithConsistencyIssuesGenerator {
                 "]\n" +
                 "dataStore DataStore {\n" +
                 "    entityType EntityType1\n" +
+                "    entityType RootType\n" +
+                "    entityType SubType1\n" +
+                "    entityType SubType2\n" +
+                "    entityType UnrelatedType\n" +
                 "}";
         
         try (var writer = new FileWriter(fileName)) {
@@ -66,6 +75,7 @@ public class TracesWithConsistencyIssuesGenerator {
         traces.add(this.buildTraceWithWritesInSubordinateTransaction(useCaseName, 1235));
         traces.add(this.buildTraceWithWriteConflict(useCaseName, 1236));
         traces.add(this.buildTraceWithImplicitAbort(useCaseName, 1237));
+        traces.add(this.buildTraceWithInterleavedAccessToAggregate(useCaseName, 1238));
         
         try (var outputStream = new FileOutputStream(fileName)) {
             new EventTraceEncoder().encodeTraces(traces, outputStream);
@@ -166,6 +176,34 @@ public class TracesWithConsistencyIssuesGenerator {
                 new ServiceCandidateReturnEvent(traceId, timestamps.noStep(), location1, "Sc2"),
                 new TransactionCommitEvent(traceId, timestamps.nextStep(), location1, "tx1"),
                 new UseCaseEndEvent(traceId, timestamps.nextStep(), location1, useCaseName)                
+                );
+    }
+    
+    private EventTrace buildTraceWithInterleavedAccessToAggregate(String useCaseName, long traceId) {
+        var location = new ObservedLocation("test", 1, 0);
+        
+        var rootEntityType = new EntityType("RootType");
+        var entityType1 = new EntityType("SubType1", rootEntityType);
+        var entityType2 = new EntityType("SubType2", rootEntityType);
+        
+        var unrelatedType = new EntityType("UnrelatedType");
+        
+        var entity1 = new Entity(entityType1, "e1", true, "r1");
+        var entity2 = new Entity(unrelatedType, "e2");
+        var entity3 = new Entity(entityType2, "e3", true, "r1");
+        
+        return EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, useCaseName),
+                new TransactionStartEvent(traceId, 20, location, "tx1"),
+                new EntityWriteEvent(traceId, 40, location, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 60, location, "Sc2"),
+                new ServiceCandidateEntryEvent(traceId, 60, location, "Sc2"),
+                new EntityWriteEvent(traceId, 80, location, entity2),
+                new ServiceCandidateExitEvent(traceId, 100, location, "Sc2"),
+                new ServiceCandidateReturnEvent(traceId, 100, location, "Sc2"),
+                new EntityWriteEvent(traceId, 120, location, entity3),
+                new TransactionCommitEvent(traceId, 140, location, "tx1"),
+                new UseCaseEndEvent(traceId, 160, location, useCaseName)
                 );
     }
 

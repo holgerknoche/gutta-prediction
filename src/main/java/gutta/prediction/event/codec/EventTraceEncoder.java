@@ -212,6 +212,11 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
         
         stream.writeInt(this.storeString(entityType.name()));
         stream.writeInt(this.storeString(entity.id()));
+        stream.writeBoolean(entity.hasRoot());
+        
+        if (entity.hasRoot()) {
+            stream.writeInt(this.storeString(entity.rootId()));
+        }
     }
     
     private void encodeEntityReadEvent(EntityReadEvent event, DataOutputStream stream) throws IOException {

@@ -47,11 +47,13 @@ public class DeploymentModel {
                 .map(ComponentAllocationEntry::component)
                 .collect(Collectors.toSet());        
         
+        var dataStoreSet = this.entityToDataStore.values().stream().collect(Collectors.toSet());
+        
         // Build name-based lookups
         this.useCaseLookup = useCaseAllocation.keySet().stream().collect(Collectors.toMap(UseCase::name, Function.identity()));
         this.serviceCandidateLookup = serviceCandidateAllocation.keySet().stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));                
         this.componentLookup = allComponents.stream().collect(Collectors.toMap(Component::name, Function.identity()));
-        this.dataStoreLookup = this.entityToDataStore.values().stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
+        this.dataStoreLookup = dataStoreSet.stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
         this.entityTypeLookup = this.entityToDataStore.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
     }
             

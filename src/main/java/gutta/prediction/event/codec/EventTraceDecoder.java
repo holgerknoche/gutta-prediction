@@ -53,7 +53,7 @@ public class EventTraceDecoder {
     private static final int BUFFER_SIZE = 65536;
     
     private Map<String, EntityType> entityTypes;
-
+    
     public Collection<EventTrace> decodeTraces(InputStream inputStream) throws IOException {
         this.entityTypes = new HashMap<>();
         
@@ -208,7 +208,7 @@ public class EventTraceDecoder {
         return new UseCaseEndEvent(traceId, timestamp, location, useCaseName);
     }
     
-    private EntityReadEvent decodeEntityReadEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+    private Entity decodeEntity(DataInputStream stream, StringTable stringTable) throws IOException {
         var entityTypeNameIndex = stream.readInt();
         var entityTypeName = stringTable.getEntry(entityTypeNameIndex);
         var entityType = this.retrieveEntityType(entityTypeName);
@@ -216,20 +216,33 @@ public class EventTraceDecoder {
         var entityIdIndex = stream.readInt();
         var entityId = stringTable.getEntry(entityIdIndex);
         
-        // TODO Deduplicate entities to save heap for large traces
-        return new EntityReadEvent(traceId, timestamp, location, new Entity(entityType, entityId));
+        Entity entity;
+        var hasRoot = stream.readBoolean();        
+        if (hasRoot) {
+            var rootIdIndex = stream.readInt();
+            var rootId = stringTable.getEntry(rootIdIndex);
+            
+            entity = new Entity(entityType, entityId, rootId);
+        } else {
+            entity = new Entity(entityType, entityId);
+        }        
+        
+        return this.deduplicateEntity(entity);
+    }
+    
+    private Entity deduplicateEntity(Entity entity) {
+        // TODO Actually deduplicate
+        return entity;
+    }
+    
+    private EntityReadEvent decodeEntityReadEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+        var entity = this.decodeEntity(stream, stringTable);
+        return new EntityReadEvent(traceId, timestamp, location, entity);
     }
     
     private EntityWriteEvent decodeEntityWriteEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
-        var entityTypeNameIndex = stream.readInt();
-        var entityTypeName = stringTable.getEntry(entityTypeNameIndex);
-        var entityType = this.retrieveEntityType(entityTypeName);
-        
-        var entityIdIndex = stream.readInt();
-        var entityId = stringTable.getEntry(entityIdIndex);
-        
-        // TODO Deduplicate entities to save heap for large traces
-        return new EntityWriteEvent(traceId, timestamp, location, new Entity(entityType, entityId));
+        var entity = this.decodeEntity(stream, stringTable);        
+        return new EntityWriteEvent(traceId, timestamp, location, entity);
     }
     
     private TransactionStartEvent decodeTransactionStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {

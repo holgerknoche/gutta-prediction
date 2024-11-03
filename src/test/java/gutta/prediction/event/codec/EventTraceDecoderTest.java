@@ -70,7 +70,19 @@ class EventTraceDecoderTest extends EventTraceCodecTestTemplate {
                 
         this.runDecoderTest(traceBytes, expectedTraces);
     }
-
+    
+    
+    /**
+     * Test case: Variants of entities (root, subordinate).
+     */
+    @Test
+    void decodeAllEntityVariants() {
+        var traceBytes = serializedTraceWithAllEntityVariants();
+        var expectedTraces = List.of(traceWithAllEntityVariants());
+        
+        this.runDecoderTest(traceBytes, expectedTraces);
+    }
+    
     private void runDecoderTest(byte[] serializedTraces, Collection<EventTrace> expectedTraces) {
         try (var inputStream = new ByteArrayInputStream(serializedTraces)) {
             var decodedTraces = new EventTraceDecoder().decodeTraces(inputStream);

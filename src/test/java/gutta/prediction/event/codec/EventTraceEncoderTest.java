@@ -71,6 +71,17 @@ class EventTraceEncoderTest extends EventTraceCodecTestTemplate {
         this.runEncoderTest(traces, expectedBytes);
     }
     
+    /**
+     * Test case: Variants of entities (root, subordinate).
+     */
+    @Test
+    void encodeAllEntityVariants() {
+        var trace = traceWithAllEntityVariants();
+        var expectedBytes = serializedTraceWithAllEntityVariants();
+        
+        this.runEncoderTest(List.of(trace), expectedBytes);
+    }
+    
     private void runEncoderTest(Collection<EventTrace> traces, byte[] expectedBytes) {
         try (var outputStream = new ByteArrayOutputStream()) {
             new EventTraceEncoder().encodeTraces(traces, outputStream);

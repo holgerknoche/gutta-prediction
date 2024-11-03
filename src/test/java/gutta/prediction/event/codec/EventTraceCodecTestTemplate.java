@@ -97,6 +97,7 @@ abstract class EventTraceCodecTestTemplate {
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index of the first event (0)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the entity type name (1)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // String index of the entity id (2)
+                (byte) 0x00, // No root id
                 
                 (byte) 0x04, // Event type (4)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
@@ -104,6 +105,7 @@ abstract class EventTraceCodecTestTemplate {
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the entity type name (1)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // String index of the entity id (2)
+                (byte) 0x00, // No root id
                 
                 (byte) 0x05, // Event type (5)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
@@ -305,6 +307,85 @@ abstract class EventTraceCodecTestTemplate {
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xC8, // Timestamp (200)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 // String index of the use case name (0)
+        };
+
+    }
+    
+    protected static EventTrace traceWithAllEntityVariants() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1234, 1);
+        
+        var rootType = new EntityType("root");
+        var subType = new EntityType("sub");
+        
+        var rootEntity = new Entity(rootType, "1");
+        var subEntity = new Entity(subType, "2", true, "1");
+        
+        return EventTrace.of(
+                new EntityReadEvent(traceId, 100, location, rootEntity),
+                new EntityWriteEvent(traceId, 200, location, rootEntity),
+                new EntityReadEvent(traceId, 300, location, subEntity),
+                new EntityWriteEvent(traceId, 400, location, subEntity)
+                );
+    }
+    
+    protected static byte[] serializedTraceWithAllEntityVariants() {
+        return new byte[] {
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Number of traces (1)
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x05, // Number of string table entries (5)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, // Length of the first string table entry (4)
+                (byte) 0x72, (byte) 0x6F, (byte) 0x6F, (byte) 0x74, // String data of the first entry ("root")
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Length of the second string table entry (1)
+                (byte) 0x31, // String data of the second entry ("1")
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x03, // Length of the third string table entry (3)
+                (byte) 0x73, (byte) 0x75, (byte) 0x62, // String data of the third entry ("sub")
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Length of the fourth string table entry (1)
+                (byte) 0x32, // String data of the fourth entry ("2")
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, // Length of the fifth string table entry (4)
+                (byte) 0x74, (byte) 0x65, (byte) 0x73, (byte) 0x74, // String data of the fifth entry ("test")
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Number of location table entries (1)
+                (byte) 0x01, // Type of the first location entry
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, // String index of the host name (4)
+                (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Process id of the location (1234)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // Thread id of the location (1)                
+                
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, // Number of events in the first trace (4)
+                
+                (byte) 0x03, // Event type (3)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x64, // Timestamp (100)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // String index of the entity type name (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the entity id (1)
+                (byte) 0x00, // No root id
+                
+                (byte) 0x04, // Event type (4)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xC8, // Timestamp (200)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // String index of the entity type name (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the entity id (1)
+                (byte) 0x00, // No root id
+
+                (byte) 0x03, // Event type (3)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x2C, // Timestamp (300)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // String index of the entity type name (2)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x03, // String index of the entity id (3)
+                (byte) 0x01, // Root id
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the root id (1)
+                
+                (byte) 0x04, // Event type (4)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0xD2, // Trace id (1234)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x90, // Timestamp (400)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Location index (0)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, // String index of the entity type name (2)
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x03, // String index of the entity id (3)
+                (byte) 0x01, // Root id
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // String index of the root id (1)                
         };
 
     }
