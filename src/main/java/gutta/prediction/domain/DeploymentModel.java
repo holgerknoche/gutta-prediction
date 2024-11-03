@@ -127,6 +127,10 @@ public class DeploymentModel {
         public ConnectionKey(ComponentConnection connection) {
             this(connection.source(), connection.target());
         }
+        
+        public int hashCode() {
+            return (this.source().hashCode() + this.target().hashCode());
+        }
 
     }    
     
