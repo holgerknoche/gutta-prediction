@@ -19,6 +19,7 @@ import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.event.codec.EventTraceEncoder;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -208,13 +209,60 @@ public class RandomTraceGenerator {
     
     public static void main(String[] arguments) throws IOException {
         var fileName = arguments[0];
+        var deploymentModelFileName = arguments[1];
                 
-        var numberOfTraces = Integer.parseInt(arguments[1]);
-        var maxNumberOfInvocations = Integer.parseInt(arguments[2]);
-        var maxInvocationDepth = Integer.parseInt(arguments[3]);
+        var numberOfTraces = Integer.parseInt(arguments[2]);
+        var maxNumberOfInvocations = Integer.parseInt(arguments[3]);
+        var maxInvocationDepth = Integer.parseInt(arguments[4]);
         
-        new RandomTraceGenerator().generateRandomTraces(fileName, numberOfTraces, maxNumberOfInvocations, maxInvocationDepth);
+        var generator = new RandomTraceGenerator();
+        generator.writeDeploymentModel(deploymentModelFileName);
+        generator.generateRandomTraces(fileName, numberOfTraces, maxNumberOfInvocations, maxInvocationDepth);
     }
+    
+    private void writeDeploymentModel(String fileName) throws IOException {
+        var modelSpec = 
+                "component \"Component 1\" {\n" + 
+                "    useCase \"Use Case 1\"\n" + 
+                "\n" + 
+                "    serviceCandidate \"Service Candidate 1\"\n" + 
+                "    serviceCandidate \"Service Candidate 4\"\n" + 
+                "    serviceCandidate \"Service Candidate 7\"\n" + 
+                "    serviceCandidate \"Service Candidate 10\"\n" + 
+                "}\n" + 
+                "\n" + 
+                "component \"Component 2\" {\n" + 
+                "    useCase \"Use Case 2\"\n" + 
+                "\n" + 
+                "    serviceCandidate \"Service Candidate 2\"\n" + 
+                "    serviceCandidate \"Service Candidate 5\"\n" + 
+                "    serviceCandidate \"Service Candidate 8\"\n" + 
+                "}\n" + 
+                "\n" + 
+                "component \"Component 3\" {\n" + 
+                "    useCase \"Use Case 3\"\n" + 
+                "\n" + 
+                "    serviceCandidate \"Service Candidate 3\"\n" + 
+                "    serviceCandidate \"Service Candidate 6\"\n" + 
+                "    serviceCandidate \"Service Candidate 9\"\n" + 
+                "}\n" + 
+                "\n" + 
+                "remote \"Component 1\" -> \"Component 2\" [\n" + 
+                "    latency = 0\n" + 
+                "]\n" + 
+                "\n" + 
+                "remote \"Component 1\" -> \"Component 3\" [\n" + 
+                "    latency = 0\n" + 
+                "]\n" + 
+                "\n" + 
+                "remote \"Component 2\" -> \"Component 3\" [\n" + 
+                "    latency = 0\n" + 
+                "]";
+        
+        try (var writer = new FileWriter(fileName)) {
+            writer.write(modelSpec);
+        }
+    } 
     
     private void generateRandomTraces(String fileName, int numberOfTraces, int maxNumberOfInvocations, int maxInvocationDepth) throws IOException {        
         var traces = new ArrayList<EventTrace>(numberOfTraces);
