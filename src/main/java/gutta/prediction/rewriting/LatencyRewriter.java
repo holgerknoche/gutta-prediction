@@ -48,13 +48,13 @@ public class LatencyRewriter implements TraceRewriter {
             return (originalTimestamp + this.timeOffset);
         }
 
-        private boolean needsModification(MonitoringEvent event, TraceSimulationContext context) {
+        private boolean requiresRewrite(MonitoringEvent event, TraceSimulationContext context) {
             return (this.timeOffset != 0) || !(context.currentLocation().equals(event.location()));
         }
 
         @Override
         public void onUseCaseStartEvent(UseCaseStartEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new UseCaseStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
                 this.addRewrittenEvent(rewrittenEvent, event);
             } else {
@@ -64,7 +64,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onServiceCandidateInvocationEvent(ServiceCandidateInvocationEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ServiceCandidateInvocationEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.name());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -81,7 +81,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onServiceCandidateEntryEvent(ServiceCandidateEntryEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ServiceCandidateEntryEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.name(), event.transactionStarted(), event.transactionId());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -92,7 +92,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onServiceCandidateExitEvent(ServiceCandidateExitEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ServiceCandidateExitEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.name());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -119,7 +119,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onServiceCandidateReturnEvent(ServiceCandidateReturnEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ServiceCandidateReturnEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.name());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -130,7 +130,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onTransactionStartEvent(TransactionStartEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new TransactionStartEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.transactionId());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -141,7 +141,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ImplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.transactionId(), event.cause());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -152,7 +152,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onExplicitTransactionAbortEvent(ExplicitTransactionAbortEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new ExplicitTransactionAbortEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.transactionId());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -163,7 +163,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onTransactionCommitEvent(TransactionCommitEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new TransactionCommitEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(),
                         event.transactionId());
                 this.addRewrittenEvent(rewrittenEvent, event);
@@ -174,7 +174,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new EntityReadEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
                 this.addRewrittenEvent(rewrittenEvent, event);
             } else {
@@ -184,7 +184,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new EntityWriteEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.entity());
                 this.addRewrittenEvent(rewrittenEvent, event);
             } else {
@@ -194,7 +194,7 @@ public class LatencyRewriter implements TraceRewriter {
 
         @Override
         public void onUseCaseEndEvent(UseCaseEndEvent event, TraceSimulationContext context) {
-            if (this.needsModification(event, context)) {
+            if (this.requiresRewrite(event, context)) {
                 var rewrittenEvent = new UseCaseEndEvent(event.traceId(), this.adjustTimestamp(event.timestamp()), context.currentLocation(), event.name());
                 this.addRewrittenEvent(rewrittenEvent, event);
             } else {
