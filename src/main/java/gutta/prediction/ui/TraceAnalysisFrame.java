@@ -1,6 +1,5 @@
 package gutta.prediction.ui;
 
-import gutta.prediction.analysis.consistency.CheckCrossComponentAccesses;
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.analysis.consistency.ConsistencyIssuesAnalysis;
 import gutta.prediction.analysis.overview.RemoteCall;
@@ -187,7 +186,7 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     private void performAnalysis(String modifiedDeploymentModelSpec, DeploymentModel baseModel) {
         var modifiedDeploymentModel = new DeploymentModelReader().readModel(modifiedDeploymentModelSpec, baseModel);
         
-        var analysis = new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.YES);
+        var analysis = new ConsistencyIssuesAnalysis();
         var originalTrace = this.trace;
         var rewrittenTrace = analysis.rewriteTrace(originalTrace, modifiedDeploymentModel);
         

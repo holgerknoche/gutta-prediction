@@ -21,7 +21,7 @@ public class DeploymentModel {
     private final Map<ConnectionKey, ComponentConnection> componentConnections;
     
     private final Map<EntityType, DataStore> entityToDataStore;
-    
+        
     private final Map<String, UseCase> useCaseLookup;
     
     private final Map<String, ServiceCandidate> serviceCandidateLookup;

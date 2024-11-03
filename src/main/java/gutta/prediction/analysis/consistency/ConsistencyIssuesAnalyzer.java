@@ -1,17 +1,22 @@
 package gutta.prediction.analysis.consistency;
 
 import gutta.prediction.domain.DeploymentModel;
+import gutta.prediction.domain.Entity;
 import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.event.EntityAccessEvent;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.simulation.TraceProcessingException;
 import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulationMode;
+import gutta.prediction.simulation.Transaction;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
@@ -19,6 +24,8 @@ import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private final boolean checkForCrossComponentAccesses;
+    
+    private final boolean checkForInterleavingAccesses;
         
     private final Set<ConsistencyIssue<?>> foundIssues = new HashSet<>();
     
@@ -26,15 +33,20 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     
     private final Set<EntityWriteEvent> revertedWrites = new HashSet<>();
     
+    private final Set<Transaction> suspendedTransactions = new HashSet<>();
+    
+    private final Map<Transaction, TransactionData> transactionContextData = new HashMap<>();
+    
     private DeploymentModel deploymentModel;
     
     ConsistencyIssuesAnalyzer() {
-        this(CheckCrossComponentAccesses.YES);
+        this(CheckCrossComponentAccesses.YES, CheckInterleavingAccesses.YES);
     }
     
-    public ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses checkCrossComponentAccesses) {
+    ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses checkCrossComponentAccesses, CheckInterleavingAccesses checkInterleavingAccesses) {
         this.checkForCrossComponentAccesses = (checkCrossComponentAccesses == CheckCrossComponentAccesses.YES);
-    }
+        this.checkForInterleavingAccesses = (checkInterleavingAccesses == CheckInterleavingAccesses.YES);
+    }       
     
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
@@ -56,6 +68,11 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         if (this.checkForCrossComponentAccesses) {
             this.assertValidComponent(event, context);
         }
+        
+        if (this.checkForInterleavingAccesses) {
+            this.checkForInterleavedChange(event, context);
+            this.updateInterleavingForSuspendedTransactions();
+        }
     }
     
     private void assertValidComponent(EntityAccessEvent event, TraceSimulationContext context) {
@@ -66,6 +83,66 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         if (!componentAllocation.component().equals(context.currentComponent())) {
             var issue = new CrossComponentAccessIssue(event.entity(), event);
             this.foundIssues.add(issue);
+        }
+    }
+    
+    private void checkForInterleavedChange(EntityWriteEvent event, TraceSimulationContext context) {
+        var currentTransaction = context.currentTransaction();
+        if (currentTransaction == null) {
+            // If no transaction is active, there can be no interleaved change
+            return;
+        }
+        
+        var dataForTransaction = this.transactionContextData.get(currentTransaction);
+        
+        if (dataForTransaction != null) {
+            // If there is data for this transaction, check for an interleaved write for the respective entity
+            var changedEntity = event.entity();            
+            this.checkForInterleavedChange(event, changedEntity, dataForTransaction);
+        } else {
+            // If there was no data for this transaction yet, create an entry
+            dataForTransaction = new TransactionData();
+            this.transactionContextData.put(currentTransaction, dataForTransaction);
+        }
+        
+        // In any case, register the current write
+        dataForTransaction.registerWrite(event);
+    }
+    
+    private void checkForInterleavedChange(EntityWriteEvent event, Entity entity, TransactionData transactionData) {
+        var change = transactionData.existingChangeForEntity(entity);
+        if (isInterleavedChange(change)) {
+            // Same entity was changed before, so raise an "interleaved change" event
+            var issue = new InterleavedWriteIssue(entity, event);
+            this.foundIssues.add(issue);
+        } 
+        
+        if (entity.hasRoot()) {
+            var rootType = entity.type().rootType();            
+            if (rootType == null) {
+                throw new TraceProcessingException(event, "Entity type '" + entity.type() + "' does not have a root type.");
+            }
+            
+            var rootEntity = new Entity(rootType, entity.rootId());
+            var rootChange = transactionData.existingChangeForEntity(rootEntity);
+            if (isInterleavedChange(rootChange)) {
+                // Root entity or another subordinate was changed before, so raise an "interleaved change" event
+                var issue = new InterleavedWriteIssue(entity, event);
+                this.foundIssues.add(issue);
+            }
+        }
+    }
+    
+    private static boolean isInterleavedChange(EntityChange change) {
+        return (change != null && change.interleaved());
+    }
+    
+    private void updateInterleavingForSuspendedTransactions() {
+        for (var suspendedTransaction : this.suspendedTransactions) {
+            var dataForTransaction = this.transactionContextData.get(suspendedTransaction);
+            if (dataForTransaction != null) {
+                dataForTransaction.registerInterleavingWrite();
+            }
         }
     }
     
@@ -103,4 +180,65 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         this.revertedWrites.add(event);
     }
     
+    @Override
+    public void onTransactionSuspend(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        if (this.checkForInterleavingAccesses) {
+            this.suspendedTransactions.add(transaction);
+        }
+    }
+    
+    @Override
+    public void onTransactionResume(MonitoringEvent event, Transaction transaction, TraceSimulationContext context) {
+        if (this.checkForInterleavingAccesses) { 
+            this.suspendedTransactions.remove(transaction);
+        }
+    }
+    
+    private static class TransactionData {                
+        
+        private final Map<Entity, EntityChange> entityChanges = new HashMap<>();
+                
+        public EntityChange existingChangeForEntity(Entity entity) {
+            return this.entityChanges.get(entity);
+        }
+        
+        public void registerWrite(EntityWriteEvent event) {
+            var writtenEntity = event.entity();
+            this.entityChanges.computeIfAbsent(writtenEntity, EntityChange::new);
+            
+            if (writtenEntity.hasRoot()) {
+                var rootType = writtenEntity.type().rootType();
+                if (rootType == null) {
+                    throw new TraceProcessingException(event, "Entity type '" + writtenEntity.type() + "' does not have a root type.");
+                }
+                
+                var rootEntity = new Entity(rootType, writtenEntity.rootId());
+                this.entityChanges.computeIfAbsent(rootEntity, EntityChange::new);
+            }
+        }
+        
+        public void registerInterleavingWrite() {
+            this.entityChanges.forEach((entity, entityChange) -> entityChange.setInterleaved());
+        }
+        
+    }
+        
+    private static class EntityChange {
+                
+        private boolean interleaved;
+        
+        public EntityChange(Entity entity) {
+            this.interleaved = false;
+        }
+        
+        public boolean interleaved() {
+            return this.interleaved;
+        }
+        
+        public void setInterleaved() {
+            this.interleaved = true;
+        }        
+        
+    }
+        
 }

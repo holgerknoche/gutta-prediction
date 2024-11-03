@@ -21,5 +21,10 @@ public interface ConsistencyIssueVisitor<R> {
         // Do nothing by default
         return null;
     }
+    
+    default R handleInterleavedWriteIssue(InterleavedWriteIssue issue) {
+        // Do nothing by default
+        return null;
+    }
 
 }

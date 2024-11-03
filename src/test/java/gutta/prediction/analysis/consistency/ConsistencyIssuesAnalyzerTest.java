@@ -334,7 +334,7 @@ class ConsistencyIssuesAnalyzerTest {
                 .addSymmetricRemoteConnection(component1, component2, 0, TransactionPropagation.SUBORDINATE)
                 .build();
         
-        var analyzer = new ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses.NO);
+        var analyzer = new ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses.NO, CheckInterleavingAccesses.NO);
         var result = analyzer.analyzeTrace(trace, deploymentModel);
         
         var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 300, location1, entity1);
@@ -549,6 +549,113 @@ class ConsistencyIssuesAnalyzerTest {
         var expectedCommittedWrite = new EntityWriteEvent(traceId, 200, location, entity);
         
         var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue1, expectedIssue2), Set.of(expectedCommittedWrite), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: An interleaved access to the same entity raises an issue if the appropriate option is active. 
+     */
+    @Test
+    void interleavedAccessToSameEntity() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        var entityType = new EntityType("et1");
+        
+        var entity1 = new Entity(entityType, "e1");
+        var entity2 = new Entity(entityType, "e2");
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new TransactionStartEvent(traceId, 10, location, "tx1"),
+                new EntityWriteEvent(traceId, 20, location, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 30, location, "sc"),
+                new ServiceCandidateEntryEvent(traceId, 40, location, "sc"),
+                new EntityWriteEvent(traceId, 50, location, entity2),
+                new ServiceCandidateExitEvent(traceId, 60, location, "sc"),
+                new ServiceCandidateReturnEvent(traceId, 70, location, "sc"),
+                new EntityWriteEvent(traceId, 80, location, entity1),
+                new TransactionCommitEvent(traceId, 90, location, "tx1"),
+                new UseCaseEndEvent(traceId, 100, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");
+        var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.REQUIRES_NEW);
+        var component = new Component("component");        
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(entityType, component)
+                .build();
+
+        var analyzer = new ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses.NO, CheckInterleavingAccesses.YES);
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedIssue = new InterleavedWriteIssue(entity1, new EntityWriteEvent(traceId, 80, location, entity1));
+        var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 20, location, entity1);
+        var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 50, location, entity2);
+        var expectedCommittedWrite3 = new EntityWriteEvent(traceId, 80, location, entity1);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite1, expectedCommittedWrite2, expectedCommittedWrite3), Set.of());
+        
+        assertEquals(expectedResult, result);
+    }
+    
+    /**
+     * Test case: An interleaved access to an entity in the same aggregate raises an issue if the appropriate option is active.
+     */
+    @Test
+    void interleavedAccessToSameAggregate() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1, 0);
+        
+        var rootEntityType = new EntityType("rootType");
+        var entityType1 = new EntityType("subType1", rootEntityType);
+        var entityType2 = new EntityType("subType2", rootEntityType);
+        
+        var unrelatedType = new EntityType("unrelated");
+        
+        var entity1 = new Entity(entityType1, "e1", true, "r1");
+        var entity2 = new Entity(unrelatedType, "e2");
+        var entity3 = new Entity(entityType2, "e3", true, "r1");
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location, "uc"),
+                new TransactionStartEvent(traceId, 10, location, "tx1"),
+                new EntityWriteEvent(traceId, 20, location, entity1),
+                new ServiceCandidateInvocationEvent(traceId, 30, location, "sc"),
+                new ServiceCandidateEntryEvent(traceId, 40, location, "sc"),
+                new EntityWriteEvent(traceId, 50, location, entity2),
+                new ServiceCandidateExitEvent(traceId, 60, location, "sc"),
+                new ServiceCandidateReturnEvent(traceId, 70, location, "sc"),
+                new EntityWriteEvent(traceId, 80, location, entity3),
+                new TransactionCommitEvent(traceId, 90, location, "tx1"),
+                new UseCaseEndEvent(traceId, 100, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");
+        var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.REQUIRES_NEW);
+        var component = new Component("component");        
+
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
+                .assignEntityTypeToComponent(rootEntityType, component)
+                .assignEntityTypeToComponent(entityType1, component)
+                .assignEntityTypeToComponent(entityType2, component)
+                .assignEntityTypeToComponent(unrelatedType, component)
+                .build();
+
+        var analyzer = new ConsistencyIssuesAnalyzer(CheckCrossComponentAccesses.NO, CheckInterleavingAccesses.YES);
+        var result = analyzer.analyzeTrace(trace, deploymentModel);
+        
+        var expectedIssue = new InterleavedWriteIssue(entity3, new EntityWriteEvent(traceId, 80, location, entity3));
+        var expectedCommittedWrite1 = new EntityWriteEvent(traceId, 20, location, entity1);
+        var expectedCommittedWrite2 = new EntityWriteEvent(traceId, 50, location, entity2);
+        var expectedCommittedWrite3 = new EntityWriteEvent(traceId, 80, location, entity3);
+        
+        var expectedResult = new ConsistencyAnalyzerResult(Set.of(expectedIssue), Set.of(expectedCommittedWrite1, expectedCommittedWrite2, expectedCommittedWrite3), Set.of());
         
         assertEquals(expectedResult, result);
     }
