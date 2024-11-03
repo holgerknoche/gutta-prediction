@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import static gutta.prediction.event.codec.Constants.EVENT_TYPE_ENTITY_READ;
 import static gutta.prediction.event.codec.Constants.EVENT_TYPE_ENTITY_WRITE;
@@ -54,8 +55,11 @@ public class EventTraceDecoder {
     
     private Map<String, EntityType> entityTypes;
     
+    private Map<Entity, Entity> knownEntities;
+    
     public Collection<EventTrace> decodeTraces(InputStream inputStream) throws IOException {
         this.entityTypes = new HashMap<>();
+        this.knownEntities = new HashMap<>();
         
         try (var bufferedStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
              var dataStream = new DataInputStream(bufferedStream)) {
@@ -231,8 +235,8 @@ public class EventTraceDecoder {
     }
     
     private Entity deduplicateEntity(Entity entity) {
-        // TODO Actually deduplicate
-        return entity;
+        // Deduplicate entities to save heap for large traces
+        return this.knownEntities.computeIfAbsent(entity, Function.identity());
     }
     
     private EntityReadEvent decodeEntityReadEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
