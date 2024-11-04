@@ -82,7 +82,9 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract Component buildComponent(String name);
+    protected Component buildComponent(String name) {
+        return new Component(name);
+    }
 
     @Override
     public Void visitUseCaseDeclaration(UseCaseDeclarationContext context) {
@@ -101,7 +103,9 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract UseCase buildUseCase(String name);
+    protected UseCase buildUseCase(String name) {
+        return new UseCase(name);
+    }
 
     @Override
     public Void visitServiceCandidateDeclaration(ServiceCandidateDeclarationContext context) {
@@ -122,7 +126,9 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous);
+    protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous) {
+        return new ServiceCandidate(name, transactionBehavior, asynchronous);
+    }
 
     private static TransactionBehavior determineTransactionBehavior(Map<String, PropertyValue> properties) {
         var propertyValue = properties.get("transactionBehavior");
@@ -271,7 +277,9 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract DataStore buildDataStore(String name, ReadWriteConflictBehavior readWriteConflictBehavior);
+    protected DataStore buildDataStore(String name, ReadWriteConflictBehavior readWriteConflictBehavior) {
+        return new DataStore(name, readWriteConflictBehavior);
+    }
     
     @Override
     public Void visitEntityTypeDeclaration(EntityTypeDeclarationContext context) {
@@ -284,7 +292,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         this.knownEntityTypes.add(name);
         
         var rootTypeName = (context.rootTypeName != null) ? nameToString(context.rootTypeName) : null;
-        var entityType = this.buildEntityType(name, rootTypeName);
+        var entityType = this.buildEntityType(name, rootTypeName, context.refToken);
         this.builder.assignEntityTypeToComponent(entityType, this.currentComponent);
         
         this.nameToEntityType.put(name, entityType);
@@ -292,7 +300,20 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         return null;
     }
     
-    protected abstract EntityType buildEntityType(String name, String rootTypeName);
+    protected EntityType buildEntityType(String name, String rootTypeName, Token referenceToken) {
+        if (rootTypeName != null) {
+            var rootType = this.resolveEntityTypeByName(rootTypeName);
+            if (rootType == null) {
+                throw new DeploymentModelParseException(referenceToken, "Root type '" + rootTypeName + "' of entity type '" + name + "' is not defined.");
+            } else if (rootType.rootType() != null) {
+                throw new DeploymentModelParseException(referenceToken, "Root type '" + rootTypeName + "' must not have a root type itself.");
+            }
+            
+            return new EntityType(name, rootType);
+        } else {
+            return new EntityType(name);
+        }
+    }
 
     @Override
     public Void visitEntityTypeReference(EntityTypeReferenceContext context) {
