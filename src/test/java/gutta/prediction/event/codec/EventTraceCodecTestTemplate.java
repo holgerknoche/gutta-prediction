@@ -1,7 +1,6 @@
 package gutta.prediction.event.codec;
 
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
@@ -34,8 +33,7 @@ abstract class EventTraceCodecTestTemplate {
         var traceId = 1234;
         var location = new ObservedLocation("test", 123, 1);
         
-        var entityType = new EntityType("et");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("et", "1");
         
         // Trace that contains all event types (and is semantically incorrect on purpose)
         return EventTrace.of(
@@ -314,12 +312,9 @@ abstract class EventTraceCodecTestTemplate {
     protected static EventTrace traceWithAllEntityVariants() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 1);
-        
-        var rootType = new EntityType("root");
-        var subType = new EntityType("sub");
-        
-        var rootEntity = new Entity(rootType, "1");
-        var subEntity = new Entity(subType, "2", true, "1");
+                
+        var rootEntity = new Entity("root", "1");
+        var subEntity = new Entity("sub", "2", true, "1");
         
         return EventTrace.of(
                 new EntityReadEvent(traceId, 100, location, rootEntity),

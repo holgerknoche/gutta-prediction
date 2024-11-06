@@ -54,7 +54,7 @@ public class DeploymentModel {
         this.serviceCandidateLookup = serviceCandidateAllocation.keySet().stream().collect(Collectors.toMap(ServiceCandidate::name, Function.identity()));                
         this.componentLookup = allComponents.stream().collect(Collectors.toMap(Component::name, Function.identity()));
         this.dataStoreLookup = dataStoreSet.stream().collect(Collectors.toMap(DataStore::name, Function.identity()));
-        this.entityTypeLookup = this.entityToDataStore.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
+        this.entityTypeLookup = this.entityTypeAllocation.keySet().stream().collect(Collectors.toMap(EntityType::name, Function.identity()));
     }
             
     public Optional<ServiceCandidate> resolveServiceCandidateByName(String candidateName) {

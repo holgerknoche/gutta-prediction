@@ -3,7 +3,6 @@ package gutta.prediction.analysis.consistency;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
@@ -40,10 +39,9 @@ class ConsistencyIssuesAnalysisTest {
         var location = new ObservedLocation("test", 1234, 1);
         var traceId = 1234;
         
-        var entityType = new EntityType("et1");
-        var entity1 = new Entity(entityType, "e1");
-        var entity2 = new Entity(entityType, "e2");
-        var entity3 = new Entity(entityType, "e3");
+        var entity1 = new Entity("et1", "e1");
+        var entity2 = new Entity("et1", "e2");
+        var entity3 = new Entity("et1", "e3");
         
         var inputTrace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc1"),
@@ -100,9 +98,8 @@ class ConsistencyIssuesAnalysisTest {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
-        var entity1 = new Entity(entityType, "1");
-        var entity2 = new Entity(entityType, "2");
+        var entity1 = new Entity("et1", "1");
+        var entity2 = new Entity("et1", "2");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location1, "uc"),

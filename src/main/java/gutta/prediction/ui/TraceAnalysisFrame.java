@@ -231,14 +231,14 @@ class TraceAnalysisFrame extends UIFrameTemplate {
     
     private static void createIssueViews(Collection<ConsistencyIssue<?>> issues, ConsistencyIssueStatus status, Consumer<ConsistencyIssueView> viewConsumer) {
         for (var issue : issues) {
-            var view = new ConsistencyIssueView(issue.event().timestamp(), status, issue.description(), issue.entity().type().name(), issue.entity().id());            
+            var view = new ConsistencyIssueView(issue.event().timestamp(), status, issue.description(), issue.entity().typeName(), issue.entity().id());            
             viewConsumer.accept(view); 
         }
     }
     
     private static void createWriteChangeViews(Collection<EntityWriteEvent> events, WriteOutcome outcome, WriteChangeStatus status, Consumer<WriteChangeView> viewConsumer) {
         for (var event : events) {
-            var view = new WriteChangeView(event.timestamp(), outcome, status, event.entity().type().name(), event.entity().id());
+            var view = new WriteChangeView(event.timestamp(), outcome, status, event.entity().typeName(), event.entity().id());
             viewConsumer.accept(view);
         }
     }

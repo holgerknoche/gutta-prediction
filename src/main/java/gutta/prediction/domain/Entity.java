@@ -2,14 +2,14 @@ package gutta.prediction.domain;
 
 import static java.util.Objects.requireNonNull;
 
-public record Entity(EntityType type, String id, boolean hasRoot, String rootId) {
+public record Entity(String typeName, String id, boolean hasRoot, String rootId) {
     
-    public Entity(EntityType type, String id) {
-        this(type, id, false, null);
+    public Entity(String typeName, String id) {
+        this(typeName, id, false, null);
     }
     
-    public Entity(EntityType type, String id, String rootId) {
-        this(type, id, true, requireNonNull(rootId));
+    public Entity(String typeName, String id, String rootId) {
+        this(typeName, id, true, requireNonNull(rootId));
     }
 
 }

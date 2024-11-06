@@ -3,7 +3,6 @@ package gutta.prediction.rewriting;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
@@ -29,8 +28,7 @@ abstract class TraceRewriterTestTemplate {
     protected TraceFixture createIdentityTraceFixture() {
         final var traceId = 1234L;
         final var location = new ObservedLocation("test", 1234, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "id1");
+        var entity = new Entity("et1", "id1");
 
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
         var transactionStartEvent1 = new TransactionStartEvent(traceId, 200, location, "tx1");

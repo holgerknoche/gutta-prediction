@@ -60,8 +60,7 @@ class ConsistencyIssuesAnalyzerTest {
     void staleRead() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
         var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
@@ -84,6 +83,7 @@ class ConsistencyIssuesAnalyzerTest {
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
         var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
         
@@ -109,8 +109,7 @@ class ConsistencyIssuesAnalyzerTest {
     void staleReadWithoutSurroundingTransaction() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
 
         var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
         var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
@@ -131,6 +130,7 @@ class ConsistencyIssuesAnalyzerTest {
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
         var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
         
@@ -156,8 +156,7 @@ class ConsistencyIssuesAnalyzerTest {
     void potentialDeadlockOnRead() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         var committedEvent = new EntityWriteEvent(traceId, 250, location, entity); 
         var conflictCausingEvent = new EntityReadEvent(traceId, 500, location, entity);
@@ -180,6 +179,7 @@ class ConsistencyIssuesAnalyzerTest {
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
         var dataStore = new DataStore("ds", ReadWriteConflictBehavior.BLOCK);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
         
@@ -205,8 +205,7 @@ class ConsistencyIssuesAnalyzerTest {
     void writeConflict() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         var committedEvent = new EntityWriteEvent(traceId, 250, location, entity);
         var conflictCausingEvent = new EntityWriteEvent(traceId, 500, location, entity); 
@@ -228,6 +227,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
         
@@ -252,10 +252,9 @@ class ConsistencyIssuesAnalyzerTest {
     void nestedCommitAndOuterAbort() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity1 = new Entity(entityType, "e1");
-        var entity2 = new Entity(entityType, "e2");
+        var entity1 = new Entity("et1", "e1");
+        var entity2 = new Entity("et1", "e2");
         
         var abortedEvent = new EntityWriteEvent(traceId, 250, location, entity1);
         var committedEvent = new EntityWriteEvent(traceId, 500, location, entity2); 
@@ -277,6 +276,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.NOT_SUPPORTED);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
         
@@ -304,9 +304,8 @@ class ConsistencyIssuesAnalyzerTest {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("et1");
-        var entity1 = new Entity(entityType, "1");
-        var entity2 = new Entity(entityType, "2"); 
+        var entity1 = new Entity("et1", "1");
+        var entity2 = new Entity("et2", "2"); 
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 100, location1, "uc"),
@@ -323,6 +322,7 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        var entityType = new EntityType("et1");
         
         var component1 = new Component("c1");       
         var component2 = new Component("c2");
@@ -352,9 +352,8 @@ class ConsistencyIssuesAnalyzerTest {
     void commitOfImplicitTransaction() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity1 = new Entity(entityType, "e1");
+        var entity1 = new Entity("et1", "e1");
         
         var committedEvent = new EntityWriteEvent(traceId, 200, location, entity1);
         
@@ -370,6 +369,7 @@ class ConsistencyIssuesAnalyzerTest {
 
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
 
@@ -394,9 +394,8 @@ class ConsistencyIssuesAnalyzerTest {
     void abortOfImplicitTransaction() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity1 = new Entity(entityType, "e1");
+        var entity1 = new Entity("et1", "e1");
         
         var abortedEvent = new EntityWriteEvent(traceId, 200, location, entity1);
         
@@ -413,6 +412,7 @@ class ConsistencyIssuesAnalyzerTest {
 
         var useCase = new UseCase("uc");        
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRED);
+        var entityType = new EntityType("et1");
         
         var component = new Component("c1");       
 
@@ -437,9 +437,8 @@ class ConsistencyIssuesAnalyzerTest {
     void autoCommittedWrite() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
 
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc"),
@@ -449,6 +448,7 @@ class ConsistencyIssuesAnalyzerTest {
 
         var useCase = new UseCase("uc");
         var component = new Component("c1");
+        var entityType = new EntityType("et1");
         
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
@@ -472,10 +472,9 @@ class ConsistencyIssuesAnalyzerTest {
     void writeConflictAbortsTransaction() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity1 = new Entity(entityType, "e1");
-        var entity2 = new Entity(entityType, "e2");
+        var entity1 = new Entity("et1", "e1");
+        var entity2 = new Entity("et1", "e2");
 
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc"),
@@ -494,6 +493,7 @@ class ConsistencyIssuesAnalyzerTest {
         var useCase = new UseCase("uc");
         var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.REQUIRES_NEW);
         var component = new Component("c1");
+        var entityType = new EntityType("et1");
         
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
@@ -521,9 +521,8 @@ class ConsistencyIssuesAnalyzerTest {
     void crossComponentAccesses() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
-        
-        var entity = new Entity(entityType, "e1");
+                
+        var entity = new Entity("et1", "e1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc"),
@@ -535,6 +534,7 @@ class ConsistencyIssuesAnalyzerTest {
         var useCase = new UseCase("uc");        
         var component1 = new Component("c1");
         var component2 = new Component("c2");
+        var entityType = new EntityType("et1");
 
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component1)
@@ -560,10 +560,9 @@ class ConsistencyIssuesAnalyzerTest {
     void interleavedAccessToSameEntity() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        var entityType = new EntityType("et1");
         
-        var entity1 = new Entity(entityType, "e1");
-        var entity2 = new Entity(entityType, "e2");
+        var entity1 = new Entity("et1", "e1");
+        var entity2 = new Entity("et1", "e2");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc"),
@@ -581,7 +580,8 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");
         var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.REQUIRES_NEW);
-        var component = new Component("component");        
+        var component = new Component("component");      
+        var entityType = new EntityType("et1");
 
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)
@@ -609,16 +609,10 @@ class ConsistencyIssuesAnalyzerTest {
     void interleavedAccessToSameAggregate() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1, 0);
-        
-        var rootEntityType = new EntityType("rootType");
-        var entityType1 = new EntityType("subType1", rootEntityType);
-        var entityType2 = new EntityType("subType2", rootEntityType);
-        
-        var unrelatedType = new EntityType("unrelated");
-        
-        var entity1 = new Entity(entityType1, "e1", true, "r1");
-        var entity2 = new Entity(unrelatedType, "e2");
-        var entity3 = new Entity(entityType2, "e3", true, "r1");
+                        
+        var entity1 = new Entity("subType1", "e1", true, "r1");
+        var entity2 = new Entity("unrelated", "e2");
+        var entity3 = new Entity("subType2", "e3", true, "r1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, "uc"),
@@ -636,7 +630,11 @@ class ConsistencyIssuesAnalyzerTest {
         
         var useCase = new UseCase("uc");
         var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.REQUIRES_NEW);
-        var component = new Component("component");        
+        var component = new Component("component");
+        var rootEntityType = new EntityType("rootType");
+        var entityType1 = new EntityType("subType1", rootEntityType);
+        var entityType2 = new EntityType("subType2", rootEntityType);
+        var unrelatedType = new EntityType("unrelated");
 
         var deploymentModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component)

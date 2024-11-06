@@ -2,6 +2,7 @@ package gutta.prediction.analysis.consistency;
 
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
+import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ReadWriteConflictBehavior;
 import gutta.prediction.event.EntityAccessEvent;
 import gutta.prediction.event.EntityReadEvent;
@@ -75,8 +76,13 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         }
     }
     
+    private EntityType resolveEntityTypeByName(String name) {
+        return this.deploymentModel.resolveEntityTypeByName(name)
+                .orElseThrow(() -> new IllegalStateException("Entity type '" + name + "' does not exist."));
+    }
+    
     private void assertValidComponent(EntityAccessEvent event, TraceSimulationContext context) {
-        var entityType = event.entity().type();
+        var entityType = this.resolveEntityTypeByName(event.entity().typeName());
         var componentAllocation = this.deploymentModel.getComponentAllocationForEntityType(entityType)
                 .orElseThrow(() -> new TraceProcessingException(event, "Entity type " + entityType + " is not assigned to a component."));
         
@@ -118,12 +124,13 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         } 
         
         if (entity.hasRoot()) {
-            var rootType = entity.type().rootType();            
+            var entityType = this.resolveEntityTypeByName(entity.typeName());
+            var rootType = entityType.rootType();            
             if (rootType == null) {
-                throw new TraceProcessingException(event, "Entity type '" + entity.type() + "' does not have a root type.");
+                throw new TraceProcessingException(event, "Entity type '" + entity.typeName() + "' does not have a root type.");
             }
             
-            var rootEntity = new Entity(rootType, entity.rootId());
+            var rootEntity = new Entity(rootType.name(), entity.rootId());
             var rootChange = transactionData.existingChangeForEntity(rootEntity);
             if (isInterleavedChange(rootChange)) {
                 // Root entity or another subordinate was changed before, so raise an "interleaved change" event
@@ -149,7 +156,8 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     @Override
     public void onReadWriteConflict(EntityReadEvent event, TraceSimulationContext context) {
         var entity = event.entity();
-        var dataStore = this.deploymentModel.getDataStoreForEntityType(entity.type()).orElseThrow(() -> new IllegalStateException("Entity type '" + entity.type() + "' is not assigned to a data store."));
+        var entityType = this.resolveEntityTypeByName(entity.typeName());
+        var dataStore = this.deploymentModel.getDataStoreForEntityType(entityType).orElseThrow(() -> new IllegalStateException("Entity type '" + entity.typeName() + "' is not assigned to a data store."));
         
         ConsistencyIssue<EntityReadEvent> issue;            
         if (dataStore.readWriteConflictBehavior() == ReadWriteConflictBehavior.STALE_READ) {
@@ -194,7 +202,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
         }
     }
     
-    private static class TransactionData {                
+    private class TransactionData {                
         
         private final Map<Entity, EntityChange> entityChanges = new HashMap<>();
                 
@@ -207,12 +215,13 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
             this.entityChanges.computeIfAbsent(writtenEntity, EntityChange::new);
             
             if (writtenEntity.hasRoot()) {
-                var rootType = writtenEntity.type().rootType();
+                var entityType = resolveEntityTypeByName(writtenEntity.typeName());
+                var rootType = entityType.rootType();
                 if (rootType == null) {
-                    throw new TraceProcessingException(event, "Entity type '" + writtenEntity.type() + "' does not have a root type.");
+                    throw new TraceProcessingException(event, "Entity type '" + writtenEntity.typeName() + "' does not have a root type.");
                 }
                 
-                var rootEntity = new Entity(rootType, writtenEntity.rootId());
+                var rootEntity = new Entity(rootType.name(), writtenEntity.rootId());
                 this.entityChanges.computeIfAbsent(rootEntity, EntityChange::new);
             }
         }

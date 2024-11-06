@@ -127,8 +127,7 @@ class TraceBuilderWorkerTest {
         var location = new ObservedLocation("test", 1234, 0);
         var traceId = 1234;
         
-        var entityType = new EntityType("et");
-        var entity = new Entity(entityType, "e");
+        var entity = new Entity("et", "e");
         
         var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
         
@@ -142,6 +141,7 @@ class TraceBuilderWorkerTest {
         
         var useCase = new UseCase("uc");        
         var component = new Component("component");
+        var entityType = new EntityType("et");
         
         var deploymentModel = new DeploymentModel.Builder() //
                 .assignUseCaseToComponent(useCase, component) //
@@ -151,7 +151,7 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new EntityEvent(500, EntityEventType.WRITE, new Entity(new EntityType("et"), "e")), new TransactionEvent(800, TransactionEventType.COMMIT));
+        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new EntityEvent(500, EntityEventType.WRITE, new Entity("et", "e")), new TransactionEvent(800, TransactionEventType.COMMIT));
         var expectedRootSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(200, 500), new DirtyTransactionOverlay(500, 800));
         
         var expectedRootSpan = new Span("component", 100, 1000, null, expectedRootSpanEvents, expectedRootSpanOverlays);
@@ -169,8 +169,7 @@ class TraceBuilderWorkerTest {
         var location2 = new ObservedLocation("test", 1234, 1);
         var traceId = 1234;
         
-        var entityType = new EntityType("et");
-        var entity = new Entity(entityType, "e");
+        var entity = new Entity("et", "e");
         
         var dataStore = new DataStore("ds", ReadWriteConflictBehavior.STALE_READ);
         
@@ -190,6 +189,7 @@ class TraceBuilderWorkerTest {
         var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.SUPPORTED);
         var component1 = new Component("component1");
         var component2 = new Component("component2");
+        var entityType = new EntityType("et");
         
         var deploymentModel = new DeploymentModel.Builder() //
                 .assignUseCaseToComponent(useCase, component1) //

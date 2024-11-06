@@ -3,7 +3,6 @@ package gutta.prediction.simulation;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.UseCase;
@@ -40,8 +39,7 @@ class EntityAccessSimulatorWorkerTest {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 1);
         
-        var entityType = new EntityType("type");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("type", "1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 10, location, "uc"),
@@ -83,8 +81,7 @@ class EntityAccessSimulatorWorkerTest {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 1);
         
-        var entityType = new EntityType("type");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("type", "1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 10, location, "uc"),
@@ -126,8 +123,7 @@ class EntityAccessSimulatorWorkerTest {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 1);
         
-        var entityType = new EntityType("type");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("type", "1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 10, location, "uc"),
@@ -167,8 +163,7 @@ class EntityAccessSimulatorWorkerTest {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 1);
         
-        var entityType = new EntityType("type");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("type", "1");
         
         var trace = EventTrace.of(
                 new UseCaseStartEvent(traceId, 10, location, "uc"),

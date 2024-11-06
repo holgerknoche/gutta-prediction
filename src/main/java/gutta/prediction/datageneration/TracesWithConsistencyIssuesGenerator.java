@@ -1,7 +1,6 @@
 package gutta.prediction.datageneration;
 
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
@@ -41,8 +40,8 @@ public class TracesWithConsistencyIssuesGenerator {
                 "    serviceCandidate Sc2 [transactionBehavior=REQUIRES_NEW]\n" +
                 "\n" +
                 "    entityType RootType\n" +
-                "    entityType SubType1\n" +
-                "    entityType SubType2\n" +
+                "    entityType SubType1 partOf RootType\n" +
+                "    entityType SubType2 partOf RootType\n" +
                 "    entityType UnrelatedType\n" +
                 "}\n" +
                 "component \"Component 2\" {\n" +
@@ -88,8 +87,7 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("EntityType1");
-        var entity = new Entity(entityType, "1");
+        var entity = new Entity("EntityType1", "1");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
@@ -111,9 +109,8 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("EntityType1");
-        var entity1 = new Entity(entityType, "1");
-        var entity2 = new Entity(entityType, "2"); 
+        var entity1 = new Entity("EntityType1", "1");
+        var entity2 = new Entity("EntityType1", "2"); 
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
@@ -135,9 +132,8 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("EntityType1");
-        var entity1 = new Entity(entityType, "1");
-        var entity2 = new Entity(entityType, "2");
+        var entity1 = new Entity("EntityType1", "1");
+        var entity2 = new Entity("EntityType1", "2");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
@@ -160,9 +156,8 @@ public class TracesWithConsistencyIssuesGenerator {
         var location1 = new ObservedLocation("test1", 123, 1);
         var location2 = new ObservedLocation("test2", 123, 1);
         
-        var entityType = new EntityType("EntityType1");
-        var entity1 = new Entity(entityType, "1");
-        var entity2 = new Entity(entityType, "2");
+        var entity1 = new Entity("EntityType1", "1");
+        var entity2 = new Entity("EntityType1", "2");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, timestamps.nextStep(), location1, useCaseName),
@@ -181,16 +176,10 @@ public class TracesWithConsistencyIssuesGenerator {
     
     private EventTrace buildTraceWithInterleavedAccessToAggregate(String useCaseName, long traceId) {
         var location = new ObservedLocation("test", 1, 0);
-        
-        var rootEntityType = new EntityType("RootType");
-        var entityType1 = new EntityType("SubType1", rootEntityType);
-        var entityType2 = new EntityType("SubType2", rootEntityType);
-        
-        var unrelatedType = new EntityType("UnrelatedType");
-        
-        var entity1 = new Entity(entityType1, "e1", true, "r1");
-        var entity2 = new Entity(unrelatedType, "e2");
-        var entity3 = new Entity(entityType2, "e3", true, "r1");
+                
+        var entity1 = new Entity("SubType1", "e1", true, "r1");
+        var entity2 = new Entity("UnrelatedType", "e2");
+        var entity3 = new Entity("SubType2", "e3", true, "r1");
         
         return EventTrace.of(
                 new UseCaseStartEvent(traceId, 0, location, useCaseName),

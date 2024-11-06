@@ -3,7 +3,6 @@ package gutta.prediction.simulation;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
 import gutta.prediction.domain.TransactionPropagation;
@@ -48,8 +47,7 @@ class TransactionTraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ObservedLocation("test", 1234, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -121,8 +119,7 @@ class TransactionTraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ObservedLocation("test", 1234, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -199,8 +196,7 @@ class TransactionTraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ObservedLocation("test", 1234, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -299,8 +295,7 @@ class TransactionTraceSimulatorWorkerTest {
         // Define the individual events
         var traceId = 1234L;
         var location = new ObservedLocation("test", 1234, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location, "uc1");
@@ -392,8 +387,7 @@ class TransactionTraceSimulatorWorkerTest {
         var traceId = 1234L;
         var location1 = new ObservedLocation("test", 1234, 1);
         var location2 = new ObservedLocation("test", 2345, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location1, "uc1");
@@ -486,8 +480,7 @@ class TransactionTraceSimulatorWorkerTest {
         var traceId = 1234L;
         var location1 = new ObservedLocation("test", 1234, 1);
         var location2 = new ObservedLocation("test", 2345, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location1, "uc1");
@@ -589,8 +582,7 @@ class TransactionTraceSimulatorWorkerTest {
         var traceId = 1234L;
         var location1 = new ObservedLocation("test", 1234, 1);
         var location2 = new ObservedLocation("test", 2345, 1);
-        var entityType = new EntityType("et1");
-        var entity = new Entity(entityType, "e1");
+        var entity = new Entity("et1", "e1");
         
         // Define the individual events
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 0, location1, "uc1");

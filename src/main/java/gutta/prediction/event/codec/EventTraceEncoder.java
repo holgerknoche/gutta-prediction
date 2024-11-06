@@ -208,9 +208,7 @@ public class EventTraceEncoder extends MonitoringEventVisitor {
     }
     
     private void encodeEntity(Entity entity, DataOutputStream stream) throws IOException {
-        var entityType = entity.type();
-        
-        stream.writeInt(this.storeString(entityType.name()));
+        stream.writeInt(this.storeString(entity.typeName()));
         stream.writeInt(this.storeString(entity.id()));
         stream.writeBoolean(entity.hasRoot());
         

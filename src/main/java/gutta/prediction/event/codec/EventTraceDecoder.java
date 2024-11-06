@@ -1,7 +1,6 @@
 package gutta.prediction.event.codec;
 
 import gutta.prediction.domain.Entity;
-import gutta.prediction.domain.EntityType;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
@@ -52,13 +51,10 @@ public class EventTraceDecoder {
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
     private static final int BUFFER_SIZE = 65536;
-    
-    private Map<String, EntityType> entityTypes;
-    
+        
     private Map<Entity, Entity> knownEntities;
     
     public Collection<EventTrace> decodeTraces(InputStream inputStream) throws IOException {
-        this.entityTypes = new HashMap<>();
         this.knownEntities = new HashMap<>();
         
         try (var bufferedStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
@@ -193,11 +189,7 @@ public class EventTraceDecoder {
         
         return specificDecoder.decode(traceId, timestamp, location, stream, stringTable);
     }
-    
-    private EntityType retrieveEntityType(String name) {
-        return this.entityTypes.computeIfAbsent(name, EntityType::new);
-    }
-        
+            
     private UseCaseStartEvent decodeUseCaseStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
         var useCaseNameIndex = stream.readInt();
         var useCaseName = stringTable.getEntry(useCaseNameIndex);
@@ -215,7 +207,6 @@ public class EventTraceDecoder {
     private Entity decodeEntity(DataInputStream stream, StringTable stringTable) throws IOException {
         var entityTypeNameIndex = stream.readInt();
         var entityTypeName = stringTable.getEntry(entityTypeNameIndex);
-        var entityType = this.retrieveEntityType(entityTypeName);
         
         var entityIdIndex = stream.readInt();
         var entityId = stringTable.getEntry(entityIdIndex);
@@ -226,9 +217,9 @@ public class EventTraceDecoder {
             var rootIdIndex = stream.readInt();
             var rootId = stringTable.getEntry(rootIdIndex);
             
-            entity = new Entity(entityType, entityId, rootId);
+            entity = new Entity(entityTypeName, entityId, rootId);
         } else {
-            entity = new Entity(entityType, entityId);
+            entity = new Entity(entityTypeName, entityId);
         }        
         
         return this.deduplicateEntity(entity);
