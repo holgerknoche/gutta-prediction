@@ -48,7 +48,11 @@ class TransactionIssueShape extends Path2D.Float implements DrawableShape {
         /**
          * Marker color for cross-component accesses.
          */
-        CROSS_COMPONENT_ACCESS(Color.LIGHT_GRAY)
+        CROSS_COMPONENT_ACCESS(Color.LIGHT_GRAY),
+        /**
+         * Marker color for interleaved write issues.
+         */
+        INTERLEAVED_WRITE(new Color(55, 126, 71));
         ;
 
         private final Color color;
