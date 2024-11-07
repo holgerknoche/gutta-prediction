@@ -1,0 +1,43 @@
+component "Car Insurance" {
+  useCase "Car Insurance Contract Creation"
+
+  serviceCandidate createCarContract [
+    transactionBehavior = REQUIRED
+  ]
+
+  entityType "Car Contract"
+  entityType "Car Contract Component"
+}
+
+component "Common Contracts" {
+  useCase "Contract Import Job"
+
+  serviceCandidate createContract
+
+  entityType "Contract"
+  entityType "Holder Role"
+  entityType "Car Owner Role"
+}
+
+component "Persons" {
+  serviceCandidate findPerson
+  serviceCandidate updateCustomerFlag
+
+  entityType "Person"
+}
+
+component "Sales Statistics" {
+  serviceCandidate registerSale
+}
+
+remote "Car Insurance" -> "Common Contracts" [
+  latency = 10
+]
+
+remote "Common Contracts" -> "Persons" [
+  latency = 10
+]
+
+remote "Car Insurance" -> "Sales Statistics" [
+  latency = 10
+]
