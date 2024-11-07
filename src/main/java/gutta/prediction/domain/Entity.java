@@ -8,6 +8,10 @@ public record Entity(String typeName, String id, boolean hasRoot, String rootId)
         this(typeName, id, false, null);
     }
     
+    public Entity(String typeName, String id, Entity rootEntity) {
+        this(typeName, id, requireNonNull(rootEntity).id());
+    }
+    
     public Entity(String typeName, String id, String rootId) {
         this(typeName, id, true, requireNonNull(rootId));
     }

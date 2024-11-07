@@ -12,7 +12,9 @@ component "Car Insurance" {
 component "Common Contracts" {
   useCase "Contract Import Job"
 
-  serviceCandidate createContract
+  serviceCandidate createContract [
+    transactionBehavior = REQUIRED
+  ]
 
   entityType "Contract"
   entityType "Holder Role"
