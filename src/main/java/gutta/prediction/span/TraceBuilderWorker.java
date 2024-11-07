@@ -6,6 +6,7 @@ import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityReadEvent;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
+import gutta.prediction.event.ImplicitTransactionAbortEvent;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.event.ServiceCandidateEntryEvent;
 import gutta.prediction.event.ServiceCandidateExitEvent;
@@ -186,6 +187,11 @@ class TraceBuilderWorker implements TraceSimulationListener {
         }
         
         affectedSpan.addEvent(new TransactionEvent(currentTimestamp, eventType));
+    }
+    
+    @Override
+    public void onImplicitTransactionAbortEvent(ImplicitTransactionAbortEvent event, TraceSimulationContext context) {
+        this.currentSpan.addEvent(new TransactionEvent(event.timestamp(), TransactionEventType.IMPLICIT_ABORT, event.cause()));
     }
         
     @Override
