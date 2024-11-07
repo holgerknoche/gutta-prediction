@@ -23,10 +23,9 @@ import gutta.prediction.span.TransactionEvent.TransactionEventType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
@@ -36,7 +35,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     private final Map<Transaction, SpanState> pendingSuspendedStates = new HashMap<>();
     
-    private Map<MonitoringEvent, ConsistencyIssue<?>> eventToIssue;
+    private Map<MonitoringEvent, Set<ConsistencyIssue<?>>> eventToIssues;
            
     private long traceId;
     
@@ -49,19 +48,25 @@ class TraceBuilderWorker implements TraceSimulationListener {
     private TransactionOverlay currentTransactionOverlay;
     
     public Trace buildTrace(EventTrace eventTrace, DeploymentModel deploymentModel, Set<ConsistencyIssue<?>> consistencyIssues) {
-        this.eventToIssue = createIssueLookup(consistencyIssues);
+        this.eventToIssues = createIssueLookup(consistencyIssues);
         
         runSimulationOf(eventTrace, deploymentModel, TraceSimulationMode.WITH_TRANSACTIONS, this);
 
         return new Trace(this.traceId, this.traceName, this.rootSpan);
     }
     
-    private static Map<MonitoringEvent, ConsistencyIssue<?>> createIssueLookup(Set<ConsistencyIssue<?>> consistencyIssues) {
+    private static Map<MonitoringEvent, Set<ConsistencyIssue<?>>> createIssueLookup(Set<ConsistencyIssue<?>> consistencyIssues) {
         if (consistencyIssues == null) {
             return Map.of();
-        } else {
-            return consistencyIssues.stream().collect(Collectors.toMap(ConsistencyIssue::event, Function.identity()));
+        } 
+        
+        var eventToIssues = new HashMap<MonitoringEvent, Set<ConsistencyIssue<?>>>();
+        for (var issue : consistencyIssues) {
+            var issuesForEvent = eventToIssues.computeIfAbsent(issue.event(), event -> new HashSet<>());
+            issuesForEvent.add(issue);
         }
+        
+        return eventToIssues;
     }
 
     @Override
@@ -190,10 +195,10 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     @Override
     public void onEntityReadEvent(EntityReadEvent event, TraceSimulationContext context) {
-        var issue = this.eventToIssue.get(event);
+        var issues = this.eventToIssues.get(event);
         
-        if (issue != null) {
-            this.currentSpan.addEvent(new ConsistencyIssueEvent(issue));
+        if (issues != null) {
+            issues.forEach(issue -> this.currentSpan.addEvent(new ConsistencyIssueEvent(issue)));
         } else {        
             this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
         }
@@ -201,10 +206,10 @@ class TraceBuilderWorker implements TraceSimulationListener {
     
     @Override
     public void onEntityWriteEvent(EntityWriteEvent event, TraceSimulationContext context) {
-        var issue = this.eventToIssue.get(event);
+        var issues = this.eventToIssues.get(event);
         
-        if (issue != null) {
-            this.currentSpan.addEvent(new ConsistencyIssueEvent(issue));
+        if (issues != null) {
+            issues.forEach(issue -> this.currentSpan.addEvent(new ConsistencyIssueEvent(issue)));
         } else {
             this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
         }
