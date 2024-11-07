@@ -43,6 +43,12 @@ class EntityAccessSimulatorWorker extends TransactionTraceSimulatorWorker {
         } else {
             // No transaction available, so the event is auto-committed
             this.listeners.forEach(listener -> listener.onCommittedWrite(event, this.context));
+            
+            var currentCandidate = this.context.currentServiceCandidate();
+            if (currentCandidate != null && currentCandidate.asynchronous()) {
+                // If the current candidate is invoked asynchronously, register an asynchronously written entity
+                this.context.registerAsynchronouslyChangedEntity(event.entity());
+            }
         }
     }
     

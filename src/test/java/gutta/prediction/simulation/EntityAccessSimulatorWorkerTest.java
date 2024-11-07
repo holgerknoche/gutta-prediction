@@ -195,6 +195,47 @@ class EntityAccessSimulatorWorkerTest {
         assertEquals(expectedConflicts, listener.encounteredConflicts());
     }
     
+    /**
+     * Test case: A read-write conflict is detected if the write occurs in an asynchronous operation without an active transaction,
+     * i.e., with auto-commit.
+     */
+    @Test
+    void readWriteConflictInAsynchronousActionWithAutoCommit() {
+        var traceId = 1234;
+        var location = new ObservedLocation("test", 1234, 1);
+        
+        var entity = new Entity("type", "1");
+        
+        var trace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 10, location, "uc"),
+                new ServiceCandidateInvocationEvent(traceId, 20, location, "sc"),
+                new ServiceCandidateEntryEvent(traceId, 30, location, "sc"),
+                new EntityWriteEvent(traceId, 40, location, entity),
+                new ServiceCandidateExitEvent(traceId, 50, location, "sc"),
+                new ServiceCandidateReturnEvent(traceId, 60, location, "sc"),
+                new EntityReadEvent(traceId, 70, location, entity),                
+                new UseCaseEndEvent(traceId, 100, location, "uc")
+                );
+        
+        var useCase = new UseCase("uc");
+        var serviceCandidate = new ServiceCandidate("sc", TransactionBehavior.SUPPORTED, true);
+        
+        var component = new Component("component");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component)
+                .assignServiceCandidateToComponent(serviceCandidate, component)
+                .build();
+        
+        var listener = new ConflictListener();
+        new EntityAccessSimulatorWorker(List.of(listener), trace, deploymentModel).processEvents();
+        
+        var expectedConflict = new Conflict(ConflictType.READ_WRITE, new EntityReadEvent(traceId, 70, location, entity));
+        var expectedConflicts = List.of(expectedConflict);
+        
+        assertEquals(expectedConflicts, listener.encounteredConflicts());        
+    }
+    
     private static class ConflictListener implements TraceSimulationListener {
         
         private final List<Conflict> encounteredConflicts = new ArrayList<>();
