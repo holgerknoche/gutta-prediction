@@ -33,13 +33,13 @@ component "Sales Statistics" {
 }
 
 remote "Car Insurance" -> "Common Contracts" [
-  latency = 10
+  overhead = 10
 ]
 
 remote "Common Contracts" -> "Persons" [
-  latency = 10
+  overhead = 10
 ]
 
 remote "Car Insurance" -> "Sales Statistics" [
-  latency = 10
+  overhead = 10
 ]
