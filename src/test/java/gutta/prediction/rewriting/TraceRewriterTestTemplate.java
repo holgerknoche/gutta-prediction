@@ -32,7 +32,7 @@ abstract class TraceRewriterTestTemplate {
 
         var useCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
         var transactionStartEvent1 = new TransactionStartEvent(traceId, 200, location, "tx1");
-        // Same timestamp for invocation and entry as to avoid latency adjustment
+        // Same timestamp for invocation and entry as to avoid overhead adjustment
         var serviceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 300, location, "sc1");
         var serviceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 300, location, "sc1", false, "");
         // Again, same timestamp for exit and return
@@ -48,7 +48,7 @@ abstract class TraceRewriterTestTemplate {
         var inputTrace = EventTrace.of(
                 useCaseStartEvent,
                 transactionStartEvent1,
-                // Same timestamp for invocation and entry as to avoid latency adjustment
+                // Same timestamp for invocation and entry as to avoid overhead adjustment
                 serviceCandidateInvocationEvent,
                 serviceCandidateEntryEvent,
                 // Again, same timestamp for exit and return

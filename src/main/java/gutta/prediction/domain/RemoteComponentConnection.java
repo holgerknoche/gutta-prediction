@@ -4,20 +4,20 @@ import gutta.prediction.util.EqualityUtil;
 
 public final class RemoteComponentConnection extends ComponentConnection {
         
-    private final long latency;
+    private final long overhead;
     
     private final TransactionPropagation transactionPropagation;
     
-    public RemoteComponentConnection(Component source, Component target, long latency, TransactionPropagation transactionPropagation, boolean modified) {
+    public RemoteComponentConnection(Component source, Component target, long overhead, TransactionPropagation transactionPropagation, boolean modified) {
         super(source, target, modified);
         
-        this.latency = latency;
+        this.overhead = overhead;
         this.transactionPropagation = transactionPropagation;
     }
 
     @Override
-    public long latency() {
-        return this.latency;
+    public long overhead() {
+        return this.overhead;
     }
 
     @Override
@@ -32,7 +32,7 @@ public final class RemoteComponentConnection extends ComponentConnection {
     
     @Override
     public int hashCode() {
-        return super.hashCode() + (int) this.latency;
+        return super.hashCode() + (int) this.overhead;
     }
     
     @Override
@@ -45,7 +45,7 @@ public final class RemoteComponentConnection extends ComponentConnection {
             return false;
         }
         
-        return (this.latency == that.latency) &&
+        return (this.overhead == that.overhead) &&
                 (this.transactionPropagation == that.transactionPropagation);
     }
     

@@ -248,15 +248,15 @@ public class RandomTraceGenerator {
                 "}\n" + 
                 "\n" + 
                 "remote \"Component 1\" -> \"Component 2\" [\n" + 
-                "    latency = 0\n" + 
+                "    overhead = 0\n" + 
                 "]\n" + 
                 "\n" + 
                 "remote \"Component 1\" -> \"Component 3\" [\n" + 
-                "    latency = 0\n" + 
+                "    overhead = 0\n" + 
                 "]\n" + 
                 "\n" + 
                 "remote \"Component 2\" -> \"Component 3\" [\n" + 
-                "    latency = 0\n" + 
+                "    overhead = 0\n" + 
                 "]";
         
         try (var writer = new FileWriter(fileName)) {
@@ -288,7 +288,7 @@ public class RandomTraceGenerator {
         
         var events = new ArrayList<MonitoringEvent>();
         
-        var timestampGenerator = new TimestampGenerator(10, useCaseSpec.minLatency(), useCaseSpec.maxLatency());              
+        var timestampGenerator = new TimestampGenerator(10, useCaseSpec.minOverhead(), useCaseSpec.maxOverhead());              
         
         events.add(new UseCaseStartEvent(traceId, timestampGenerator.nextStep(), startLocation, useCase.name()));
                 
@@ -329,7 +329,7 @@ public class RandomTraceGenerator {
             var remoteInvocation = (!sourceLocation.equals(targetLocation));
             
             var invocationEvent = new ServiceCandidateInvocationEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
-            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextLatency() : this.timestampGenerator.noStep()), targetLocation, candidateName);
+            var entryEvent = new ServiceCandidateEntryEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextOverhead() : this.timestampGenerator.noStep()), targetLocation, candidateName);
             
             this.eventConsumer.accept(invocationEvent);
             this.eventConsumer.accept(entryEvent);
@@ -346,7 +346,7 @@ public class RandomTraceGenerator {
             var remoteInvocation = (!sourceLocation.equals(targetLocation));
             
             var exitEvent = new ServiceCandidateExitEvent(this.traceId, this.timestampGenerator.nextStep(), sourceLocation, candidateName);
-            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextLatency() : this.timestampGenerator.noStep()), targetLocation, candidateName);
+            var returnEvent = new ServiceCandidateReturnEvent(this.traceId, ((remoteInvocation) ? this.timestampGenerator.nextOverhead() : this.timestampGenerator.noStep()), targetLocation, candidateName);
             
             this.eventConsumer.accept(exitEvent);
             this.eventConsumer.accept(returnEvent);            
@@ -354,7 +354,7 @@ public class RandomTraceGenerator {
         
     }
     
-    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex, long minLatency, long maxLatency) {
+    private record UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex, long minOverhead, long maxOverhead) {
         
         public UseCaseSpecification(UseCase useCase, List<ServiceCandidate> serviceCandidates, Location useCaseLocation, Map<ServiceCandidate, Location> candidateAllocation, TransitionGraph<ServiceCandidate> transitionGraph, Vertex<ServiceCandidate> startVertex) {
             this(useCase, serviceCandidates, useCaseLocation, candidateAllocation, transitionGraph, startVertex, 0, 0);

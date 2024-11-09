@@ -1,10 +1,10 @@
 package gutta.prediction.ui.shape;
 
-class AppendedLatencyShape extends SyntheticLatencyShape {
+class AppendedOverheadShape extends SyntheticOverheadShape {
 
     private static final long serialVersionUID = 820437604965312898L;
 
-    public AppendedLatencyShape(int startX, int y, int endX) {
+    public AppendedOverheadShape(int startX, int y, int endX) {
         int centerY = y + (HEIGHT / 2);
 
         this.moveTo(startX, centerY);

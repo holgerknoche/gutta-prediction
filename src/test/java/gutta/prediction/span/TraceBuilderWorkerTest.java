@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TraceBuilderWorkerTest {
     
     /**
-     * Test case: A "plain" event trace, i.e., a trace without location changes, is transformed into a single span. Latency overlays are created, if any.
+     * Test case: A "plain" event trace, i.e., a trace without location changes, is transformed into a single span. Overhead overlays are created, if any.
      */
     @Test
     void plainEventTrace() {
@@ -64,14 +64,14 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("component", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(350, 400)));
+        var expectedRootSpan = new Span("component", 100, 1000, null, List.of(), List.of(new OverheadOverlay(200, 250), new OverheadOverlay(350, 400)));
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
         
         assertEquals(expectedTrace, spanTrace);
     }
     
     /**
-     * Test case: A event trace that spans multiple locations is transformed into an appropriate span structure. Latency overlays are created at the appropriate spans.
+     * Test case: A event trace that spans multiple locations is transformed into an appropriate span structure. Overhead overlays are created at the appropriate spans.
      */
     @Test
     void traceWithMultipleLocations() {
@@ -109,8 +109,8 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new LatencyOverlay(200, 250), new LatencyOverlay(450, 500)));
-        new Span("component2", 320, 380, expectedRootSpan, List.of(), List.of(new LatencyOverlay(300, 320), new LatencyOverlay(380, 400)));
+        var expectedRootSpan = new Span("component1", 100, 1000, null, List.of(), List.of(new OverheadOverlay(200, 250), new OverheadOverlay(450, 500)));
+        new Span("component2", 320, 380, expectedRootSpan, List.of(), List.of(new OverheadOverlay(300, 320), new OverheadOverlay(380, 400)));
         
         var expectedTrace = new Trace(1234, "uc", expectedRootSpan);
         

@@ -27,7 +27,7 @@ public interface TraceElementVisitor<T> {
         return null;
     }
     
-    default T handleLatencyOverlay(LatencyOverlay overlay) {
+    default T handleOverheadOverlay(OverheadOverlay overlay) {
         // Do nothing by default
         return null;
     }

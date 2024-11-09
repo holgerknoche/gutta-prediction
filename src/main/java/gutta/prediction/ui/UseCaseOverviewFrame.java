@@ -109,9 +109,9 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
     private JMenu createAnalysisMenu() {
         var analysisMenu = new JMenu("Analysis");
         
-        var latencyChangeMenuItem = new JMenuItem("Latency change analysis...");
-        latencyChangeMenuItem.addActionListener(this::performLatencyAnalysisAction);
-        analysisMenu.add(latencyChangeMenuItem);        
+        var overheadChangeMenuItem = new JMenuItem("Overhead change analysis...");
+        overheadChangeMenuItem.addActionListener(this::performOverheadAnalysisAction);
+        analysisMenu.add(overheadChangeMenuItem);        
         
         var consistencyChangeMenuItem = new JMenuItem("Consistency change analysis...");
         consistencyChangeMenuItem.addActionListener(this::performConsistencyAnalysisAction);
@@ -239,7 +239,7 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             var useCaseName = entry.getKey();
             var overview = entry.getValue();
             
-            var view = new UseCaseView(useCaseName, overview.traces().size(), overview.averageDuration(), overview.latencyPercentage());
+            var view = new UseCaseView(useCaseName, overview.traces().size(), overview.averageDuration(), overview.overheadPercentage());
             views.add(view);
         }
         
@@ -248,12 +248,12 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         this.useCasesTable.get().setModel(new UseCaseTableModel(views));
     }
 
-    private void performLatencyAnalysisAction(ActionEvent event) {
+    private void performOverheadAnalysisAction(ActionEvent event) {
         if (this.deploymentModel == null) {
             JOptionPane.showMessageDialog(this, "No deployment model loaded. Please load a deployment model first.");
         }
         
-        var frame = new UseCaseLatencyAnalysisFrame(this.tracesPerUseCase, this.deploymentModelSpec, this.deploymentModel);
+        var frame = new UseCaseOverheadAnalysisFrame(this.tracesPerUseCase, this.deploymentModelSpec, this.deploymentModel);
         frame.setVisible(true);
     }
     
@@ -266,12 +266,12 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
         frame.setVisible(true);
     }
     
-    private record UseCaseView(String useCaseName, int numberOfTraces, double averageDuration, double latencyPercentage) {
+    private record UseCaseView(String useCaseName, int numberOfTraces, double averageDuration, double overheadPercentage) {
     }
     
     private static class UseCaseTableModel extends SimpleTableModel<UseCaseView> {
 
-        private static final List<String> COLUMN_NAMES = List.of("Use Case", "# of Traces", "Avg. Duration", "Latency %");
+        private static final List<String> COLUMN_NAMES = List.of("Use Case", "# of Traces", "Avg. Duration", "Overhead %");
         
         private static final long serialVersionUID = -5733710300186756473L;
         
@@ -285,7 +285,7 @@ class UseCaseOverviewFrame extends UIFrameTemplate {
             case 0 -> object.useCaseName();
             case 1 -> object.numberOfTraces();
             case 2 -> formatAverage(object.averageDuration());
-            case 3 -> formatPercentage(object.latencyPercentage());
+            case 3 -> formatPercentage(object.overheadPercentage());
             default -> "";
             };
         }

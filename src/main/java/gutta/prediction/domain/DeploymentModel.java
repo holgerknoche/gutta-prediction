@@ -214,14 +214,14 @@ public class DeploymentModel {
             return this;
         }
         
-        public Builder addRemoteConnection(Component sourceComponent, Component targetComponent, long latency, TransactionPropagation propagation) {
-            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, latency, propagation, this.modificationInProgress));
+        public Builder addRemoteConnection(Component sourceComponent, Component targetComponent, long overhead, TransactionPropagation propagation) {
+            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, overhead, propagation, this.modificationInProgress));
             return this;
         }        
         
-        public Builder addSymmetricRemoteConnection(Component sourceComponent, Component targetComponent, long latency, TransactionPropagation propagation) {
-            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, latency, propagation, this.modificationInProgress));
-            this.addConnection(new RemoteComponentConnection(targetComponent, sourceComponent, latency, propagation, this.modificationInProgress));
+        public Builder addSymmetricRemoteConnection(Component sourceComponent, Component targetComponent, long overhead, TransactionPropagation propagation) {
+            this.addConnection(new RemoteComponentConnection(sourceComponent, targetComponent, overhead, propagation, this.modificationInProgress));
+            this.addConnection(new RemoteComponentConnection(targetComponent, sourceComponent, overhead, propagation, this.modificationInProgress));
             return this;
         }
         

@@ -30,7 +30,7 @@ public abstract class ComponentConnection {
         return this.modified;
     }
     
-    public abstract long latency();
+    public abstract long overhead();
         
     public abstract boolean isRemote();
     

@@ -8,21 +8,21 @@ class TimestampGenerator {
 
     private final long stepSize;
     
-    private final long minLatency;
+    private final long minOverhead;
     
-    private final long maxLatency;
+    private final long maxOverhead;
     
     private long currentTimestamp;    
 
-    public TimestampGenerator(long stepSize, long minLatency, long maxLatency) {
-        this(0, stepSize, minLatency, maxLatency);
+    public TimestampGenerator(long stepSize, long minOverhead, long maxOverhead) {
+        this(0, stepSize, minOverhead, maxOverhead);
     }
 
-    public TimestampGenerator(long startTimestamp, long stepSize, long minLatency, long maxLatency) {        
+    public TimestampGenerator(long startTimestamp, long stepSize, long minOverhead, long maxOverhead) {        
         this.currentTimestamp = startTimestamp;
         this.stepSize = stepSize;
-        this.minLatency = minLatency;
-        this.maxLatency = maxLatency;
+        this.minOverhead = minOverhead;
+        this.maxOverhead = maxOverhead;
     }
     
     public long noStep() {
@@ -33,9 +33,9 @@ class TimestampGenerator {
         return (this.currentTimestamp += this.stepSize);
     }
     
-    public long nextLatency() {                
-        var latency = (this.minLatency == this.maxLatency) ? this.minLatency : this.random.nextLong(this.minLatency, this.maxLatency);
-        return (this.currentTimestamp += latency);
+    public long nextOverhead() {                
+        var overhead = (this.minOverhead == this.maxOverhead) ? this.minOverhead : this.random.nextLong(this.minOverhead, this.maxOverhead);
+        return (this.currentTimestamp += overhead);
     }
 
 }

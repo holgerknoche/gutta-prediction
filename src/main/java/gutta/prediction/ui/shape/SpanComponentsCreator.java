@@ -11,7 +11,7 @@ import gutta.prediction.span.CleanTransactionOverlay;
 import gutta.prediction.span.ConsistencyIssueEvent;
 import gutta.prediction.span.DirtyTransactionOverlay;
 import gutta.prediction.span.EntityEvent;
-import gutta.prediction.span.LatencyOverlay;
+import gutta.prediction.span.OverheadOverlay;
 import gutta.prediction.span.Span;
 import gutta.prediction.span.SuspendedTransactionOverlay;
 import gutta.prediction.span.Trace;
@@ -135,17 +135,17 @@ public class SpanComponentsCreator implements TraceElementVisitor<Void> {
     }
     
     @Override
-    public Void handleLatencyOverlay(LatencyOverlay overlay) {
+    public Void handleOverheadOverlay(OverheadOverlay overlay) {
         var xStart = this.convertTimestampToXPosition(overlay.startTimestamp());
         var xEnd = this.convertTimestampToXPosition(overlay.endTimestamp());
         
         DrawableShape shape;
         if (overlay.startTimestamp() < this.currentSpan.startTimestamp()) {
-            // If the overlay starts before the current span, it is a prepended latency
-            shape = new PrependedLatencyShape(xStart, this.currentY, xEnd);
+            // If the overlay starts before the current span, it is a prepended overhead
+            shape = new PrependedOverheadShape(xStart, this.currentY, xEnd);
         } else {
-            // Otherwise, it is an appended latency
-            shape = new AppendedLatencyShape(xStart, this.currentY, xEnd);
+            // Otherwise, it is an appended overhead
+            shape = new AppendedOverheadShape(xStart, this.currentY, xEnd);
         }
         
         this.shapes.addShape(SPANS_LAYER,shape);

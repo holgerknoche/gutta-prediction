@@ -101,15 +101,15 @@ class TraceBuilderWorker implements TraceSimulationListener {
             this.currentTransactionOverlay = null;
         }
         
-        this.addLatencyOverlayIfNecessary(invocationEvent, entryEvent);
+        this.addOverheadOverlayIfNecessary(invocationEvent, entryEvent);
     }
                 
-    private void addLatencyOverlayIfNecessary(MonitoringEvent startEvent, MonitoringEvent endEvent) {
-        var latency = (endEvent.timestamp() - startEvent.timestamp());
+    private void addOverheadOverlayIfNecessary(MonitoringEvent startEvent, MonitoringEvent endEvent) {
+        var overhead = (endEvent.timestamp() - startEvent.timestamp());
         
-        if (latency > 0) {
-            var latencyOverlay = new LatencyOverlay(startEvent.timestamp(), endEvent.timestamp());
-            this.currentSpan.addOverlay(latencyOverlay);
+        if (overhead > 0) {
+            var overheadOverlay = new OverheadOverlay(startEvent.timestamp(), endEvent.timestamp());
+            this.currentSpan.addOverlay(overheadOverlay);
         }
     }
 
@@ -117,7 +117,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
     public void beforeComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
             TraceSimulationContext context) {
 
-        this.addLatencyOverlayIfNecessary(exitEvent, returnEvent);
+        this.addOverheadOverlayIfNecessary(exitEvent, returnEvent);
         
         if (locationChange(exitEvent, returnEvent)) {
             // Adjust the end timestamp of the current span

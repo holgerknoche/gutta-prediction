@@ -4,7 +4,7 @@ import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
-import gutta.prediction.rewriting.LatencyRewriter;
+import gutta.prediction.rewriting.OverheadRewriter;
 import gutta.prediction.rewriting.RewrittenEventTrace;
 import gutta.prediction.rewriting.TransactionContextRewriter;
 
@@ -42,9 +42,9 @@ public class ConsistencyIssuesAnalysis {
     }
 
     public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
-        var latencyRewriter = new LatencyRewriter(modifiedDeploymentModel);
+        var overheadRewriter = new OverheadRewriter(modifiedDeploymentModel);
         var transactionRewriter = new TransactionContextRewriter(modifiedDeploymentModel);
-        return transactionRewriter.rewriteTrace(latencyRewriter.rewriteTrace(trace));
+        return transactionRewriter.rewriteTrace(overheadRewriter.rewriteTrace(trace));
     }
 
     public ConsistencyAnalysisResult diffAnalyzerResults(ConsistencyAnalyzerResult originalResult, ConsistencyAnalyzerResult rewrittenResult,

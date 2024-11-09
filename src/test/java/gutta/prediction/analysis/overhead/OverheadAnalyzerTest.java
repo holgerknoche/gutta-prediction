@@ -1,4 +1,4 @@
-package gutta.prediction.analysis.latency;
+package gutta.prediction.analysis.overhead;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
@@ -18,12 +18,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test cases for the class {@link LatencyAnalyzer}.
+ * Test cases for the class {@link OverheadAnalyzer}.
  */
-class LatencyAnalyzerTest {
+class OverheadAnalyzerTest {
     
     /**
-     * Test case: An empty trace results in zero duration and zero latency.
+     * Test case: An empty trace results in zero duration and zero overhead.
      */
     @Test
     void emptyTrace() {
@@ -32,17 +32,17 @@ class LatencyAnalyzerTest {
         var deploymentModel = new DeploymentModel.Builder()
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new LatencyAnalyzer.Result(0, 0, 0);
+        var expectedResult = new OverheadAnalyzer.Result(0, 0, 0);
         assertEquals(expectedResult, result);
     }
     
     /**
-     * Test case: A non-empty trace without any latency results in non-zero duration and zero latency.  
+     * Test case: A non-empty trace without any overhead results in non-zero duration and zero overhead.  
      */
     @Test
-    void nonemptyTraceWithNoLatency() {
+    void nonemptyTraceWithNoOverhead() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 0);
         
@@ -64,17 +64,17 @@ class LatencyAnalyzerTest {
                 .assignServiceCandidateToComponent(serviceCandidate, component)
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new LatencyAnalyzer.Result(500, 0, 0);
+        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0);
         assertEquals(expectedResult, result);               
     }
     
     /**
-     * Test case: A non-empty trace without any latency results in non-zero duration and zero latency.  
+     * Test case: A non-empty trace without any overhead results in non-zero duration and zero overhead.  
      */
     @Test
-    void nonemptyTraceWithLatency() {
+    void nonemptyTraceWithOverhead() {
         var traceId = 1234;
         var location = new ObservedLocation("test", 1234, 0);
         
@@ -96,9 +96,9 @@ class LatencyAnalyzerTest {
                 .assignServiceCandidateToComponent(serviceCandidate, component)
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new LatencyAnalyzer.Result(1000, 250, 0.25f);
+        var expectedResult = new OverheadAnalyzer.Result(1000, 250, 0.25f);
         assertEquals(expectedResult, result);               
     }
     
@@ -128,9 +128,9 @@ class LatencyAnalyzerTest {
                 .assignServiceCandidateToComponent(serviceCandidate, component)
                 .build();
         
-        var result = new LatencyAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new LatencyAnalyzer.Result(500, 0, 0.0f);
+        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0.0f);
         assertEquals(expectedResult, result);
     }
 

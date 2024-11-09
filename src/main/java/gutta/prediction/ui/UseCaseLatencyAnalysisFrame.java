@@ -1,6 +1,6 @@
 package gutta.prediction.ui;
 
-import gutta.prediction.analysis.latency.DurationChangeAnalysis;
+import gutta.prediction.analysis.overhead.DurationChangeAnalysis;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
 
@@ -14,7 +14,7 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.table.TableModel;
 
-class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLatencyAnalysisResultView> {
+class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseOverheadAnalysisResultView> {
 
     private static final double DEFAULT_SIGNIFICANCE_LEVEL = 0.05;
     
@@ -24,7 +24,7 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
     
     private final InitializeOnce<JTextField> significanceLevelField = new InitializeOnce<>(this::createSignificanceLevelTextField);
         
-    public UseCaseLatencyAnalysisFrame(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
+    public UseCaseOverheadAnalysisFrame(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel) {
         super(tracesPerUseCase, originalDeploymentModelSpec, originalDeploymentModel);
         
         this.initialize();
@@ -33,7 +33,7 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
     }
     
     private void initialize() {
-        super.initialize("Latency Change Analysis");
+        super.initialize("Overhead Change Analysis");
     }
         
     protected void initializeDefaults() {
@@ -61,39 +61,39 @@ class UseCaseLatencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseLa
         var traces = this.tracesPerUseCase.get(useCaseName);
         
         if (traces != null) {
-            var frame = new TracesForUseCaseLatencyAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.modifiedDeploymentModelSpec());
+            var frame = new TracesForUseCaseOverheadAnalysisFrame(useCaseName, traces, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.modifiedDeploymentModelSpec());
             frame.setVisible(true);
         }
     }
             
     @Override
-    protected UseCaseLatencyAnalysisResultView analyzeScenario(String useCaseName, Collection<EventTrace> traces, DeploymentModel originalDeploymentModel,
+    protected UseCaseOverheadAnalysisResultView analyzeScenario(String useCaseName, Collection<EventTrace> traces, DeploymentModel originalDeploymentModel,
             DeploymentModel modifiedDeploymentModel) {
 
         var significanceLevelText = this.significanceLevelField.get().getText();
         var significanceLevel = (significanceLevelText.isEmpty()) ? DEFAULT_SIGNIFICANCE_LEVEL : Double.parseDouble(significanceLevelText);
         
         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, originalDeploymentModel, modifiedDeploymentModel, significanceLevel);
-        return new UseCaseLatencyAnalysisResultView(useCaseName, analysisResult);
+        return new UseCaseOverheadAnalysisResultView(useCaseName, analysisResult);
     }
     
     @Override
-    protected TableModel createTableModel(List<UseCaseLatencyAnalysisResultView> values) {
-        return new LatencyAnalysisTableModel(values);
+    protected TableModel createTableModel(List<UseCaseOverheadAnalysisResultView> values) {
+        return new OverheadAnalysisTableModel(values);
     }
                 
-    private static class LatencyAnalysisTableModel extends SimpleTableModel<UseCaseLatencyAnalysisResultView> {
+    private static class OverheadAnalysisTableModel extends SimpleTableModel<UseCaseOverheadAnalysisResultView> {
         
         private static final long serialVersionUID = -8857807589164164128L;
         
         private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Significant Change?", "p Value");
         
-        public LatencyAnalysisTableModel(List<UseCaseLatencyAnalysisResultView> values) {
+        public OverheadAnalysisTableModel(List<UseCaseOverheadAnalysisResultView> values) {
             super(COLUMN_NAMES, values);
         }
 
         @Override
-        protected Object fieldOf(UseCaseLatencyAnalysisResultView object, int columnIndex) {
+        protected Object fieldOf(UseCaseOverheadAnalysisResultView object, int columnIndex) {
             return switch (columnIndex) {
             case 0 -> object.useCaseName();
             case 1 -> formatAverage(object.originalDuration());

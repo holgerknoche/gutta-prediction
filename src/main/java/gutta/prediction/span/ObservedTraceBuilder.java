@@ -97,9 +97,9 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
                 this.stack.push(this.currentSpan);
                 this.currentSpan = newSpan;
 
-                var latency = calculateLatency(event, entryEvent);
-                if (latency > 0) {
-                    newSpan.addOverlay(new LatencyOverlay(event.timestamp(), entryEvent.timestamp()));
+                var overhead = calculateOverhead(event, entryEvent);
+                if (overhead > 0) {
+                    newSpan.addOverlay(new OverheadOverlay(event.timestamp(), entryEvent.timestamp()));
                 }
             }
         } else {
@@ -107,7 +107,7 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
         }        
     }
     
-    private static long calculateLatency(MonitoringEvent startEvent, MonitoringEvent endEvent) {
+    private static long calculateOverhead(MonitoringEvent startEvent, MonitoringEvent endEvent) {
         return (endEvent.timestamp() - startEvent.timestamp());
     }
     
@@ -123,9 +123,9 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
             if (locationChange(event, returnEvent)) {                
                 this.currentSpan.endTimestamp(event.timestamp());                
                         
-                var latency = calculateLatency(event, returnEvent);
-                if (latency > 0) {
-                    this.currentSpan.addOverlay(new LatencyOverlay(event.timestamp(), returnEvent.timestamp()));
+                var overhead = calculateOverhead(event, returnEvent);
+                if (overhead > 0) {
+                    this.currentSpan.addOverlay(new OverheadOverlay(event.timestamp(), returnEvent.timestamp()));
                 }
                 
                 var span = this.stack.pop();

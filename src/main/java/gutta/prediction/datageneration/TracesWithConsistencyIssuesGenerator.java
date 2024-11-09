@@ -49,7 +49,7 @@ public class TracesWithConsistencyIssuesGenerator {
                 "    entityType EntityType1\n" +
                 "}\n" +
                 "remote \"Component 1\" -> \"Component 2\" [\n" +
-                "    latency = 20\n" +
+                "    overhead = 20\n" +
                 "    transactionPropagation = SUBORDINATE\n" +
                 "]\n" +
                 "dataStore DataStore {\n" +

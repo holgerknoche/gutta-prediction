@@ -19,23 +19,23 @@ import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.TraceSimulationContext;
 
 /**
- * This rewriter adjusts the latencies within a given trace, i.e., the difference between the timestamps of service canidate invocation/entry events as well as
+ * This rewriter adjusts the overhead within a given trace, i.e., the difference between the timestamps of service canidate invocation/entry events as well as
  * exit/return-events according to a set of given connections.
  */
-public class LatencyRewriter implements TraceRewriter {
+public class OverheadRewriter implements TraceRewriter {
 
     private final DeploymentModel deploymentModel;
 
-    public LatencyRewriter(DeploymentModel deploymentModel) {
+    public OverheadRewriter(DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
     }
 
     @Override
     public RewrittenEventTrace rewriteTrace(EventTrace trace) {
-        return new LatencyRewriterWorker().rewriteTrace(trace, this.deploymentModel);
+        return new OverheadRewriterWorker().rewriteTrace(trace, this.deploymentModel);
     }
 
-    private static class LatencyRewriterWorker extends TraceRewriterWorker {
+    private static class OverheadRewriterWorker extends TraceRewriterWorker {
 
         private long timeOffset;
 
@@ -76,7 +76,7 @@ public class LatencyRewriter implements TraceRewriter {
         @Override
         public void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent,
                 ComponentConnection connection, TraceSimulationContext context) {
-            this.adjustLatency(invocationEvent, entryEvent, connection);
+            this.adjustOverhead(invocationEvent, entryEvent, connection);
         }
 
         @Override
@@ -104,16 +104,16 @@ public class LatencyRewriter implements TraceRewriter {
         @Override
         public void beforeComponentReturn(ServiceCandidateExitEvent exitEvent, ServiceCandidateReturnEvent returnEvent, ComponentConnection connection,
                 TraceSimulationContext context) {
-            this.adjustLatency(exitEvent, returnEvent, connection);
+            this.adjustOverhead(exitEvent, returnEvent, connection);
         }
 
-        private void adjustLatency(MonitoringEvent startEvent, MonitoringEvent endEvent, ComponentConnection connection) {
+        private void adjustOverhead(MonitoringEvent startEvent, MonitoringEvent endEvent, ComponentConnection connection) {
             if (connection.isModified()) {
-                // For transitions over modified connections, we may need to adjust the time offset as we do not preserve the latency
-                var observedLatency = (endEvent.timestamp() - startEvent.timestamp());
-                var newLatency = connection.latency();
+                // For transitions over modified connections, we may need to adjust the time offset as we do not preserve the overhead
+                var observedOverhead = (endEvent.timestamp() - startEvent.timestamp());
+                var newOverhead = connection.overhead();
 
-                this.timeOffset += (newLatency - observedLatency);
+                this.timeOffset += (newOverhead - observedOverhead);
             }
         }
 

@@ -24,9 +24,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test cases for the class {@link LatencyRewriter}.
+ * Test cases for the class {@link OverheadRewriter}.
  */
-class LatencyRewriterTest extends TraceRewriterTestTemplate {
+class OverheadRewriterTest extends TraceRewriterTestTemplate {
 
     /**
      * Test case: Rewrite a trace containing all event types with a configuration that does not introduce any changes.
@@ -36,13 +36,13 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
         var fixture = this.createIdentityTraceFixture();
         
         var inputTrace = fixture.trace();
-        var rewrittenTrace = new LatencyRewriter(fixture.deploymentModel()).rewriteTrace(inputTrace);
+        var rewrittenTrace = new OverheadRewriter(fixture.deploymentModel()).rewriteTrace(inputTrace);
 
         assertEquals(fixture.rewrittenTrace(), rewrittenTrace);
     }
 
     /**
-     * Test case: A local transition removes existing latency (if any) and does not introduce a location change.
+     * Test case: A local transition removes existing overhead (if any) and does not introduce a location change.
      */
     @Test
     void localTransition() {
@@ -81,25 +81,25 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 .addLocalConnection(component1, component2)
                 .build();
 
-        var rewriter = new LatencyRewriter(modifiedDeploymentModel);
+        var rewriter = new OverheadRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var rewrittenUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location, "uc1");
         var rewrittenServiceCandidateInvocationEvent = new ServiceCandidateInvocationEvent(traceId, 200, location, "sc1");
-        // Remove latency from the input trace
+        // Remove overhead from the input trace
         var rewrittenServiceCandidateEntryEvent = new ServiceCandidateEntryEvent(traceId, 200, location, "sc1", true, "tx1");
         var rewrittenServiceCandidateExitEvent = new ServiceCandidateExitEvent(traceId, 390, location, "sc1");
-        // Again, latency is removed
+        // Again, overhead is removed
         var rewrittenServiceCandidateReturnEvent = new ServiceCandidateReturnEvent(traceId, 390, location, "sc1");
         var rewrittenUseCaseEndEvent = new UseCaseEndEvent(traceId, 480, location, "uc1");
         
         var expectedEvents = List.<MonitoringEvent> of(
                 rewrittenUseCaseStartEvent,
                 rewrittenServiceCandidateInvocationEvent,
-                // Remove latency from the input trace
+                // Remove overhead from the input trace
                 rewrittenServiceCandidateEntryEvent,
                 rewrittenServiceCandidateExitEvent,
-                // Again, latency is removed
+                // Again, overhead is removed
                 rewrittenServiceCandidateReturnEvent,
                 rewrittenUseCaseEndEvent
                 );
@@ -117,7 +117,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
     }
     
     /**
-     * Test case: For remote connections, a location change is introduced and latency is adjusted.
+     * Test case: For remote connections, a location change is introduced and overhead is adjusted.
      */
     @Test
     void locationChange() {
@@ -156,7 +156,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 .addSymmetricRemoteConnection(component1, component2, 50, TransactionPropagation.NONE)
                 .build();                
         
-        var rewriter = new LatencyRewriter(modifiedDeploymentModel);
+        var rewriter = new OverheadRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var artificialLocation = new SyntheticLocation(0);
@@ -189,7 +189,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
     }
 
     /**
-     * Test case: If a service candidate is "internalized", i.e., moved to the component in which the invoker resides, the latency must be set to zero (synthetic local connection).
+     * Test case: If a service candidate is "internalized", i.e., moved to the component in which the invoker resides, the overhead must be set to zero (synthetic local connection).
      */
     @Test
     void internalizationOfServiceCandidate() {
@@ -230,7 +230,7 @@ class LatencyRewriterTest extends TraceRewriterTestTemplate {
                 .assignServiceCandidateToComponent(candidate, component1)
                 .build();                
         
-        var rewriter = new LatencyRewriter(modifiedDeploymentModel);
+        var rewriter = new OverheadRewriter(modifiedDeploymentModel);
         var rewrittenTrace = rewriter.rewriteTrace(inputTrace);
 
         var rewrittenUseCaseStartEvent = new UseCaseStartEvent(traceId, 100, location1, "uc1");

@@ -202,16 +202,16 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
                 (sourceComponent, targetComponent) -> this.buildRemoteComponentConnection(sourceComponent, targetComponent, context));
     }
     
-    private static int determineConnectionLatency(Map<String, PropertyValue> properties, Token refToken) {
-        var propertyValue = properties.get("latency");
+    private static int determineConnectionOverhead(Map<String, PropertyValue> properties, Token refToken) {
+        var propertyValue = properties.get("overhead");
         if (propertyValue == null) {
-            throw new DeploymentModelParseException(refToken, "No latency specified.");
+            throw new DeploymentModelParseException(refToken, "No overhead specified.");
         }
         
         try {
             return Integer.parseInt(propertyValue.value());
         } catch (NumberFormatException e) {
-            throw new DeploymentModelParseException(propertyValue.token(), "Invalid latency '" + propertyValue.value() + "'.");
+            throw new DeploymentModelParseException(propertyValue.token(), "Invalid overhead '" + propertyValue.value() + "'.");
         }
     }
     
@@ -232,14 +232,14 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         var asymmetric = (context.asymmetric != null);
         var properties = toPropertyMap(context.properties);
         
-        var latency = determineConnectionLatency(properties, context.refToken);
+        var overhead = determineConnectionOverhead(properties, context.refToken);
         var transactionPropagation = determineTransactionPropagation(properties);
         
         if (asymmetric) {
-            this.builder.addRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
+            this.builder.addRemoteConnection(sourceComponent, targetComponent, overhead, transactionPropagation);
         } else {
             // TODO Check for existing "opposite" connections
-            this.builder.addSymmetricRemoteConnection(sourceComponent, targetComponent, latency, transactionPropagation);
+            this.builder.addSymmetricRemoteConnection(sourceComponent, targetComponent, overhead, transactionPropagation);
         }
     }
     

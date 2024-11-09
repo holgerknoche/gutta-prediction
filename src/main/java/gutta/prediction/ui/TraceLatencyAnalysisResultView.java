@@ -1,9 +1,9 @@
 package gutta.prediction.ui;
 
-record TraceLatencyAnalysisResultView(long traceId, double originalDuration, double newDuration, double changePercentage) implements Comparable<TraceLatencyAnalysisResultView> {
+record TraceOverheadAnalysisResultView(long traceId, double originalDuration, double newDuration, double changePercentage) implements Comparable<TraceOverheadAnalysisResultView> {
 
     @Override
-    public int compareTo(TraceLatencyAnalysisResultView that) {
+    public int compareTo(TraceOverheadAnalysisResultView that) {
         return Long.compare(this.traceId(), that.traceId());
     }
 

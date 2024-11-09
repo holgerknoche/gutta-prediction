@@ -61,20 +61,20 @@ public class UseCaseOverviewAnalysis {
     
     private UseCaseOverview calculateOverview(Collection<EventTrace> traces) {
         var totalDuration = 0L;
-        var totalLatency = 0L;
+        var totalOverhead = 0L;
         
         for (var trace : traces) {
             var traceDuration = determineDuration(trace);
-            var traceLatency = determineLatency(trace);
+            var traceOverhead = determineOverhead(trace);
             
             totalDuration += traceDuration;
-            totalLatency += traceLatency;
+            totalOverhead += traceOverhead;
         }
         
         var averageDuration = (double) totalDuration / (double) traces.size();
-        var latencyPercentage = (double) totalLatency / (double) totalDuration;
+        var overheadPercentage = (double) totalOverhead / (double) totalDuration;
                         
-        return new UseCaseOverview(traces, averageDuration, latencyPercentage);
+        return new UseCaseOverview(traces, averageDuration, overheadPercentage);
     }
     
     public static long determineDuration(EventTrace trace) {
@@ -90,25 +90,25 @@ public class UseCaseOverviewAnalysis {
         return Math.max(0L, (lastEvent.timestamp() - firstEvent.timestamp()));
     }
     
-    public static long determineLatency(EventTrace trace) {
-        return new LatencySummarizer().determineLatencyIn(trace);
+    public static long determineOverhead(EventTrace trace) {
+        return new OverheadSummarizer().determineOverheadIn(trace);
     }
 
-    public record UseCaseOverview(Collection<EventTrace> traces, double averageDuration, double latencyPercentage) {}
+    public record UseCaseOverview(Collection<EventTrace> traces, double averageDuration, double overheadPercentage) {}
     
-    private static class LatencySummarizer extends MonitoringEventVisitor {
+    private static class OverheadSummarizer extends MonitoringEventVisitor {
                 
-        private long totalLatency;
+        private long totalOverhead;
         
         private EventStream events;
         
-        public long determineLatencyIn(EventTrace trace) {
-            this.totalLatency = 0L;
+        public long determineOverheadIn(EventTrace trace) {
+            this.totalOverhead = 0L;
             
             this.events = new EventStream(trace.events());
             this.events.forEach(this::handleMonitoringEvent);
             
-            return this.totalLatency;
+            return this.totalOverhead;
         }
                 
         @Override
@@ -116,8 +116,8 @@ public class UseCaseOverviewAnalysis {
             var nextEvent = this.events.lookahead(1);
             
             if (nextEvent instanceof ServiceCandidateEntryEvent entryEvent) {
-                var latency = (entryEvent.timestamp() - event.timestamp());
-                this.totalLatency += latency;
+                var overhead = (entryEvent.timestamp() - event.timestamp());
+                this.totalOverhead += overhead;
             }
         }
         
@@ -126,8 +126,8 @@ public class UseCaseOverviewAnalysis {
             var nextEvent = this.events.lookahead(1);
             
             if (nextEvent instanceof ServiceCandidateReturnEvent returnEvent) {
-                var latency = (returnEvent.timestamp() - event.timestamp());
-                this.totalLatency += latency;
+                var overhead = (returnEvent.timestamp() - event.timestamp());
+                this.totalOverhead += overhead;
             }
         }
         

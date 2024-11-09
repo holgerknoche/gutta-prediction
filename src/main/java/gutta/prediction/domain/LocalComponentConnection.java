@@ -9,7 +9,7 @@ public final class LocalComponentConnection extends ComponentConnection {
     }
     
     @Override
-    public long latency() {
+    public long overhead() {
         return 0;
     }
 

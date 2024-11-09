@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 
-abstract class SyntheticLatencyShape extends Path2D.Float implements DrawableShape {
+abstract class SyntheticOverheadShape extends Path2D.Float implements DrawableShape {
 
     private static final long serialVersionUID = -8198955856180731652L;
 

@@ -1,4 +1,4 @@
-package gutta.prediction.analysis.latency;
+package gutta.prediction.analysis.overhead;
 
 import gutta.prediction.domain.ComponentConnection;
 import gutta.prediction.domain.DeploymentModel;
@@ -19,13 +19,13 @@ import java.util.Deque;
 
 import static gutta.prediction.simulation.TraceSimulator.runSimulationOf;
 
-class LatencyAnalyzer implements TraceSimulationListener {
+class OverheadAnalyzer implements TraceSimulationListener {
     
     private long startTime = 0;
     
     private long endTime = 0;
     
-    private long totalLatency = 0;
+    private long totalOverhead = 0;
     
     private long totalTimeInAsyncInvocations = 0;
     
@@ -35,9 +35,9 @@ class LatencyAnalyzer implements TraceSimulationListener {
         runSimulationOf(trace, deploymentModel, TraceSimulationMode.BASIC, this);
         
         var duration = (this.endTime - this.startTime) - this.totalTimeInAsyncInvocations;
-        var latencyPercentage = (duration == 0) ? 0 : (float) (this.totalLatency) / (float) duration; 
+        var overheadPercentage = (duration == 0) ? 0 : (float) (this.totalOverhead) / (float) duration; 
         
-        return new Result(duration, this.totalLatency, latencyPercentage);
+        return new Result(duration, this.totalOverhead, overheadPercentage);
     }
     
     @Override
@@ -54,8 +54,8 @@ class LatencyAnalyzer implements TraceSimulationListener {
             // can be calculated on return
             this.asyncStack.push(invocationEvent);
         } else {
-            // Otherwise, simply register the latency
-            this.registerLatency(invocationEvent, entryEvent);
+            // Otherwise, simply register the overhead
+            this.registerOverhead(invocationEvent, entryEvent);
         }
     }
     
@@ -70,14 +70,14 @@ class LatencyAnalyzer implements TraceSimulationListener {
             var timeSpentInAsyncInvocation = (returnEvent.timestamp() - invocationEvent.timestamp());
             this.totalTimeInAsyncInvocations += timeSpentInAsyncInvocation;
         } else {
-            // Otherwise, simply register the latency
-            this.registerLatency(exitEvent, returnEvent);
+            // Otherwise, simply register the overhead
+            this.registerOverhead(exitEvent, returnEvent);
         }
     }
         
-    private void registerLatency(MonitoringEvent startEvent, MonitoringEvent endEvent) {        
-        long latency = (endEvent.timestamp() - startEvent.timestamp());
-        this.totalLatency += latency;
+    private void registerOverhead(MonitoringEvent startEvent, MonitoringEvent endEvent) {        
+        long overhead = (endEvent.timestamp() - startEvent.timestamp());
+        this.totalOverhead += overhead;
     }
     
     @Override
@@ -85,6 +85,6 @@ class LatencyAnalyzer implements TraceSimulationListener {
         this.endTime = event.timestamp();
     }
     
-    record Result(long duration, long totalLatency, float latencyPercentage) {}
+    record Result(long duration, long totalOverhead, float overheadPercentage) {}
 
 }

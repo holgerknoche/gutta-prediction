@@ -18,7 +18,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
 import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineDuration;
-import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineLatency;
+import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineOverhead;
 
 class TracesViewFrame extends UIFrameTemplate {
 
@@ -55,11 +55,11 @@ class TracesViewFrame extends UIFrameTemplate {
         
         for (var trace : traces) {
             var duration = determineDuration(trace);
-            var latency = determineLatency(trace);
+            var overhead = determineOverhead(trace);
             
-            var latencyPercentage = (duration > 0) ? (double) latency / (double) duration : 0.0;
+            var overheadPercentage = (duration > 0) ? (double) overhead / (double) duration : 0.0;
             
-            var view = new TraceView(trace.traceId(), duration, latencyPercentage, trace);
+            var view = new TraceView(trace.traceId(), duration, overheadPercentage, trace);
             views.add(view);
         }
         
@@ -150,7 +150,7 @@ class TracesViewFrame extends UIFrameTemplate {
 
         private static final long serialVersionUID = -16840755840867050L;
 
-        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Duration", "Latency %");
+        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Duration", "Overhead %");
         
         public TracesListModel(List<TraceView> values) {
             super(COLUMN_NAMES, values);
@@ -161,14 +161,14 @@ class TracesViewFrame extends UIFrameTemplate {
             return switch (columnIndex) {
             case 0 -> object.traceId();
             case 1 -> object.duration();
-            case 2 -> formatPercentage(object.latencyPercentage());
+            case 2 -> formatPercentage(object.overheadPercentage());
             default -> "";
             };
         }
         
     }
     
-    private record TraceView(long traceId, long duration, double latencyPercentage, EventTrace trace) implements Comparable<TraceView> {
+    private record TraceView(long traceId, long duration, double overheadPercentage, EventTrace trace) implements Comparable<TraceView> {
         
         @Override
         public int compareTo(TraceView that) {

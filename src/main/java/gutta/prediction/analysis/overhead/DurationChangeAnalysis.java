@@ -1,8 +1,8 @@
-package gutta.prediction.analysis.latency;
+package gutta.prediction.analysis.overhead;
 
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
-import gutta.prediction.rewriting.LatencyRewriter;
+import gutta.prediction.rewriting.OverheadRewriter;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.inference.TTest;
 
@@ -19,7 +19,7 @@ public class DurationChangeAnalysis {
         for (var trace : traces) {
             var originalDuration = this.determineDuration(trace, originalDeploymentModel);
             
-            var modifiedTrace = new LatencyRewriter(modifiedDeploymentModel).rewriteTrace(trace);
+            var modifiedTrace = new OverheadRewriter(modifiedDeploymentModel).rewriteTrace(trace);
             var modifiedDuration = this.determineDuration(modifiedTrace, modifiedDeploymentModel);
             
             originalDurationsList.add(originalDuration);
@@ -50,7 +50,7 @@ public class DurationChangeAnalysis {
     }
 
     private double determineDuration(EventTrace trace, DeploymentModel deploymentModel) {
-        var analyzerResult = new LatencyAnalyzer().analyzeTrace(trace, deploymentModel);
+        var analyzerResult = new OverheadAnalyzer().analyzeTrace(trace, deploymentModel);
         return analyzerResult.duration();
     }
     

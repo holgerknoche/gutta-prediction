@@ -42,7 +42,7 @@ class StandaloneDeploymentModelBuilderTest {
                 "}\n" +
                 "// A comment\n" +
                 "remote Component1 -> Component2 [\n" +
-                "    latency = 10\n" +
+                "    overhead = 10\n" +
                 "]";
         
         var parsedModel = this.parse(input);

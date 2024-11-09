@@ -1,4 +1,4 @@
-package gutta.prediction.analysis.latency;
+package gutta.prediction.analysis.overhead;
 
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
@@ -66,7 +66,7 @@ class DurationChangeAnalysisTest {
     }
     
     /**
-     * Test case: Analysis where only an insignificant (with respect to the significance level) change in latency is applied.
+     * Test case: Analysis where only an insignificant (with respect to the significance level) change in overhead is applied.
      */
     @Test
     void analysisWithInsignificantModifications() {                  
@@ -90,7 +90,7 @@ class DurationChangeAnalysisTest {
     }
     
     /**
-     * Test case: Analysis where a significant (with respect to the significance level) change in latency is applied.
+     * Test case: Analysis where a significant (with respect to the significance level) change in overhead is applied.
      */
     @Test
     void analysisWithSignificantModifications() {                  
@@ -121,7 +121,7 @@ class DurationChangeAnalysisTest {
                 .build();
     }
     
-    private static EventTrace buildSequenceOfInvocations(int numberOfInvocations, int traceId, long latencyPerInvocation, long durationPerInvocation) {
+    private static EventTrace buildSequenceOfInvocations(int numberOfInvocations, int traceId, long overheadPerInvocation, long durationPerInvocation) {
         var location = new ObservedLocation("test", 1234, 1);        
         var events = new ArrayList<MonitoringEvent>(numberOfInvocations * 4 + 2);                
         
@@ -131,9 +131,9 @@ class DurationChangeAnalysisTest {
         
         for (int invocationIndex = 0; invocationIndex < numberOfInvocations; invocationIndex++) {
             events.add(new ServiceCandidateInvocationEvent(traceId, currentTime, location, SERVICE_CANDIDATE_NAME));
-            events.add(new ServiceCandidateEntryEvent(traceId, currentTime += latencyPerInvocation, location, SERVICE_CANDIDATE_NAME));
+            events.add(new ServiceCandidateEntryEvent(traceId, currentTime += overheadPerInvocation, location, SERVICE_CANDIDATE_NAME));
             events.add(new ServiceCandidateExitEvent(traceId, currentTime += durationPerInvocation, location, SERVICE_CANDIDATE_NAME));
-            events.add(new ServiceCandidateReturnEvent(traceId, currentTime += latencyPerInvocation, location, SERVICE_CANDIDATE_NAME));
+            events.add(new ServiceCandidateReturnEvent(traceId, currentTime += overheadPerInvocation, location, SERVICE_CANDIDATE_NAME));
         }
         
         events.add(new UseCaseEndEvent(traceId, currentTime, location, USE_CASE_NAME));
