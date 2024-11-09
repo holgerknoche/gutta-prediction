@@ -70,6 +70,19 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>3.1.2</version>
 				</plugin>
+				<!-- Build executable JAR file-->
+				<plugin>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.1</version>
+					<configuration>
+						<archive>
+							<manifest>
+								<addClasspath>true</addClasspath>
+								<mainClass>gutta.prediction.ui.AnalysisApplication</mainClass>
+							</manifest>							
+						</archive>
+					</configuration>
+				</plugin>
 				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
