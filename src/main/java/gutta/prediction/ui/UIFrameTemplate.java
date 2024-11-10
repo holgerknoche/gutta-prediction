@@ -22,7 +22,7 @@ abstract class UIFrameTemplate extends JFrame {
     }
     
     protected static String formatAverage(double value) {
-        return String.format("%.02f", value);
+        return String.format("%,.02f", value);
     }
     
     protected static String formatPercentage(double value) {

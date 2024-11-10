@@ -36,7 +36,7 @@ public class DurationChangeAnalysis {
         var modifiedDurations = toDoubleArray(modifiedDurationsList);
         
         // Perform a heteroscedastic t-Test for the durations
-        var pValue = (traces.size() < 2) ? 1.0 : new TTest().tTest(originalDurations, modifiedDurations); 
+        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, modifiedDurations); 
         var originalMean = StatUtils.mean(originalDurations);
         var modifiedMean = StatUtils.mean(modifiedDurations); 
         var significantChange = (pValue <= significanceLevel);
