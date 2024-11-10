@@ -16,14 +16,20 @@ public class DurationChangeAnalysis {
         var originalDurationsList = new ArrayList<Double>();
         var modifiedDurationsList = new ArrayList<Double>();
         
+        var originalSumOfRemoteCalls = 0L;
+        var modifiedSumOfRemoteCalls = 0L;
+        
         for (var trace : traces) {
-            var originalDuration = this.determineDuration(trace, originalDeploymentModel);
+            var originalTraceResult = this.analyzeTrace(trace, originalDeploymentModel);
             
             var modifiedTrace = new OverheadRewriter(modifiedDeploymentModel).rewriteTrace(trace);
-            var modifiedDuration = this.determineDuration(modifiedTrace, modifiedDeploymentModel);
+            var modifiedTraceResult = this.analyzeTrace(modifiedTrace, modifiedDeploymentModel);
             
-            originalDurationsList.add(originalDuration);
-            modifiedDurationsList.add(modifiedDuration);
+            originalDurationsList.add((double) originalTraceResult.duration());
+            modifiedDurationsList.add((double) modifiedTraceResult.duration());
+            
+            originalSumOfRemoteCalls += originalTraceResult.numberOfRemoteCalls();
+            modifiedSumOfRemoteCalls += modifiedTraceResult.numberOfRemoteCalls();
         }
         
         var originalDurations = toDoubleArray(originalDurationsList);
@@ -33,8 +39,13 @@ public class DurationChangeAnalysis {
         var pValue = (traces.size() < 2) ? 1.0 : new TTest().tTest(originalDurations, modifiedDurations); 
         var originalMean = StatUtils.mean(originalDurations);
         var modifiedMean = StatUtils.mean(modifiedDurations); 
+        var significantChange = (pValue <= significanceLevel);
         
-        return new Result((pValue <= significanceLevel), pValue, originalMean, modifiedMean);
+        // Calculate averages for remote calls
+        var originalAverageNumberOfRemoteCalls = (double) originalSumOfRemoteCalls / (double) traces.size();
+        var modifiedAverageNumberOfRemoteCalls = (double) modifiedSumOfRemoteCalls / (double) traces.size();
+        
+        return new Result(significantChange, pValue, originalMean, modifiedMean, originalAverageNumberOfRemoteCalls, modifiedAverageNumberOfRemoteCalls);
     }
     
     private static double[] toDoubleArray(List<Double> values) {
@@ -49,11 +60,10 @@ public class DurationChangeAnalysis {
         return array;
     }
 
-    private double determineDuration(EventTrace trace, DeploymentModel deploymentModel) {
-        var analyzerResult = new OverheadAnalyzer().analyzeTrace(trace, deploymentModel);
-        return analyzerResult.duration();
+    private OverheadAnalyzer.Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
+        return new OverheadAnalyzer().analyzeTrace(trace, deploymentModel);        
     }
     
-    public record Result(boolean significantChange, double pValue, double originalMean, double modifiedMean) {}
+    public record Result(boolean significantChange, double pValue, double originalMean, double modifiedMean, double oldAverageNumberOfRemoteCalls, double newAverageNumberOfRemoteCalls) {}
 
 }

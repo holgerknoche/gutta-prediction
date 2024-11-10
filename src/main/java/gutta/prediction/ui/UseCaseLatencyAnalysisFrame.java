@@ -86,7 +86,7 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
         
         private static final long serialVersionUID = -8857807589164164128L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Significant Change?", "p Value");
+        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Significant Change?", "p Value", "Old Avg. # Remote Calls", "New Avg. # Remote Calls");
         
         public OverheadAnalysisTableModel(List<UseCaseOverheadAnalysisResultView> values) {
             super(COLUMN_NAMES, values);
@@ -100,6 +100,8 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
             case 2 -> formatAverage(object.newDuration());
             case 3 -> asYesNo(object.significant());
             case 4 -> formatPValue(object.pValue());
+            case 5 -> formatAverage(object.oldAverageNumberOfRemoteCals());
+            case 6 -> formatAverage(object.newAverageNumberOfRemoteCalls());
             default -> "";
             };
         }

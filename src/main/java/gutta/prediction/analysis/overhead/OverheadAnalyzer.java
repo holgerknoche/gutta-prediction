@@ -29,6 +29,8 @@ class OverheadAnalyzer implements TraceSimulationListener {
     
     private long totalTimeInAsyncInvocations = 0;
     
+    private int remoteCallsCount = 0;
+    
     private Deque<ServiceCandidateInvocationEvent> asyncStack = new ArrayDeque<>();
     
     public Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
@@ -37,12 +39,19 @@ class OverheadAnalyzer implements TraceSimulationListener {
         var duration = (this.endTime - this.startTime) - this.totalTimeInAsyncInvocations;
         var overheadPercentage = (duration == 0) ? 0 : (float) (this.totalOverhead) / (float) duration; 
         
-        return new Result(duration, this.totalOverhead, overheadPercentage);
+        return new Result(duration, this.totalOverhead, overheadPercentage, this.remoteCallsCount);
     }
     
     @Override
     public void onUseCaseStartEvent(UseCaseStartEvent event, TraceSimulationContext context) {
         this.startTime = event.timestamp();
+    }
+    
+    @Override
+    public void beforeComponentTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ComponentConnection connection, TraceSimulationContext context) {
+        if (connection.isRemote()) {
+            this.remoteCallsCount++;
+        }
     }
     
     @Override
@@ -85,6 +94,6 @@ class OverheadAnalyzer implements TraceSimulationListener {
         this.endTime = event.timestamp();
     }
     
-    record Result(long duration, long totalOverhead, float overheadPercentage) {}
+    record Result(long duration, long totalOverhead, float overheadPercentage, int numberOfRemoteCalls) {}
 
 }

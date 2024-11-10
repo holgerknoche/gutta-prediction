@@ -35,14 +35,8 @@ class TracesForUseCaseOverheadAnalysisFrame extends TracesForUseCaseAnalysisFram
     
     @Override
     protected TraceOverheadAnalysisResultView analyzeScenario(EventTrace trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        var analysisResult = new DurationChangeAnalysis().analyzeTraces(List.of(trace), originalDeploymentModel, modifiedDeploymentModel, 0.05);
-        
-        var originalDuration = analysisResult.originalMean();
-        var modifiedDuration = analysisResult.modifiedMean();
-        
-        var changePercentage = (modifiedDuration == 0.0) ? 0.0 : (modifiedDuration / originalDuration) - 1.0;
-        
-        return new TraceOverheadAnalysisResultView(trace.traceId(), analysisResult.originalMean(), analysisResult.modifiedMean(), changePercentage);
+        var analysisResult = new DurationChangeAnalysis().analyzeTraces(List.of(trace), originalDeploymentModel, modifiedDeploymentModel, 0.05);                       
+        return new TraceOverheadAnalysisResultView(trace.traceId(), analysisResult.originalMean(), analysisResult.modifiedMean(), analysisResult.oldAverageNumberOfRemoteCalls(), analysisResult.newAverageNumberOfRemoteCalls());
     }
 
     @Override
@@ -54,7 +48,7 @@ class TracesForUseCaseOverheadAnalysisFrame extends TracesForUseCaseAnalysisFram
 
         private static final long serialVersionUID = -3816177678731840041L;
         
-        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Original Duration", "Modified Duration", "Change %");
+        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Original Duration", "Modified Duration", "Duration Change %", "Original # Remote Calls", "Modified # Remote Calls", "Remote Calls Change %");
 
         public TraceOverheadTableModel(List<TraceOverheadAnalysisResultView> values) {
             super(COLUMN_NAMES, values);
@@ -66,7 +60,10 @@ class TracesForUseCaseOverheadAnalysisFrame extends TracesForUseCaseAnalysisFram
             case 0 -> object.traceId();
             case 1 -> formatAverage(object.originalDuration());
             case 2 -> formatAverage(object.newDuration());
-            case 3 -> formatPercentage(object.changePercentage());
+            case 3 -> formatPercentage(object.durationChangePercentage());
+            case 4 -> formatAverage(object.oldNumberOfRemoteCalls());
+            case 5 -> formatAverage(object.newNumberOfRemoteCalls());
+            case 6 -> formatPercentage(object.remoteCallsChangePercentage());
             default -> "";
             };
         }

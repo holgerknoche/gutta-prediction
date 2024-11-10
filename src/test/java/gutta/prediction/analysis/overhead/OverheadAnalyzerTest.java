@@ -4,6 +4,7 @@ import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
 import gutta.prediction.domain.TransactionBehavior;
+import gutta.prediction.domain.TransactionPropagation;
 import gutta.prediction.domain.UseCase;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.ObservedLocation;
@@ -34,7 +35,7 @@ class OverheadAnalyzerTest {
         
         var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new OverheadAnalyzer.Result(0, 0, 0);
+        var expectedResult = new OverheadAnalyzer.Result(0, 0, 0, 0);
         assertEquals(expectedResult, result);
     }
     
@@ -66,7 +67,7 @@ class OverheadAnalyzerTest {
         
         var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0);
+        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0, 0);
         assertEquals(expectedResult, result);               
     }
     
@@ -98,8 +99,47 @@ class OverheadAnalyzerTest {
         
         var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new OverheadAnalyzer.Result(1000, 250, 0.25f);
+        var expectedResult = new OverheadAnalyzer.Result(1000, 250, 0.25f, 0);
         assertEquals(expectedResult, result);               
+    }
+    
+    /**
+     * Test case: Remote calls are identified and counted.
+     */
+    @Test
+    void remoteCallCounting() {
+        var traceId = 1234;
+        var location1 = new ObservedLocation("test1", 1234, 0);
+        var location2 = new ObservedLocation("test2", 1234, 1);
+        
+        var inputTrace = EventTrace.of(
+                new UseCaseStartEvent(traceId, 0, location1, "uc1"),
+                new ServiceCandidateInvocationEvent(traceId, 100, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 200, location2, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 500, location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 650, location1, "sc1"),
+                new ServiceCandidateInvocationEvent(traceId, 700, location1, "sc1"),
+                new ServiceCandidateEntryEvent(traceId, 800, location2, "sc1"),
+                new ServiceCandidateExitEvent(traceId, 1000, location2, "sc1"),
+                new ServiceCandidateReturnEvent(traceId, 1100, location1, "sc1"),
+                new UseCaseEndEvent(traceId, 1200, location1, "uc1")
+                );
+        
+        var useCase = new UseCase("uc1");
+        var serviceCandidate = new ServiceCandidate("sc1", TransactionBehavior.SUPPORTED);
+        var component1 = new Component("c1");        
+        var component2 = new Component("c2");
+        
+        var deploymentModel = new DeploymentModel.Builder()
+                .assignUseCaseToComponent(useCase, component1)
+                .assignServiceCandidateToComponent(serviceCandidate, component2)
+                .addSymmetricRemoteConnection(component1, component2, 100, TransactionPropagation.NONE)
+                .build();
+        
+        var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
+        
+        var expectedResult = new OverheadAnalyzer.Result(1200, 450, 0.375f, 2);
+        assertEquals(expectedResult, result);
     }
     
     /**
@@ -130,7 +170,7 @@ class OverheadAnalyzerTest {
         
         var result = new OverheadAnalyzer().analyzeTrace(inputTrace, deploymentModel);
         
-        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0.0f);
+        var expectedResult = new OverheadAnalyzer.Result(500, 0, 0.0f, 0);
         assertEquals(expectedResult, result);
     }
 
