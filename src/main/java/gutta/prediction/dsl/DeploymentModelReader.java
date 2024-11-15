@@ -15,6 +15,10 @@ public class DeploymentModelReader {
         return this.readModel(CharStreams.fromStream(inputStream, StandardCharsets.UTF_8), null);
     }
     
+    public DeploymentModel readModel(InputStream inputStream, DeploymentModel originalModel) throws IOException {
+        return this.readModel(CharStreams.fromStream(inputStream, StandardCharsets.UTF_8), originalModel);
+    }
+    
     public DeploymentModel readModel(String input) {
         return this.readModel(CharStreams.fromString(input), null);
     }
