@@ -58,8 +58,8 @@ abstract class AnalysisSpeedBenchmark {
             System.out.println("#" + iteration + ": " + durationMs + "ms");
         }
         
-        System.out.println("Average duration: " + StatUtils.mean(durations));
-        System.out.print("Standard deviation: " + Math.sqrt(StatUtils.variance(durations)));
+        System.out.println("Average duration: " + StatUtils.mean(durations) + "ms");
+        System.out.println("Standard deviation: " + Math.sqrt(StatUtils.variance(durations)) + "ms");
     }    
     
     private DeploymentModel loadDeploymentModel(File deploymentModelFile) {

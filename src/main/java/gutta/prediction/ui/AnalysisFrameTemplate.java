@@ -104,7 +104,7 @@ abstract class AnalysisFrameTemplate extends UIFrameTemplate {
     private JScrollPane createModifiedDeploymentModelPane() {
         var pane = new JScrollPane(this.modifiedDeploymentModelArea.get());
         
-        pane.setBorder(BorderFactory.createTitledBorder("Modified Deployment Model"));
+        pane.setBorder(BorderFactory.createTitledBorder("Scenario Deployment Model"));
         
         return pane;
     }
