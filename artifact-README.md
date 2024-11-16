@@ -14,6 +14,7 @@ The benchmarks will print the duration of each timed iteration in milliseconds, 
 # Interactive Use
 The user interface is opened automatically when running the JAR `gutta-prediction-1.0-SNAPSHOT.jar`, e.g., by clicking on it or running it from the command line with `java -jar`.
 Instructions for running different scenarios from the paper are given below.
+The name "gutta" is inspired by the latin proverb "gutta cavat lapidem" ("the drop (of water) carves the rock"), as we intend our approach to slowly carve the service boundaries from a monolith.
 
 ## Overview of the User Interface
 
