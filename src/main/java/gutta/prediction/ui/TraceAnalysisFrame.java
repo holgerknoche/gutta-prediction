@@ -2,14 +2,14 @@ package gutta.prediction.ui;
 
 import gutta.prediction.analysis.consistency.ConsistencyIssue;
 import gutta.prediction.analysis.consistency.ConsistencyIssuesAnalysis;
-import gutta.prediction.analysis.overview.RemoteCall;
-import gutta.prediction.analysis.overview.RemoteCallsLister;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.dsl.DeploymentModelReader;
 import gutta.prediction.event.EntityWriteEvent;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.span.TraceBuilder;
+import gutta.prediction.ui.analysis.RemoteCall;
+import gutta.prediction.ui.analysis.RemoteCallsLister;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;

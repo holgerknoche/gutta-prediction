@@ -1,10 +1,10 @@
 package gutta.prediction.ui;
 
-import gutta.prediction.analysis.overview.UseCaseOverviewAnalysis;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.dsl.DeploymentModelReader;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.event.codec.EventTraceDecoder;
+import gutta.prediction.ui.analysis.UseCaseOverviewAnalysis;
 
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;

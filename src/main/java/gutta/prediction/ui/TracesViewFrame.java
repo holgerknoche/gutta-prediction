@@ -17,8 +17,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
-import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineDuration;
-import static gutta.prediction.analysis.overview.UseCaseOverviewAnalysis.determineOverhead;
+import static gutta.prediction.ui.analysis.UseCaseOverviewAnalysis.determineDuration;
+import static gutta.prediction.ui.analysis.UseCaseOverviewAnalysis.determineOverhead;
 
 class TracesViewFrame extends UIFrameTemplate {
 

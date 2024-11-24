@@ -13,40 +13,83 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A {@link ConsistencyIssuesAnalysis} performs a consistency analysis of a trace with respect to a scenario. For this purpose, the given trace is rewritten,
+ * both traces are analyzed, and the results are compared to each other.
+ */
 public class ConsistencyIssuesAnalysis {
-    
+
     private final CheckCrossComponentAccesses checkCrossComponentAccesses;
-    
+
     private final CheckInterleavingAccesses checkInterleavingAccesses;
-    
+
+    /**
+     * Creates a new analysis with default parameters.
+     */
     public ConsistencyIssuesAnalysis() {
         this(CheckCrossComponentAccesses.YES, CheckInterleavingAccesses.YES);
     }
-    
+
+    /**
+     * Creates a new analysis with the given parameters.
+     * 
+     * @param checkCrossComponentAccesses Denotes whether to check for cross-component accesses
+     * @param checkInterleavingAccesses   Denotes whether to check for interleaving entity accesses
+     */
     public ConsistencyIssuesAnalysis(CheckCrossComponentAccesses checkCrossComponentAccesses, CheckInterleavingAccesses checkInterleavingAccesses) {
         this.checkCrossComponentAccesses = checkCrossComponentAccesses;
         this.checkInterleavingAccesses = checkInterleavingAccesses;
     }
 
-    public ConsistencyAnalysisResult analyzeTrace(EventTrace trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        var originalTraceResult = this.analyzeTrace(trace, originalDeploymentModel);
+    /**
+     * Analyzes the given trace with respect to the given scenario.
+     * 
+     * @param trace           The trace to analyze
+     * @param deploymentModel The deployment model of the given trace
+     * @param scenarioModel   The scenario model based on the given deployment model
+     * @return The result of the analysis
+     */
+    public ConsistencyAnalysisResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
+        var originalTraceResult = this.analyzeTrace(trace, deploymentModel);
 
-        var rewrittenTrace = this.rewriteTrace(trace, modifiedDeploymentModel);
-        var rewrittenTraceResult = this.analyzeTrace(rewrittenTrace, modifiedDeploymentModel);
+        var rewrittenTrace = this.rewriteTrace(trace, scenarioModel);
+        var rewrittenTraceResult = this.analyzeTrace(rewrittenTrace, scenarioModel);
 
         return this.diffAnalyzerResults(originalTraceResult, rewrittenTraceResult, rewrittenTrace::obtainOriginalEvent);
     }
 
+    /**
+     * Analyzes the given trace.
+     * 
+     * @param trace           The trace to analyze
+     * @param deploymentModel The deployment model of the given trace
+     * @return The result of the analysis
+     */
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         return new ConsistencyIssuesAnalyzer(this.checkCrossComponentAccesses, this.checkInterleavingAccesses).analyzeTrace(trace, deploymentModel);
     }
 
-    public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel modifiedDeploymentModel) {
-        var overheadRewriter = new OverheadRewriter(modifiedDeploymentModel);
-        var transactionRewriter = new TransactionContextRewriter(modifiedDeploymentModel);
+    /**
+     * Rewrites the given trace to match the given scenario model.
+     * 
+     * @param trace         The trace to rewrite
+     * @param scenarioModel The scenario model to rewrite to
+     * @return The rewritten trace
+     */
+    public RewrittenEventTrace rewriteTrace(EventTrace trace, DeploymentModel scenarioModel) {
+        var overheadRewriter = new OverheadRewriter(scenarioModel);
+        var transactionRewriter = new TransactionContextRewriter(scenarioModel);
         return transactionRewriter.rewriteTrace(overheadRewriter.rewriteTrace(trace));
     }
 
+    /**
+     * Determines the difference between the given results, using the given event map.
+     * 
+     * @param originalResult  The result from the original trace
+     * @param rewrittenResult The result from the rewritten trace
+     * @param eventMap        The event map from the rewritten events to the original events
+     * @return The difference of the results
+     */
     public ConsistencyAnalysisResult diffAnalyzerResults(ConsistencyAnalyzerResult originalResult, ConsistencyAnalyzerResult rewrittenResult,
             EventMap eventMap) {
         var newIssues = new HashSet<ConsistencyIssue<?>>();
@@ -60,7 +103,7 @@ public class ConsistencyIssuesAnalysis {
         var unchangedCommittedWrites = new HashSet<EntityWriteEvent>();
         var unchangedRevertedWrites = new HashSet<EntityWriteEvent>();
 
-        this.diffWrites(originalResult.committedWrites(), originalResult.abortedWrites(), rewrittenResult.committedWrites(), rewrittenResult.abortedWrites(),
+        this.diffWrites(originalResult.committedWrites(), originalResult.revertedWrites(), rewrittenResult.committedWrites(), rewrittenResult.revertedWrites(),
                 eventMap, nowCommittedWrites::add, nowRevertedWrites::add, unchangedCommittedWrites::add, unchangedRevertedWrites::add);
 
         return new ConsistencyAnalysisResult(originalResult.issues().size(), rewrittenResult.issues().size(), newIssues, obsoleteIssues, unchangedIssues,
@@ -139,8 +182,18 @@ public class ConsistencyIssuesAnalysis {
         matchingRevertedWrites.forEach(unchangedRevertedWritesCollector::collect);
     }
 
+    /**
+     * An event map, e.g., mapping rewritten events to their original events.
+     */
     public interface EventMap {
 
+        /**
+         * Maps the given event.
+         * 
+         * @param <T>   The type of event
+         * @param event The event to map
+         * @return The mapped event
+         */
         <T extends MonitoringEvent> T map(T event);
 
     }
