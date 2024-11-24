@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Abstract superclass for analysis speed benchmarks that provides a common framework for such benchmarks.
+ */
 abstract class AnalysisSpeedBenchmark {
 
     protected void runBenchmark(String[] arguments) {
