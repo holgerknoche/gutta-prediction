@@ -26,11 +26,24 @@ class TransitionGraph<T> {
         this.vertices.forEach(Vertex::validate);
     }
 
+    /**
+     * Performs a "stack" walk of this graph, i.e., traverses the graph to emulate random sequences of function calls.
+     * 
+     * @param startVertex The vertex to start at
+     * @param numberOfTransitions The number of transitions to perform during the walk
+     * @param maxDepth The maximum depth of the emulated call stack
+     * @param listener A listener to perform actions based on the walk
+     */
     public void stackWalk(Vertex<T> startVertex, int numberOfTransitions, int maxDepth, StackWalkListener<T> listener) {
         var walker = new StackWalker<>(listener, new Random());
         walker.walk(startVertex, numberOfTransitions, maxDepth);
     }
 
+    /**
+     * Vertex of a {@link TransitionGraph}.
+     * 
+     * @param <T> The type of the object associated to this vertex
+     */
     public static class Vertex<T> {
 
         private final T label;
@@ -95,14 +108,39 @@ class TransitionGraph<T> {
 
     }
 
+    /**
+     * Edge from one vertex to another in a transition graph.
+     * 
+     * @param <T> The type of the objects associated with the vertices
+     * @param probability The probability that this edge is traversed
+     * @param target The target vertex of this edge
+     */
     public record Edge<T>(double probability, Vertex<T> target) {
 
     }
 
+    /**
+     * Listener interface for a "stack" walk along a transition graph, i.e., vertices that have been entered are exited in reverse order, emulating a call
+     * stack.
+     * 
+     * @param <T> The type of object associated with the vertices
+     * @see StackWalker
+     * @see TransitionGraph#stackWalk(Vertex, int, int, StackWalkListener)
+     */
     public interface StackWalkListener<T> {
 
+        /**
+         * This method is invoked when a vertex is entered.
+         * 
+         * @param vertex The vertex that was entered
+         */
         void onVertexEntry(Vertex<T> vertex);
 
+        /**
+         * This method is invoked when a vertex is exited.
+         * 
+         * @param vertex The vertex that was exited
+         */
         void onVertexExit(Vertex<T> vertex);
 
     }
