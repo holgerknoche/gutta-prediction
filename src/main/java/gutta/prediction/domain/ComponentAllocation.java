@@ -8,6 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * As the name implies, a {@link ComponentAllocation} allocates objects of a given type to a {@link Component}.
+ * In addition to the allocation itself, this class tracks whether this allocation was changed due to a scenario.  
+ * 
+ * @param <T> The type of the objects that are allocated
+ */
 class ComponentAllocation<T> {
     
     private final Map<T, ComponentAllocationEntry<T>> allocation;
