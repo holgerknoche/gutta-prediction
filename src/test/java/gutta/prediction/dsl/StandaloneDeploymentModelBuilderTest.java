@@ -56,7 +56,7 @@ class StandaloneDeploymentModelBuilderTest {
         var component1 = new Component("Component1");
         var component2 = new Component("Component2");
         
-        var expectedModel = DeploymentModel.builder()
+        var expectedModel = new DeploymentModel.Builder()
                 .assignUseCaseToComponent(useCase, component1)
                 .assignServiceCandidateToComponent(serviceCandidate1, component1)
                 .assignServiceCandidateToComponent(serviceCandidate2, component1)
