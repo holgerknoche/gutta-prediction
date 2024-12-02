@@ -46,26 +46,37 @@ import static gutta.prediction.event.codec.Constants.EVENT_TYPE_USE_CASE_START;
 import static gutta.prediction.event.codec.Constants.LOCATION_TYPE_OBSERVED;
 import static gutta.prediction.event.codec.Constants.LOCATION_TYPE_SYNTHETIC;
 
+/**
+ * An {@link EventTraceDecoder} decodes event streams from the storage format.
+ */
 public class EventTraceDecoder {
 
     private static final Charset CHARSET = StandardCharsets.UTF_8;
-    
+
     private static final int BUFFER_SIZE = 65536;
-        
+
     private Map<Entity, Entity> knownEntities;
-    
+
+    /**
+     * Decodes a collection of event traces from the given input stream.
+     * 
+     * @param inputStream The input stream to read from
+     * @return The decoded event traces
+     * @throws IOException If an I/O exception occurs while reading
+     */
     public Collection<EventTrace> decodeTraces(InputStream inputStream) throws IOException {
         this.knownEntities = new HashMap<>();
-        
-        try (var bufferedStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
-             var dataStream = new DataInputStream(bufferedStream)) {
-            var numberOfTraces = dataStream.readInt();            
+
+        try (var bufferedStream = new BufferedInputStream(inputStream, BUFFER_SIZE); //
+                var dataStream = new DataInputStream(bufferedStream)) {
+
+            var numberOfTraces = dataStream.readInt();
             var traces = new ArrayList<EventTrace>(numberOfTraces);
 
             var stringTable = this.readStringTable(dataStream);
             var locationTable = this.readLocationTable(dataStream, stringTable);
 
-            for (int traceIndex = 0; traceIndex < numberOfTraces; traceIndex++) {
+            for (var traceIndex = 0; traceIndex < numberOfTraces; traceIndex++) {
                 var trace = this.decodeTrace(dataStream, stringTable, locationTable);
                 traces.add(trace);
             }
@@ -142,37 +153,37 @@ public class EventTraceDecoder {
         switch (eventTypeId) {
         case EVENT_TYPE_USE_CASE_START:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeUseCaseStartEvent);
-            
+
         case EVENT_TYPE_USE_CASE_END:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeUseCaseEndEvent);
-            
+
         case EVENT_TYPE_ENTITY_READ:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeEntityReadEvent);
-            
+
         case EVENT_TYPE_ENTITY_WRITE:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeEntityWriteEvent);
-            
+
         case EVENT_TYPE_TRANSACTION_START:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeTransactionStartEvent);
-            
+
         case EVENT_TYPE_TRANSACTION_COMMIT:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeTransactionCommitEvent);
-            
+
         case EVENT_TYPE_EXPLICIT_TRANSACTION_ABORT:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeExplicitTransactionAbortEvent);
-            
+
         case EVENT_TYPE_IMPLICIT_TRANSACTION_ABORT:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeImplicitTransactionAbortEvent);
-            
+
         case EVENT_TYPE_SERVICE_CANDIDATE_INVOCATION:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeServiceCandidateInvocationEvent);
-            
+
         case EVENT_TYPE_SERVICE_CANDIDATE_ENTRY:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeServiceCandidateEntryEvent);
-            
+
         case EVENT_TYPE_SERVICE_CANDIDATE_EXIT:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeServiceCandidateExitEvent);
-            
+
         case EVENT_TYPE_SERVICE_CANDIDATE_RETURN:
             return this.decodeEvent(stream, stringTable, locationTable, this::decodeServiceCandidateReturnEvent);
 
@@ -180,130 +191,143 @@ public class EventTraceDecoder {
             throw new EventTraceDecodingException("Unknown event type " + eventTypeId + ".");
         }
     }
-    
-    private <T extends MonitoringEvent> T decodeEvent(DataInputStream stream, StringTable stringTable, LocationTable locationTable, SpecificEventDecoder<T> specificDecoder) throws IOException {
+
+    private <T extends MonitoringEvent> T decodeEvent(DataInputStream stream, StringTable stringTable, LocationTable locationTable,
+            SpecificEventDecoder<T> specificDecoder) throws IOException {
         var traceId = stream.readLong();
         var timestamp = stream.readLong();
         var locationIndex = stream.readInt();
         var location = locationTable.getEntry(locationIndex);
-        
+
         return specificDecoder.decode(traceId, timestamp, location, stream, stringTable);
     }
-            
-    private UseCaseStartEvent decodeUseCaseStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private UseCaseStartEvent decodeUseCaseStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable)
+            throws IOException {
         var useCaseNameIndex = stream.readInt();
         var useCaseName = stringTable.getEntry(useCaseNameIndex);
-        
+
         return new UseCaseStartEvent(traceId, timestamp, location, useCaseName);
     }
-    
-    private UseCaseEndEvent decodeUseCaseEndEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private UseCaseEndEvent decodeUseCaseEndEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable)
+            throws IOException {
         var useCaseNameIndex = stream.readInt();
         var useCaseName = stringTable.getEntry(useCaseNameIndex);
-        
+
         return new UseCaseEndEvent(traceId, timestamp, location, useCaseName);
     }
-    
+
     private Entity decodeEntity(DataInputStream stream, StringTable stringTable) throws IOException {
         var entityTypeNameIndex = stream.readInt();
         var entityTypeName = stringTable.getEntry(entityTypeNameIndex);
-        
+
         var entityIdIndex = stream.readInt();
         var entityId = stringTable.getEntry(entityIdIndex);
-        
+
         Entity entity;
-        var hasRoot = stream.readBoolean();        
+        var hasRoot = stream.readBoolean();
         if (hasRoot) {
             var rootIdIndex = stream.readInt();
             var rootId = stringTable.getEntry(rootIdIndex);
-            
+
             entity = new Entity(entityTypeName, entityId, rootId);
         } else {
             entity = new Entity(entityTypeName, entityId);
-        }        
-        
+        }
+
         return this.deduplicateEntity(entity);
     }
-    
+
     private Entity deduplicateEntity(Entity entity) {
         // Deduplicate entities to save heap for large traces
         return this.knownEntities.computeIfAbsent(entity, Function.identity());
     }
-    
-    private EntityReadEvent decodeEntityReadEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private EntityReadEvent decodeEntityReadEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable)
+            throws IOException {
         var entity = this.decodeEntity(stream, stringTable);
         return new EntityReadEvent(traceId, timestamp, location, entity);
     }
-    
-    private EntityWriteEvent decodeEntityWriteEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
-        var entity = this.decodeEntity(stream, stringTable);        
+
+    private EntityWriteEvent decodeEntityWriteEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable)
+            throws IOException {
+        var entity = this.decodeEntity(stream, stringTable);
         return new EntityWriteEvent(traceId, timestamp, location, entity);
     }
-    
-    private TransactionStartEvent decodeTransactionStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private TransactionStartEvent decodeTransactionStartEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable)
+            throws IOException {
         var transactionIdIndex = stream.readInt();
         var transactionId = stringTable.getEntry(transactionIdIndex);
-        
-        return new TransactionStartEvent(traceId, timestamp, location, transactionId);                
+
+        return new TransactionStartEvent(traceId, timestamp, location, transactionId);
     }
-    
-    private TransactionCommitEvent decodeTransactionCommitEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private TransactionCommitEvent decodeTransactionCommitEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var transactionIdIndex = stream.readInt();
         var transactionId = stringTable.getEntry(transactionIdIndex);
-        
-        return new TransactionCommitEvent(traceId, timestamp, location, transactionId);                
+
+        return new TransactionCommitEvent(traceId, timestamp, location, transactionId);
     }
-    
-    private ExplicitTransactionAbortEvent decodeExplicitTransactionAbortEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ExplicitTransactionAbortEvent decodeExplicitTransactionAbortEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var transactionIdIndex = stream.readInt();
         var transactionId = stringTable.getEntry(transactionIdIndex);
-        
-        return new ExplicitTransactionAbortEvent(traceId, timestamp, location, transactionId);                
+
+        return new ExplicitTransactionAbortEvent(traceId, timestamp, location, transactionId);
     }
-    
-    private ImplicitTransactionAbortEvent decodeImplicitTransactionAbortEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ImplicitTransactionAbortEvent decodeImplicitTransactionAbortEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var transactionIdIndex = stream.readInt();
         var transactionId = stringTable.getEntry(transactionIdIndex);
         var causeIndex = stream.readInt();
         var cause = stringTable.getEntry(causeIndex);
-        
-        return new ImplicitTransactionAbortEvent(traceId, timestamp, location, transactionId, cause);                
+
+        return new ImplicitTransactionAbortEvent(traceId, timestamp, location, transactionId, cause);
     }
-    
-    private ServiceCandidateInvocationEvent decodeServiceCandidateInvocationEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ServiceCandidateInvocationEvent decodeServiceCandidateInvocationEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var candidateNameIndex = stream.readInt();
         var candidateName = stringTable.getEntry(candidateNameIndex);
-        
-        return new ServiceCandidateInvocationEvent(traceId, timestamp, location, candidateName);                
+
+        return new ServiceCandidateInvocationEvent(traceId, timestamp, location, candidateName);
     }
-    
-    private ServiceCandidateEntryEvent decodeServiceCandidateEntryEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ServiceCandidateEntryEvent decodeServiceCandidateEntryEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var candidateNameIndex = stream.readInt();
         var candidateName = stringTable.getEntry(candidateNameIndex);
         var transactionStarted = stream.readBoolean();
-        
+
         if (transactionStarted) {
             var transactionIdIndex = stream.readInt();
             var transactionId = stringTable.getEntry(transactionIdIndex);
-            
+
             return new ServiceCandidateEntryEvent(traceId, timestamp, location, candidateName, true, transactionId);
         } else {
-            return new ServiceCandidateEntryEvent(traceId, timestamp, location, candidateName);                    
+            return new ServiceCandidateEntryEvent(traceId, timestamp, location, candidateName);
         }
     }
-    
-    private ServiceCandidateExitEvent decodeServiceCandidateExitEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ServiceCandidateExitEvent decodeServiceCandidateExitEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var candidateNameIndex = stream.readInt();
         var candidateName = stringTable.getEntry(candidateNameIndex);
-        
-        return new ServiceCandidateExitEvent(traceId, timestamp, location, candidateName);                
+
+        return new ServiceCandidateExitEvent(traceId, timestamp, location, candidateName);
     }
-    
-    private ServiceCandidateReturnEvent decodeServiceCandidateReturnEvent(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException {
+
+    private ServiceCandidateReturnEvent decodeServiceCandidateReturnEvent(long traceId, long timestamp, Location location, DataInputStream stream,
+            StringTable stringTable) throws IOException {
         var candidateNameIndex = stream.readInt();
         var candidateName = stringTable.getEntry(candidateNameIndex);
-        
-        return new ServiceCandidateReturnEvent(traceId, timestamp, location, candidateName);                
+
+        return new ServiceCandidateReturnEvent(traceId, timestamp, location, candidateName);
     }
 
     static class EventTraceDecodingException extends RuntimeException {
@@ -347,11 +371,11 @@ public class EventTraceDecoder {
         }
 
     }
-    
+
     private interface SpecificEventDecoder<T extends MonitoringEvent> {
-        
+
         T decode(long traceId, long timestamp, Location location, DataInputStream stream, StringTable stringTable) throws IOException;
-        
+
     }
 
 }
