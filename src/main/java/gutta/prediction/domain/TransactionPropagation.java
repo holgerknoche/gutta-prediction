@@ -48,5 +48,14 @@ public enum TransactionPropagation {
      * @return see above
      */
     public abstract boolean canPropagateTransactions();
+    
+    /**
+     * Returns the default transaction propagation that is used if none is specified.
+     * 
+     * @return see above
+     */
+    public static TransactionPropagation defaultPropagation() {
+        return NONE;
+    }
 
 }

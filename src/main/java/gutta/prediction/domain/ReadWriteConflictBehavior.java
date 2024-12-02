@@ -14,5 +14,15 @@ public enum ReadWriteConflictBehavior {
      * Denotes that the data store returns the state of the entity as it was before the change. This behavior is common in data stores with multi-version
      * concurrency control (MVCC).
      */
-    STALE_READ
+    STALE_READ;
+    
+    /**
+     * Returns the default read-write conflict behavior that is used if none is specified.
+     * 
+     * @return see above
+     */
+    public static ReadWriteConflictBehavior defaultBehavior() {
+        return STALE_READ;
+    }
+    
 }

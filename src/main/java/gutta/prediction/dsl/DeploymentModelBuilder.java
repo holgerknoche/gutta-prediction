@@ -28,42 +28,46 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+/**
+ * A {@link DeploymentModelBuilder} creates a {@linkplain DeploymentModel deployment model} from the parser output. Specialized deployment builders are used for
+ * either building a fully specified model or a delta model for an existing deployment model.
+ */
 abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
-    private static final TransactionBehavior DEFAULT_TX_BEHAVIOR = TransactionBehavior.SUPPORTED;
-    
-    private static final TransactionPropagation DEFAULT_TX_PROPAGATION = TransactionPropagation.NONE;
-    
-    private static final ReadWriteConflictBehavior DEFAULT_RW_CONFLICT_BEHAVIOR = ReadWriteConflictBehavior.STALE_READ;
+    private static final TransactionBehavior DEFAULT_TX_BEHAVIOR = TransactionBehavior.defaultBehavior();
+
+    private static final TransactionPropagation DEFAULT_TX_PROPAGATION = TransactionPropagation.defaultPropagation();
+
+    private static final ReadWriteConflictBehavior DEFAULT_RW_CONFLICT_BEHAVIOR = ReadWriteConflictBehavior.defaultBehavior();
 
     private final Map<String, Component> nameToComponent = new HashMap<>();
-    
+
     private final Map<String, EntityType> nameToEntityType = new HashMap<>();
-    
+
     private final Set<ComponentPair> knownConnections = new HashSet<>();
-    
+
     private final Set<String> knownDataStores = new HashSet<>();
 
     private final Set<String> knownUseCases = new HashSet<>();
 
     private final Set<String> knownServiceCandidates = new HashSet<>();
-    
-    private final Set<String> knownEntityTypes = new HashSet<>();    
+
+    private final Set<String> knownEntityTypes = new HashSet<>();
 
     private Component currentComponent;
-    
+
     private DataStore currentDataStore;
-    
-    private  final DeploymentModel.Builder builder;
-    
+
+    private final DeploymentModel.Builder builder;
+
     protected DeploymentModelBuilder(DeploymentModel.Builder builder) {
         this.builder = builder;
     }
-    
+
     public DeploymentModel getBuiltModel() {
         return this.builder.build();
     }
-    
+
     @Override
     public Void visitComponentDeclaration(ComponentDeclarationContext context) {
         var name = nameToString(context.name());
@@ -81,7 +85,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return null;
     }
-    
+
     protected Component buildComponent(String name) {
         return new Component(name);
     }
@@ -102,7 +106,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return null;
     }
-    
+
     protected UseCase buildUseCase(String name) {
         return new UseCase(name);
     }
@@ -125,7 +129,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return null;
     }
-    
+
     protected ServiceCandidate buildServiceCandidate(String name, TransactionBehavior transactionBehavior, boolean asynchronous) {
         return new ServiceCandidate(name, transactionBehavior, asynchronous);
     }
@@ -142,7 +146,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             throw new DeploymentModelParseException(propertyValue.token(), "Unsupported transaction behavior '" + propertyValue.value() + "'.");
         }
     }
-    
+
     protected Component resolveComponentByName(String name) {
         return this.nameToComponent.get(name);
     }
@@ -155,11 +159,11 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
         return component;
     }
-    
+
     protected EntityType resolveEntityTypeByName(String name) {
         return this.nameToEntityType.get(name);
     }
-    
+
     private EntityType resolveEntityType(String name, Token refToken) {
         var entityType = this.resolveEntityTypeByName(name);
         if (entityType == null) {
@@ -188,7 +192,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
     @Override
     public Void visitLocalComponentConnectionDeclaration(LocalComponentConnectionDeclarationContext context) {
-        return this.processComponentConnection(context.source, context.target, 
+        return this.processComponentConnection(context.source, context.target,
                 (sourceComponent, targetComponent) -> this.buildLocalComponentConnection(sourceComponent, targetComponent, context));
     }
 
@@ -198,43 +202,43 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
 
     @Override
     public Void visitRemoteComponentConnectionDeclaration(RemoteComponentConnectionDeclarationContext context) {
-        return this.processComponentConnection(context.source, context.target, 
+        return this.processComponentConnection(context.source, context.target,
                 (sourceComponent, targetComponent) -> this.buildRemoteComponentConnection(sourceComponent, targetComponent, context));
     }
-    
+
     private static int determineConnectionOverhead(Map<String, PropertyValue> properties, Token refToken) {
         var propertyValue = properties.get("overhead");
         if (propertyValue == null) {
             throw new DeploymentModelParseException(refToken, "No overhead specified.");
         }
-        
+
         try {
             return Integer.parseInt(propertyValue.value());
         } catch (NumberFormatException e) {
             throw new DeploymentModelParseException(propertyValue.token(), "Invalid overhead '" + propertyValue.value() + "'.");
         }
     }
-    
+
     private static TransactionPropagation determineTransactionPropagation(Map<String, PropertyValue> properties) {
         var propertyValue = properties.get("transactionPropagation");
         if (propertyValue == null) {
             return DEFAULT_TX_PROPAGATION;
         }
-        
+
         try {
             return TransactionPropagation.valueOf(propertyValue.value().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new DeploymentModelParseException(propertyValue.token(), "Unsupported transaction propagation '" + propertyValue.value() + "'.");
         }
     }
-    
+
     private void buildRemoteComponentConnection(Component sourceComponent, Component targetComponent, RemoteComponentConnectionDeclarationContext context) {
         var asymmetric = (context.asymmetric != null);
         var properties = toPropertyMap(context.properties);
-        
+
         var overhead = determineConnectionOverhead(properties, context.refToken);
         var transactionPropagation = determineTransactionPropagation(properties);
-        
+
         if (asymmetric) {
             this.builder.addRemoteConnection(sourceComponent, targetComponent, overhead, transactionPropagation);
         } else {
@@ -242,64 +246,64 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             this.builder.addSymmetricRemoteConnection(sourceComponent, targetComponent, overhead, transactionPropagation);
         }
     }
-    
+
     private static ReadWriteConflictBehavior determineReadWriteConflictBehavior(Map<String, PropertyValue> properties) {
         var propertyValue = properties.get("readWriteConflictBehavior");
         if (propertyValue == null) {
             return DEFAULT_RW_CONFLICT_BEHAVIOR;
         }
-        
+
         try {
             return ReadWriteConflictBehavior.valueOf(propertyValue.value().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new DeploymentModelParseException(propertyValue.token(), "Unsupported read-write conflict behavior '" + propertyValue.value() + "'.");
         }
     }
-    
+
     @Override
     public Void visitDataStoreDeclaration(DataStoreDeclarationContext context) {
         var name = nameToString(context.name());
         var properties = toPropertyMap(context.properties);
-        
+
         if (this.knownDataStores.contains(name)) {
             throw new DeploymentModelParseException(context.refToken, "Duplicate data store '" + name + "'.");
         }
-        
+
         var readWriteConflictBehavior = determineReadWriteConflictBehavior(properties);
         var dataStore = this.buildDataStore(name, readWriteConflictBehavior);
-        
+
         this.knownDataStores.add(name);
-        
+
         this.currentDataStore = dataStore;
         this.visitChildren(context);
         this.currentDataStore = null;
-        
+
         return null;
     }
-    
+
     protected DataStore buildDataStore(String name, ReadWriteConflictBehavior readWriteConflictBehavior) {
         return new DataStore(name, readWriteConflictBehavior);
     }
-    
+
     @Override
     public Void visitEntityTypeDeclaration(EntityTypeDeclarationContext context) {
         var name = nameToString(context.typeName);
-        
+
         if (this.knownEntityTypes.contains(name)) {
             throw new DeploymentModelParseException(context.refToken, "Duplicate entity type '" + name + "'.");
         }
-        
+
         this.knownEntityTypes.add(name);
-        
+
         var rootTypeName = (context.rootTypeName != null) ? nameToString(context.rootTypeName) : null;
         var entityType = this.buildEntityType(name, rootTypeName, context.refToken);
         this.builder.assignEntityTypeToComponent(entityType, this.currentComponent);
-        
+
         this.nameToEntityType.put(name, entityType);
-        
+
         return null;
     }
-    
+
     protected EntityType buildEntityType(String name, String rootTypeName, Token referenceToken) {
         if (rootTypeName != null) {
             var rootType = this.resolveEntityTypeByName(rootTypeName);
@@ -308,7 +312,7 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
             } else if (rootType.rootType() != null) {
                 throw new DeploymentModelParseException(referenceToken, "Root type '" + rootTypeName + "' must not have a root type itself.");
             }
-            
+
             return new EntityType(name, rootType);
         } else {
             return new EntityType(name);
@@ -319,18 +323,18 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     public Void visitEntityTypeReference(EntityTypeReferenceContext context) {
         var name = nameToString(context.name());
         var entityType = this.resolveEntityType(name, context.refToken);
-        
+
         this.builder.assignEntityTypeToDataStore(entityType, this.currentDataStore);
-        
+
         return null;
     }
-    
+
     private static Map<String, PropertyValue> toPropertyMap(PropertiesDeclarationContext context) {
         if (context == null || context.properties.isEmpty()) {
             // If no properties have been specified, return an empty map
             return Map.of();
         }
-        
+
         var properties = new HashMap<String, PropertyValue>(context.properties.size());
 
         for (var property : context.properties) {
@@ -371,11 +375,11 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
     }
 
     private record PropertyValue(String value, Token token) {
-    };
-    
+    }
+
     private record ComponentPair(Component component1, Component component2) {
-    };
-    
+    }
+
     static class DeploymentModelParseException extends RuntimeException {
 
         private static final long serialVersionUID = -3560623347221634775L;
@@ -389,5 +393,5 @@ abstract class DeploymentModelBuilder extends DeploymentModelBaseVisitor<Void> {
         }
 
     }
-    
+
 }

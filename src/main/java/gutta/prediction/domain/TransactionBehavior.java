@@ -35,7 +35,12 @@ public enum TransactionBehavior {
      */
     SUPPORTED;
 
-    static TransactionBehavior defaultBehavior() {
+    /**
+     * Returns the default transaction behavior that is used if none is specified.
+     * 
+     * @return see above
+     */
+    public static TransactionBehavior defaultBehavior() {
         return SUPPORTED;
     }
 
