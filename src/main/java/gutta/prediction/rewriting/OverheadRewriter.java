@@ -26,6 +26,11 @@ public class OverheadRewriter implements TraceRewriter {
 
     private final DeploymentModel deploymentModel;
 
+    /**
+     * Creates a new overhead rewriter using the given deployment model.
+     * 
+     * @param deploymentModel The deployment model to use during rewriting
+     */
     public OverheadRewriter(DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
     }

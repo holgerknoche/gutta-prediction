@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Supertype for objects that collect the rewritten events during the rewriting process.
+ */
 abstract class RewrittenEventCollector {
 
     private final List<MonitoringEvent> rewrittenEvents;
