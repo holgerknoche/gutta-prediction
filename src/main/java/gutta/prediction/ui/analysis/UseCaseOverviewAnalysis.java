@@ -140,8 +140,8 @@ public class UseCaseOverviewAnalysis {
         public long determineOverheadIn(EventTrace trace) {
             this.totalOverhead = 0L;
 
-            this.events = new EventStream(trace.events());
-            this.events.forEach(this::handleMonitoringEvent);
+            this.events = new EventStream(trace);
+            this.events.forEachRemaining(this::handleMonitoringEvent);
 
             return this.totalOverhead;
         }

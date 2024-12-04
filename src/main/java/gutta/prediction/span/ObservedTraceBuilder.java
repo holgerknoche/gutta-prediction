@@ -45,7 +45,7 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
     }
     
     public Trace buildTrace() {        
-        this.events.forEach(this::handleMonitoringEvent);
+        this.events.forEachRemaining(this::handleMonitoringEvent);
         
         return new Trace(this.traceId, this.traceName, this.rootSpan);
     }

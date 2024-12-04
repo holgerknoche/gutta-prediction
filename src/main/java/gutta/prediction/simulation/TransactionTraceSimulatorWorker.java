@@ -23,15 +23,15 @@ import java.util.List;
 class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
 
     private int syntheticTransactionIdCount = 0;
-    
+
     private Transaction previousTransaction = null;
-    
+
     private Transaction newTransaction = null;
 
     public TransactionTraceSimulatorWorker(List<TraceSimulationListener> listeners, EventTrace trace, DeploymentModel deploymentModel) {
         super(listeners, trace, deploymentModel);
     }
-    
+
     public TransactionTraceSimulatorWorker(TraceSimulationListener listener, EventTrace trace, DeploymentModel deploymentModel) {
         this(List.of(listener), trace, deploymentModel);
     }
@@ -45,7 +45,8 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
     }
 
     @Override
-    protected void handlePossibleTransactionSuspensionOnCandidateInvocation(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+    protected void handlePossibleTransactionSuspensionOnCandidateInvocation(ServiceCandidateInvocationEvent invocationEvent,
+            ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var currentTransaction = this.context.currentTransaction();
         var newTransaction = this.determineTransactionAfterTransition(invocationEvent, entryEvent, enteredServiceCandidate, connection);
 
@@ -57,11 +58,11 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         this.previousTransaction = currentTransaction;
         this.newTransaction = newTransaction;
     }
-    
+
     @Override
     protected void handlePossibleTransactionCreationOnCandidateEntry(ServiceCandidateEntryEvent entryEvent) {
         this.registerTransactionAndSetAsCurrent(this.newTransaction);
-        
+
         if (newTransaction != null && newTransaction != this.previousTransaction) {
             // If a new transaction is created, notify the listeners (in the new state)
             this.listeners.forEach(listener -> listener.onTransactionStart(entryEvent, newTransaction, this.context));
@@ -70,7 +71,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         this.newTransaction = null;
         this.previousTransaction = null;
     }
-    
+
     @Override
     protected void handlePossibleTransactionCompletionOnCandidateExit(ServiceCandidateExitEvent exitEvent) {
         var transaction = this.currentTransaction();
@@ -82,7 +83,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
             var asynchronous = this.context.currentServiceCandidate().asynchronous();
             this.completeTransactionAndNotifyListeners(exitEvent, transaction, asynchronous);
         }
-        
+
         this.previousTransaction = transaction;
     }
 
@@ -93,7 +94,7 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
         if (restoredTransaction != null && restoredTransaction != this.previousTransaction) {
             this.listeners.forEach(listener -> listener.onTransactionResume(returnEvent, restoredTransaction, this.context));
         }
-        
+
         this.previousTransaction = null;
     }
 
@@ -124,45 +125,45 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
     private void notifyListenersOfAbortOf(Transaction transaction, MonitoringEvent event) {
         this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
     }
-    
+
     @Override
     protected void handleExplicitStartOfTransaction(TransactionStartEvent event) {
         if (this.context.currentTransaction() != null) {
             throw new TraceProcessingException(event, "A transaction was active at the time of an explicitly demarcated transaction start event.");
         }
-        
+
         var newTransaction = new TopLevelTransaction(event.transactionId(), event, event.location(), Demarcation.EXPLICIT);
         this.listeners.forEach(listener -> listener.onTransactionStart(event, newTransaction, this.context));
-        
-        this.registerTransactionAndSetAsCurrent(newTransaction);                        
+
+        this.registerTransactionAndSetAsCurrent(newTransaction);
     }
-    
+
     @Override
     protected void handleExplicitCommitOfTransaction(TransactionCommitEvent event) {
-        var transaction = this.currentTransaction();                
+        var transaction = this.currentTransaction();
         if (transaction != null) {
             // If a transaction is present, it must be a top-level transaction with explicit demarcation
             if (transaction.isTopLevel() && transaction.demarcation() == Demarcation.EXPLICIT) {
                 this.completeTransactionAndNotifyListeners(event, transaction, false);
             } else {
                 throw new IllegalStateException("An invalid transaction '" + transaction + "' was found for explicit commit.");
-            }            
-            
+            }
+
             this.context.currentTransaction(null);
         }
     }
-    
+
     @Override
     protected void handleExplicitAbortOfTransaction(ExplicitTransactionAbortEvent event) {
         var transaction = this.currentTransaction();
         if (transaction != null) {
             transaction.abort();
-                        
+
             this.listeners.forEach(listener -> listener.onTransactionAbort(event, transaction, this.context));
             transaction.forEach(tx -> this.notifyListenersOfRevertedWrites(tx, false));
         }
     }
-    
+
     @Override
     protected void handleImplicitAbortOfTransaction(ImplicitTransactionAbortEvent event) {
         var transaction = this.currentTransaction();
@@ -170,97 +171,100 @@ class TransactionTraceSimulatorWorker extends BasicTraceSimulatorWorker {
             transaction.registerImplicitAbort(event);
         }
     }
-    
-    private Transaction determineTransactionAfterTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent, ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
+
+    private Transaction determineTransactionAfterTransition(ServiceCandidateInvocationEvent invocationEvent, ServiceCandidateEntryEvent entryEvent,
+            ServiceCandidate enteredServiceCandidate, ComponentConnection connection) {
         var currentTransaction = this.currentTransaction();
         var propagationType = connection.transactionPropagation();
-        
+
         // We only have a readily usable transaction if it is propagated to the new component
         var asynchronousInvocation = enteredServiceCandidate.asynchronous();
         var usableTransactionAvailable = (currentTransaction != null && !(propagationType == TransactionPropagation.NONE || asynchronousInvocation));
         var action = this.determineTransactionActionFor(enteredServiceCandidate, usableTransactionAvailable, entryEvent);
-        
+
         switch (action) {
-        case CREATE_NEW: 
+        case CREATE_NEW:
             // Create a new top-level transaction if required by the action
-            var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId() : this.createSyntheticTransactionId();
+            var transactionId = (entryEvent.transactionStarted() && entryEvent.transactionId() != null) ? entryEvent.transactionId()
+                    : this.createSyntheticTransactionId();
             return new TopLevelTransaction(transactionId, entryEvent, entryEvent.location(), Demarcation.IMPLICIT);
-            
-        case KEEP:            
-            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, asynchronousInvocation, entryEvent.location());        
-            
+
+        case KEEP:
+            return this.buildAppropriateTransactionFor(currentTransaction, propagationType, entryEvent, asynchronousInvocation, entryEvent.location());
+
         case SUSPEND:
             // If the current transaction is to be suspended, just clear the current transaction
             return null;
-            
+
         default:
             throw new UnsupportedOperationException("Unsupported action '" + action + "'.");
-        } 
+        }
     }
-        
+
     private TransactionAction determineTransactionActionFor(ServiceCandidate serviceCandidate, boolean transactionAvailable, MonitoringEvent contextEvent) {
         var transactionBehavior = serviceCandidate.transactionBehavior();
-        
+
         switch (transactionBehavior) {
         case MANDATORY:
             if (!transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "No active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
+                throw new TraceProcessingException(contextEvent,
+                        "No active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
             }
-            
-            return TransactionAction.KEEP; 
-            
+
+            return TransactionAction.KEEP;
+
         case NEVER:
             if (transactionAvailable) {
-                throw new TraceProcessingException(contextEvent, "Active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
+                throw new TraceProcessingException(contextEvent,
+                        "Active transaction found for candidate '" + serviceCandidate + "' with behavior " + transactionBehavior + "'.");
             }
-            
+
             return TransactionAction.KEEP;
-            
+
         case NOT_SUPPORTED:
             return TransactionAction.SUSPEND;
-            
+
         case SUPPORTED:
             return TransactionAction.KEEP;
-            
+
         case REQUIRED:
             return (transactionAvailable) ? TransactionAction.KEEP : TransactionAction.CREATE_NEW;
-            
+
         case REQUIRES_NEW:
             return TransactionAction.CREATE_NEW;
-            
+
         default:
             throw new UnsupportedOperationException("Unsupported transaction behavior '" + transactionBehavior + "'.");
-        }            
+        }
     }
-    
-    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event, boolean asynchronous, Location location) {
+
+    private Transaction buildAppropriateTransactionFor(Transaction propagatedTransaction, TransactionPropagation propagationType, MonitoringEvent event,
+            boolean asynchronous, Location location) {
         if (propagatedTransaction == null || asynchronous) {
             return null;
         }
-        
+
         switch (propagationType) {
         case IDENTICAL:
             return propagatedTransaction;
-            
+
         case SUBORDINATE:
             return new SubordinateTransaction(this.createSyntheticTransactionId(), event, location, propagatedTransaction);
-            
-        case NONE:                
+
+        case NONE:
             return null;
-            
+
         default:
             throw new IllegalArgumentException("Unsupported propagation type '" + propagationType + "'.");
         }
     }
-    
+
     private void registerTransactionAndSetAsCurrent(Transaction transaction) {
         this.context.currentTransaction(transaction);
     }
-    
+
     private enum TransactionAction {
-        CREATE_NEW,
-        KEEP,
-        SUSPEND        
+        CREATE_NEW, KEEP, SUSPEND
     }
 
 }

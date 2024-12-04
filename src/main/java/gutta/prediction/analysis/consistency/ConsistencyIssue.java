@@ -62,7 +62,7 @@ public abstract class ConsistencyIssue<T extends MonitoringEvent> {
      * Compares this issue to the given one. This method is intended to be called only by {@link #equals(Object)} and specializations.
      * 
      * @param that The issue to compare to
-     * @return {@code True} if the two
+     * @return {@code True} if the two elements are equal
      */
     protected boolean equalsInternal(ConsistencyIssue<T> that) {
         return Objects.equals(this.entity, that.entity) && Objects.equals(this.event, that.event);

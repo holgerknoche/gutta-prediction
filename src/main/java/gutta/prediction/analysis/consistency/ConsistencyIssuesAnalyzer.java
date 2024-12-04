@@ -55,7 +55,7 @@ class ConsistencyIssuesAnalyzer implements TraceSimulationListener {
     public ConsistencyAnalyzerResult analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         this.deploymentModel = deploymentModel;
 
-        runSimulationOf(trace, deploymentModel, TraceSimulationMode.WITH_ENTITY_ACCESS, this);
+        runSimulationOf(trace, deploymentModel, TraceSimulationMode.WITH_ENTITY_ACCESSES, this);
 
         return new ConsistencyAnalyzerResult(this.foundIssues, this.committedWrites, this.revertedWrites);
     }
