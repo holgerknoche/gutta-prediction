@@ -1,7 +1,7 @@
 package gutta.prediction.simulation;
 
 /**
- * Enumeration of all possible trace simulation modes.
+ * Enumeration of all possible trace simulation modes.   
  */
 public enum TraceSimulationMode {
     
