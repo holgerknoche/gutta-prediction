@@ -157,7 +157,7 @@ public class SpanComponentsCreator implements TraceElementVisitor<Void> {
     public Void handleEntityEvent(EntityEvent event) {
         var xPosition = this.convertTimestampToXPosition(event.timestamp());
         
-        var shapeType = switch (event.type()) {
+        var shapeType = switch (event.accessType()) {
         case READ -> EntityEventType.READ;
         case WRITE -> EntityEventType.WRITE;
         };

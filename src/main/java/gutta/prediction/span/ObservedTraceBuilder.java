@@ -19,7 +19,7 @@ import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
 import gutta.prediction.simulation.EventStream;
-import gutta.prediction.span.EntityEvent.EntityEventType;
+import gutta.prediction.span.EntityEvent.EntityAccessType;
 import gutta.prediction.span.TransactionEvent.TransactionEventType;
 
 import java.util.ArrayDeque;
@@ -55,7 +55,7 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
         this.traceId = event.traceId();
         this.traceName = event.name();
         
-        var newSpan = new Span(formatLocation(event.location(), event.name()), event.timestamp(), null);
+        var newSpan = new Span(formatLocation(event.location(), event.name()), event.timestamp());
         
         this.rootSpan = newSpan;
         this.currentSpan = newSpan;
@@ -138,12 +138,12 @@ public class ObservedTraceBuilder extends MonitoringEventVisitor {
     
     @Override
     protected void handleEntityReadEvent(EntityReadEvent event) {
-        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityAccessType.READ, event.entity()));
     }
     
     @Override
     protected void handleEntityWriteEvent(EntityWriteEvent event) {
-        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
+        this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityAccessType.WRITE, event.entity()));
     }
     
     private static String formatLocation(Location location, String name) {

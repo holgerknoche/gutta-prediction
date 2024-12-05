@@ -21,7 +21,7 @@ import gutta.prediction.event.TransactionCommitEvent;
 import gutta.prediction.event.TransactionStartEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import gutta.prediction.span.EntityEvent.EntityEventType;
+import gutta.prediction.span.EntityEvent.EntityAccessType;
 import gutta.prediction.span.TransactionEvent.TransactionEventType;
 import org.junit.jupiter.api.Test;
 
@@ -151,7 +151,7 @@ class TraceBuilderWorkerTest {
         var worker = new TraceBuilderWorker();
         var spanTrace = worker.buildTrace(eventTrace, deploymentModel, Set.of());
         
-        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new EntityEvent(500, EntityEventType.WRITE, new Entity("et", "e")), new TransactionEvent(800, TransactionEventType.COMMIT));
+        var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new EntityEvent(500, EntityAccessType.WRITE, new Entity("et", "e")), new TransactionEvent(800, TransactionEventType.COMMIT));
         var expectedRootSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(200, 500), new DirtyTransactionOverlay(500, 800));
         
         var expectedRootSpan = new Span("component", 100, 1000, null, expectedRootSpanEvents, expectedRootSpanOverlays);
@@ -203,7 +203,7 @@ class TraceBuilderWorkerTest {
         
         var expectedRootSpanEvents = List.<SpanEvent>of(new TransactionEvent(200, TransactionEventType.START), new TransactionEvent(800, TransactionEventType.COMMIT));
         var expectedRootSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(200, 300), new SuspendedTransactionOverlay(300, 700, false), new CleanTransactionOverlay(700, 800));
-        var expectedSubSpanEvents = List.<SpanEvent>of(new TransactionEvent(300, TransactionEventType.START), new EntityEvent(500, EntityEventType.WRITE, entity), new TransactionEvent(800, TransactionEventType.COMMIT));
+        var expectedSubSpanEvents = List.<SpanEvent>of(new TransactionEvent(300, TransactionEventType.START), new EntityEvent(500, EntityAccessType.WRITE, entity), new TransactionEvent(800, TransactionEventType.COMMIT));
         var expectedSubSpanOverlays = List.<SpanOverlay>of(new CleanTransactionOverlay(300, 500), new DirtyTransactionOverlay(500, 700), new SuspendedTransactionOverlay(700, 800, true));
         
         var expectedRootSpan = new Span("component1", 100, 1000, null, expectedRootSpanEvents, expectedRootSpanOverlays);

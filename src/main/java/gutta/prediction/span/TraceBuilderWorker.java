@@ -18,7 +18,7 @@ import gutta.prediction.simulation.TraceSimulationContext;
 import gutta.prediction.simulation.TraceSimulationListener;
 import gutta.prediction.simulation.TraceSimulationMode;
 import gutta.prediction.simulation.Transaction;
-import gutta.prediction.span.EntityEvent.EntityEventType;
+import gutta.prediction.span.EntityEvent.EntityAccessType;
 import gutta.prediction.span.TransactionEvent.TransactionEventType;
 
 import java.util.ArrayDeque;
@@ -206,7 +206,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
         if (issues != null) {
             issues.forEach(issue -> this.currentSpan.addEvent(new ConsistencyIssueEvent(issue)));
         } else {        
-            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.READ, event.entity()));
+            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityAccessType.READ, event.entity()));
         }
     }
     
@@ -217,7 +217,7 @@ class TraceBuilderWorker implements TraceSimulationListener {
         if (issues != null) {
             issues.forEach(issue -> this.currentSpan.addEvent(new ConsistencyIssueEvent(issue)));
         } else {
-            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityEventType.WRITE, event.entity()));
+            this.currentSpan.addEvent(new EntityEvent(event.timestamp(), EntityAccessType.WRITE, event.entity()));
         }
         
         if (this.currentTransactionOverlay == null || this.currentTransactionOverlay.isDirty()) {
