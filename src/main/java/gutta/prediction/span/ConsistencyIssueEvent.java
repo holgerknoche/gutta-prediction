@@ -5,7 +5,7 @@ import gutta.prediction.analysis.consistency.ConsistencyIssue;
 /**
  * A {@link ConsistencyIssueEvent} is a span event that represents the occurrence {@linkplain ConsistencyIssue consistency issue} in a span.
  */
-public class ConsistencyIssueEvent extends SpanEvent {
+public final class ConsistencyIssueEvent extends SpanEvent {
 
     private final ConsistencyIssue<?> issue;
 

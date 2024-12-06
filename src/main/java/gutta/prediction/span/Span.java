@@ -11,7 +11,7 @@ import java.util.Objects;
  * A {@link Span} represents an interval of code execution within a trace. Spans can contain {@linkplain SpanEvent events} and have {@linkplain SpanOverlay
  * overlays}, and form a hierarchy reflecting the call hierarchy from the trace.
  */
-public class Span extends Interval implements TraceElement {
+public final class Span extends Interval implements TraceElement {
 
     private final String name;
 

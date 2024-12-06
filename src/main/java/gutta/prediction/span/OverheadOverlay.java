@@ -3,7 +3,7 @@ package gutta.prediction.span;
 /**
  * An {@link OverheadOverlay} is a span overlay that represents invocation overhead.
  */
-public class OverheadOverlay extends SpanOverlay {
+public final class OverheadOverlay extends SpanOverlay {
 
     /**
      * Creates a new overlay with the given start and end timestamps.

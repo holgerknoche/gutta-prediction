@@ -1,16 +1,16 @@
 package gutta.prediction.span;
 
-interface TraceElement {
+sealed interface TraceElement permits Trace, Span, SpanEvent, SpanOverlay {
 
     /**
-     * Accepts the given visitor and invokes the appropriate operation for this element. 
+     * Accepts the given visitor and invokes the appropriate operation for this element.
      * 
-     * @param <R> The result type of the visitor operation
+     * @param <R>     The result type of the visitor operation
      * @param visitor The visitor to accept
      * @return The result of the visitor operation on this element
      */
     public <R> R accept(TraceElementVisitor<R> visitor);
-    
+
     /**
      * Traverses this object and its children and invokes the appropriate operation for each element (including this).
      * 

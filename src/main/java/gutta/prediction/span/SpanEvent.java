@@ -5,7 +5,7 @@ import gutta.prediction.util.EqualityUtil;
 /**
  * Abstract supertype for all span events.
  */
-public abstract class SpanEvent implements TraceElement {
+public abstract sealed class SpanEvent implements TraceElement permits ConsistencyIssueEvent, EntityEvent, TransactionEvent {
 
     private final long timestamp;
 

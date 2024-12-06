@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A {@link ConsistencyIssueEvent} is a span event that relates to an {@link Entity}.
  */
-public class EntityEvent extends SpanEvent {
+public final class EntityEvent extends SpanEvent {
 
     private final EntityAccessType accessType;
 

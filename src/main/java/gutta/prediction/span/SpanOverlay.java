@@ -5,7 +5,7 @@ import gutta.prediction.util.EqualityUtil;
 /**
  * Abstract supertype for all span overlays.
  */
-public abstract class SpanOverlay extends Interval implements TraceElement {
+public abstract sealed class SpanOverlay extends Interval implements TraceElement permits OverheadOverlay, TransactionOverlay {
 
     /**
      * Creates a new overlay with the given start timestamp.
