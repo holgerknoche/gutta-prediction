@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
+/**
+ * Shape for a transaction event, such as a commit event. 
+ */
 class TransactionEventShape extends Rectangle2D.Float implements DrawableShape {
 
     private static final long serialVersionUID = 2023398039429544762L;

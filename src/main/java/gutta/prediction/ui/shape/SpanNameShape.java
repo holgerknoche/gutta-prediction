@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
+/**
+ * Shape for the name of a span.
+ */
 class SpanNameShape implements DrawableShape {
 
     private static final Font TEXT_FONT = Font.decode(Font.SANS_SERIF);

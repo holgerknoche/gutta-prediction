@@ -4,7 +4,10 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
-class TransactionMarkerShape extends Rectangle2D.Float implements DrawableShape {
+/**
+ * Shape for transaction overlays.
+ */
+class TransactionOverlayShape extends Rectangle2D.Float implements DrawableShape {
 
     private static final long serialVersionUID = -7055322866818518165L;
 
@@ -14,7 +17,7 @@ class TransactionMarkerShape extends Rectangle2D.Float implements DrawableShape 
 
     private final TransactionState state;
 
-    public TransactionMarkerShape(int startX, int y, int endX, TransactionState state) {
+    public TransactionOverlayShape(int startX, int y, int endX, TransactionState state) {
         super(startX, y, (endX - startX), 40);
 
         this.state = state;

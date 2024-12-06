@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 
+/**
+ * Shape for entity-related events, such as reads.
+ */
 class EntityEventShape extends Ellipse2D.Float implements DrawableShape {
 
     private static final long serialVersionUID = -4752863530156002616L;
@@ -37,8 +40,20 @@ class EntityEventShape extends Ellipse2D.Float implements DrawableShape {
         graphics.draw(this);
     }
     
+    /**
+     * Enumeration of all possible entity event types.
+     */
     public enum EntityEventType {
-        READ(Color.ORANGE), WRITE(Color.MAGENTA);
+        
+        /**
+         * Represents a read access to an entity.
+         */
+        READ(Color.ORANGE),
+        
+        /**
+         * Represents a write access to an entity.
+         */
+        WRITE(Color.MAGENTA);
 
         private final Color color;
 

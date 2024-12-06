@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 
+/**
+ * Shape for a transaction-related issue, such as a conflict.
+ */
 class TransactionIssueShape extends Path2D.Float implements DrawableShape {
 
     private static final long serialVersionUID = 6282155971105338455L;
@@ -53,7 +56,6 @@ class TransactionIssueShape extends Path2D.Float implements DrawableShape {
          * Marker color for interleaved write issues.
          */
         INTERLEAVED_WRITE(new Color(55, 126, 71));
-        ;
 
         private final Color color;
 

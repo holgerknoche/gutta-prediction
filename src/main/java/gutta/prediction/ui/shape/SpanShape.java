@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.RoundRectangle2D;
 
+/**
+ * Shape for a span.
+ */
 class SpanShape extends RoundRectangle2D.Float implements DrawableShape {
     
     public static final int HEIGHT = 20;

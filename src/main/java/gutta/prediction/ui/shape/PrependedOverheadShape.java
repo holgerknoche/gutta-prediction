@@ -1,6 +1,9 @@
 package gutta.prediction.ui.shape;
 
-class PrependedOverheadShape extends SyntheticOverheadShape {
+/**
+ * Shape for an prepended overhead shape, i.e., overhead that occurs before a span.
+ */
+final class PrependedOverheadShape extends InvocationOverheadShape {
 
     private static final long serialVersionUID = 6916723154906612646L;
 
