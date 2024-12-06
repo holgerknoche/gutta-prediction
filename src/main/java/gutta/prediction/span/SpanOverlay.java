@@ -42,6 +42,12 @@ public abstract class SpanOverlay extends Interval implements TraceElement {
         return EqualityUtil.equals(this, that, this::equalsInternal);
     }
 
+    /**
+     * Compares this span overlay to another. This method is only intended to be invoked by {@link #equals(Object)} or subtypes.
+     * 
+     * @param that The span overlay to compare to
+     * @return {@code True} if the objects are equal, {@code false} otherwise
+     */
     protected boolean equalsInternal(SpanOverlay that) {
         return super.equalsInternal(that);
     }
