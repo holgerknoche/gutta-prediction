@@ -30,6 +30,10 @@
 					<version>3.6.0</version>
 					<configuration>
 						<configLocation>checkstyle.xml</configLocation>
+						<sourceDirectories>
+                        	<!-- Do not scan generated ANTLR sources -->
+                        	<sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    	</sourceDirectories>
 					</configuration>
 					<executions>
 						<execution>
@@ -78,8 +82,9 @@
 						<archive>
 							<manifest>
 								<addClasspath>true</addClasspath>
-								<mainClass>gutta.prediction.ui.AnalysisApplication</mainClass>
-							</manifest>							
+								<mainClass>
+									gutta.prediction.ui.AnalysisApplication</mainClass>
+							</manifest>
 						</archive>
 					</configuration>
 				</plugin>
@@ -113,6 +118,10 @@
 				<configuration>
 					<visitor>true</visitor>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
