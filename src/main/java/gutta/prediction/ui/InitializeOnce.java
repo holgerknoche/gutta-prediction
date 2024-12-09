@@ -2,6 +2,11 @@ package gutta.prediction.ui;
 
 import java.util.function.Supplier;
 
+/**
+ * Utility class to implement (non-thread-safe) once-only initialization of an object.
+ * 
+ * @param <T> The type of the object to initialize
+ */
 class InitializeOnce<T> {
     
     private Supplier<T> valueSupplier;

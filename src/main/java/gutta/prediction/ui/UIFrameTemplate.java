@@ -2,9 +2,11 @@ package gutta.prediction.ui;
 
 import java.awt.Dimension;
 import java.awt.Font;
-
 import javax.swing.JFrame;
 
+/**
+ * Template class providing defaults for all UI frames.
+ */
 abstract class UIFrameTemplate extends JFrame {
 
     protected static final Font MONOSPACED_FONT = Font.decode(Font.MONOSPACED);

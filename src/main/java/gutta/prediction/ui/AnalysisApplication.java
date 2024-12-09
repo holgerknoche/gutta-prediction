@@ -2,8 +2,16 @@ package gutta.prediction.ui;
 
 import java.io.File;
 
+/**
+ * Main entry point for the analysis application.
+ */
 public class AnalysisApplication {
     
+    /**
+     * Starts the analysis application from the command line.
+     * 
+     * @param args The command line arguments passed from the invocation
+     */
     public static void main(String[] args) {
         var arguments = parseArguments(args);
         

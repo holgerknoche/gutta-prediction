@@ -6,6 +6,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Arrays;
 
+/**
+ * Utility class to facilitate the specification of a {@link GridBagLayout}.
+ */
 class SimpleGridBagLayout {
     
     private final GridBagLayout layout;        

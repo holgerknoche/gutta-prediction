@@ -6,43 +6,51 @@ import gutta.prediction.event.EventTrace;
 
 import java.util.Collection;
 import java.util.List;
-
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 
+/**
+ * Frame to show the consistency analysis results for traces of a use case.
+ */
 class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisFrameTemplate<TraceConsistencyAnalysisResultView> {
 
     private static final long serialVersionUID = 1597680404131271009L;
 
-    public TracesForUseCaseConsistencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec, DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
-        super(traces, originalDeploymentModelSpec, originalDeploymentModel, givenModifiedDeploymentModelSpec);
+    public TracesForUseCaseConsistencyAnalysisFrame(String useCaseName, Collection<EventTrace> traces, String originalDeploymentModelSpec,
+            DeploymentModel originalDeploymentModel, String givenModifiedDeploymentModelSpec) {
         
+        super(traces, originalDeploymentModelSpec, originalDeploymentModel, givenModifiedDeploymentModelSpec);
+
         this.initialize("Consistency Analysis for Use Case '" + useCaseName + "'");
         this.initializeControls();
         this.initializeDefaults();
     }
 
     @Override
-    protected TraceConsistencyAnalysisResultView analyzeScenario(EventTrace trace, DeploymentModel originalDeploymentModel, DeploymentModel modifiedDeploymentModel) {
-        var result = new ConsistencyIssuesAnalysis().analyzeTrace(trace, originalDeploymentModel, modifiedDeploymentModel);
+    protected TraceConsistencyAnalysisResultView analyzeScenario(EventTrace trace, DeploymentModel originalDeploymentModel,
+            DeploymentModel modifiedDeploymentModel) {
         
+        var result = new ConsistencyIssuesAnalysis().analyzeTrace(trace, originalDeploymentModel, modifiedDeploymentModel);
+
         var numberOfChangedIssues = result.newIssues().size() + result.obsoleteIssues().size();
         var issuesChanged = (numberOfChangedIssues > 0);
-        
+
         var numberOfChangedWrites = result.nowCommittedWrites().size() + result.nowRevertedWrites().size();
         var numberOfUnchangedWrites = result.unchangedCommittedWrites().size() + result.unchangedRevertedWrites().size();
         var writesChanged = (numberOfChangedWrites > 0);
-        
-        return new TraceConsistencyAnalysisResultView(trace.traceId(), issuesChanged, numberOfChangedIssues, result.unchangedIssues().size(), writesChanged, numberOfChangedWrites, numberOfUnchangedWrites);
+
+        return new TraceConsistencyAnalysisResultView(trace.traceId(), issuesChanged, numberOfChangedIssues, result.unchangedIssues().size(), writesChanged,
+                numberOfChangedWrites, numberOfUnchangedWrites);
     }
-    
+
     @Override
     protected void onRowSelection(JTable table, int rowIndex) {
         var traceId = (Long) table.getValueAt(rowIndex, 0);
-        var trace = this.traceWithId(traceId);              
-        
+        var trace = this.traceWithId(traceId);
+
         if (trace != null) {
-            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel(), this.givenModifiedDeploymentModelSpec());
+            var frame = new TraceAnalysisFrame(trace, this.originalDeploymentModelSpec(), this.originalDeploymentModel(),
+                    this.givenModifiedDeploymentModelSpec());
             frame.setVisible(true);
         }
     }
@@ -51,12 +59,16 @@ class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisF
     protected TableModel createTableModel(List<TraceConsistencyAnalysisResultView> values) {
         return new TraceConsistencyAnalysisTableModel(values);
     }
-    
+
+    /**
+     * Table model for the results table.
+     */
     private static class TraceConsistencyAnalysisTableModel extends SimpleTableModel<TraceConsistencyAnalysisResultView> {
-        
+
         private static final long serialVersionUID = -8684724539167864827L;
-        
-        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Issues Changed?", "# of Changed Issues", "# of Unchanged Issues", "Writes Changed?", "# of Changed Writes", "# of Unchanged Writes");
+
+        private static final List<String> COLUMN_NAMES = List.of("Trace ID", "Issues Changed?", "# of Changed Issues", "# of Unchanged Issues",
+                "Writes Changed?", "# of Changed Writes", "# of Unchanged Writes");
 
         public TraceConsistencyAnalysisTableModel(List<TraceConsistencyAnalysisResultView> values) {
             super(COLUMN_NAMES, values);
@@ -75,7 +87,7 @@ class TracesForUseCaseConsistencyAnalysisFrame extends TracesForUseCaseAnalysisF
             default -> "";
             };
         }
-        
+
     }
-    
+
 }
