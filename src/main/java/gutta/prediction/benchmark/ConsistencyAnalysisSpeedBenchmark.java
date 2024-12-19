@@ -7,6 +7,8 @@ import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
 
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 /**
  * A benchmark that measures the speed of the consistency analysis using given data.
@@ -24,9 +26,23 @@ public class ConsistencyAnalysisSpeedBenchmark extends AnalysisSpeedBenchmark {
 
     @Override
     protected void runAnalysis(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
+        var executorService = Executors.newCachedThreadPool();     
+        var latch = new CountDownLatch(traces.size());        
+        
         for (var trace : traces) {
-            new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.YES, CheckInterleavingAccesses.YES).analyzeTrace(trace, deploymentModel, scenarioModel);
+            var analysis = new ConsistencyIssuesAnalysis(CheckCrossComponentAccesses.YES, CheckInterleavingAccesses.YES); 
+            
+            executorService.submit(() -> {
+                analysis.analyzeTrace(trace, deploymentModel, scenarioModel);
+                latch.countDown();
+            });
         }
-    }
+        
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Unexpected interrupt while waiting for the analysis results.", e);
+        }
+    }        
 
 }
