@@ -26,7 +26,7 @@ public class ConsistencyAnalysisSpeedBenchmark extends AnalysisSpeedBenchmark {
 
     @Override
     protected void runAnalysis(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
-        var executorService = Executors.newCachedThreadPool();     
+        var executorService = Executors.newCachedThreadPool(this::createDaemonThread);     
         var latch = new CountDownLatch(traces.size());        
         
         for (var trace : traces) {
@@ -43,6 +43,13 @@ public class ConsistencyAnalysisSpeedBenchmark extends AnalysisSpeedBenchmark {
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interrupt while waiting for the analysis results.", e);
         }
-    }        
+    }
+    
+    private Thread createDaemonThread(Runnable task) {
+        var thread = new Thread(task);
+        thread.setDaemon(true);
+        
+        return thread;
+    }
 
 }
