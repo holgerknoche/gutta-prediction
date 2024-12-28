@@ -7,6 +7,9 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.inference.TTest;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.stream.Collectors;
 
 /**
  * A {@link DurationChangeAnalysis} performs an analysis of the duration change of a collection of event traces caused by a scenario. For this purpose, all
@@ -31,23 +34,41 @@ public class DurationChangeAnalysis {
 
         var originalSumOfRemoteCalls = 0;
         var scenarioSumOfRemoteCalls = 0;
+        
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            // Enqueue the analysis tasks for the original traces
+            var originalTraceSubtasks = traces.stream()
+                    .map(trace -> scope.fork(() -> this.analyzeTrace(trace, deploymentModel)))
+                    .collect(Collectors.toList());
+            
+            // Enqueue the analysis tasks for the scenario traces
+            var rewrittenTraceSubtasks = traces.stream()
+                    .map(trace -> scope.fork(() -> this.rewriteAndAnalyzeTrace(trace, scenarioModel)))
+                    .collect(Collectors.toList());
+            
+            // Run the tasks
+            scope.join().throwIfFailed();
+            
+            // Collect the results
+            for (var traceIndex = 0; traceIndex < numberOfTraces; traceIndex++) {
+                var originalTraceResult = originalTraceSubtasks.get(traceIndex).get();
+                var rewrittenTraceResult = rewrittenTraceSubtasks.get(traceIndex).get();
 
-        var traceIndex = 0;
-        for (var trace : traces) {
-            var originalTraceResult = this.analyzeTrace(trace, deploymentModel);
+                originalDurations[traceIndex] = originalTraceResult.duration();
+                scenarioDurations[traceIndex] = rewrittenTraceResult.duration();
 
-            var rewrittenTrace = new OverheadRewriter(scenarioModel).rewriteTrace(trace);
-            var rewrittenTraceResult = this.analyzeTrace(rewrittenTrace, scenarioModel);
-
-            originalDurations[traceIndex] = originalTraceResult.duration();
-            scenarioDurations[traceIndex] = rewrittenTraceResult.duration();
-
-            originalSumOfRemoteCalls += originalTraceResult.numberOfRemoteCalls();
-            scenarioSumOfRemoteCalls += rewrittenTraceResult.numberOfRemoteCalls();
-
-            traceIndex++;
+                originalSumOfRemoteCalls += originalTraceResult.numberOfRemoteCalls();
+                scenarioSumOfRemoteCalls += rewrittenTraceResult.numberOfRemoteCalls();                
+            }
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DurationChangeAnalysisException("Unexpected interrupt during the analysis.", e);
+        } catch (ExecutionException e) {
+            var exceptionToReport = (e.getCause() != null) ? e.getCause() : e;
+            throw new DurationChangeAnalysisException("Execution exception during the analysis.", exceptionToReport);
         }
-
+        
         // Perform a heteroscedastic t-Test for the durations
         var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, scenarioDurations);
         var originalMean = StatUtils.mean(originalDurations);
@@ -64,7 +85,12 @@ public class DurationChangeAnalysis {
     private OverheadAnalyzer.Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         return new OverheadAnalyzer().analyzeTrace(trace, deploymentModel);
     }
-
+    
+    private OverheadAnalyzer.Result rewriteAndAnalyzeTrace(EventTrace originalTrace, DeploymentModel scenarioModel) {
+        var rewrittenTrace = new OverheadRewriter(scenarioModel).rewriteTrace(originalTrace);
+        return this.analyzeTrace(rewrittenTrace, scenarioModel);        
+    }
+    
     /**
      * This class represents the result of a {@link DurationChangeAnalysis}.
      * 
@@ -72,6 +98,19 @@ public class DurationChangeAnalysis {
      */
     public record Result(boolean significantChange, double pValue, double originalMean, double modifiedMean, double oldAverageNumberOfRemoteCalls,
             double newAverageNumberOfRemoteCalls) {
+    }
+    
+    /**
+     * This exception is thrown when an error occurs during a {@link DurationChangeAnalysis}.
+     */
+    static class DurationChangeAnalysisException extends RuntimeException {
+        
+        private static final long serialVersionUID = 6140429524214282426L;
+
+        public DurationChangeAnalysisException(String message, Throwable cause) {
+            super(message, cause);
+        }
+        
     }
 
 }
