@@ -8,8 +8,14 @@ import gutta.prediction.rewriting.OverheadRewriter;
 import gutta.prediction.rewriting.RewrittenEventTrace;
 import gutta.prediction.rewriting.TransactionContextRewriter;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Subtask;
 
 import static java.util.Objects.requireNonNull;
 
@@ -41,6 +47,31 @@ public class ConsistencyIssuesAnalysis {
         this.checkInterleavingAccesses = checkInterleavingAccesses;
     }
 
+    public Map<EventTrace, ConsistencyAnalysisResult> analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            var traceToTask = new HashMap<EventTrace, Subtask<ConsistencyAnalysisResult>>(traces.size());
+
+            // Schedule the analyses for execution
+            for (var trace : traces) {
+                var task = scope.fork(() -> this.analyzeTrace(trace, deploymentModel, scenarioModel));
+                traceToTask.put(trace, task);
+            }
+
+            // Run the analyses, throwing an exception if one of the exceptions failed
+            scope.join().throwIfFailed();
+            
+            var traceToResult = new HashMap<EventTrace, ConsistencyAnalysisResult>(traces.size());
+            traceToTask.forEach((trace, task) -> traceToResult.put(trace, task.get()));
+            
+            return traceToResult;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ConsistencyAnalysisException("Unexpected interrupt while waiting for the analysis results.", e);
+        } catch (ExecutionException e) {
+            throw new ConsistencyAnalysisException("Execution exception during the analysis.", e);
+        }
+    }
+    
     /**
      * Analyzes the given trace with respect to the given scenario.
      * 
@@ -208,6 +239,19 @@ public class ConsistencyIssuesAnalysis {
 
         void collect(EntityWriteEvent event);
 
+    }
+    
+    /**
+     * This exception is thrown if an error occurs during the consistency analysis.
+     */
+    static class ConsistencyAnalysisException extends RuntimeException {
+        
+        private static final long serialVersionUID = -8800408324143943481L;
+
+        public ConsistencyAnalysisException(String message, Throwable cause) {
+            super(message, cause);
+        }
+        
     }
 
 }
