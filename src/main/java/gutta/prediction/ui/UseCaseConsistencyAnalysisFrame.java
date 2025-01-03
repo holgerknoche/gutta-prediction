@@ -49,17 +49,16 @@ class UseCaseConsistencyAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCa
         var numberOfTracesWithChangeInIssues = 0;
         var numberOfTracesWithChangeInWrites = 0;
 
-        for (var trace : traces) {
-            var traceResult = new ConsistencyIssuesAnalysis().analyzeTrace(trace, originalDeploymentModel, modifiedDeploymentModel);
-
-            if (!traceResult.newIssues().isEmpty() || !traceResult.obsoleteIssues().isEmpty()) {
+        var analysisResults = new ConsistencyIssuesAnalysis().analyzeTraces(traces, originalDeploymentModel, modifiedDeploymentModel);
+        for (var result : analysisResults.values()) {
+            if (!result.newIssues().isEmpty() || !result.obsoleteIssues().isEmpty()) {
                 numberOfTracesWithChangeInIssues++;
             }
-            if (!traceResult.nowCommittedWrites().isEmpty() || !traceResult.nowRevertedWrites().isEmpty()) {
+            if (!result.nowCommittedWrites().isEmpty() || !result.nowRevertedWrites().isEmpty()) {
                 numberOfTracesWithChangeInWrites++;
             }
         }
-
+        
         var numberOfTraces = traces.size();
         var percentageWithChangeInIssues = (double) numberOfTracesWithChangeInIssues / (double) numberOfTraces;
         var percentageWithChangeInWrites = (double) numberOfTracesWithChangeInWrites / (double) numberOfTraces;
