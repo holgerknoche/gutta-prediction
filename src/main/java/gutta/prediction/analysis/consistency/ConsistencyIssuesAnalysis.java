@@ -47,7 +47,17 @@ public class ConsistencyIssuesAnalysis {
         this.checkInterleavingAccesses = checkInterleavingAccesses;
     }
 
-    public Map<EventTrace, ConsistencyAnalysisResult> analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
+    /**
+     * Analyzes the given traces with respect to the given scenario.
+     * 
+     * @param traces          The traces to analyze
+     * @param deploymentModel The deployment model of the given trace
+     * @param scenarioModel   The scenario model based on the given deployment model
+     * @return The result of the analysis
+     */
+    public Map<EventTrace, ConsistencyAnalysisResult> analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel,
+            DeploymentModel scenarioModel) {
+
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             var traceToTask = new HashMap<EventTrace, Subtask<ConsistencyAnalysisResult>>(traces.size());
 
@@ -59,10 +69,10 @@ public class ConsistencyIssuesAnalysis {
 
             // Run the analyses, throwing an exception if one of the exceptions failed
             scope.join().throwIfFailed();
-            
+
             var traceToResult = new HashMap<EventTrace, ConsistencyAnalysisResult>(traces.size());
             traceToTask.forEach((trace, task) -> traceToResult.put(trace, task.get()));
-            
+
             return traceToResult;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -71,7 +81,7 @@ public class ConsistencyIssuesAnalysis {
             throw new ConsistencyAnalysisException("Execution exception during the analysis.", e);
         }
     }
-    
+
     /**
      * Analyzes the given trace with respect to the given scenario.
      * 
@@ -240,18 +250,18 @@ public class ConsistencyIssuesAnalysis {
         void collect(EntityWriteEvent event);
 
     }
-    
+
     /**
      * This exception is thrown if an error occurs during the consistency analysis.
      */
     static class ConsistencyAnalysisException extends RuntimeException {
-        
+
         private static final long serialVersionUID = -8800408324143943481L;
 
         public ConsistencyAnalysisException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
     }
 
 }
