@@ -7,12 +7,14 @@ To use this proof-of-concept implementation, Java 21 or higher must be installed
 For the following instructions, we assume that the archive has been extracted to a directory.
 
 # Running the Benchmarks
-The archive contains a shell script named `run-benchmarks.sh` to run all benchmarks conveniently with a given number of warmup and timed iterations.
+The archive contains a shell script named `run-benchmarks.sh` (or `run-benchmarks.cmd` for Windows) to run all benchmarks conveniently with a given number of warmup and timed iterations.
 For our paper, we ran the benchmarks with one warmup iteration and 100 timed iterations, which can be achieved by running `run-benchmarks.sh 1 100`.
 The benchmarks will print the duration of each timed iteration in milliseconds, and compute the average duration and the standard deviation after the last timed iteration.
 
 # Interactive Use
-The user interface is opened automatically when running the JAR `gutta-prediction-1.0-SNAPSHOT.jar`, e.g., by clicking on it or running it from the command line with `java -jar`.
+The user interface is opened automatically when running the JAR `gutta-prediction-1.0-SNAPSHOT.jar`.
+Since the implementation uses a preview feature ("Structured Concurrency"), it should not be started by double-clicking on the JAR file, but by invoking it from the command line with `java -jar --enable-preview`.
+For convenience, a `run-gui-sh` script (or `run-gui.cmd` for Windows) is provided.
 Instructions for running different scenarios from the paper are given below.
 The name "gutta" is inspired by the latin proverb "gutta cavat lapidem" ("the drop (of water) carves the rock"), as we intend our approach to slowly carve the service boundaries from a monolith.
 
@@ -64,6 +66,8 @@ Double-clicking on a use case opens an overview of all associated traces with th
 
 ## The Car Insurance Example
 Traces and the deployment model for the car insurance example are located in the files `paper-example.dat` and `paper-example.deploymentmodel` in the `data` directory.
+This example emulates the creation of a car contract in an application, which is also written to a common contracts component (which provides an overview of all contracts of a customer) and also interacts with the person data application as well as a sales statistic.
+It contains several issues that make the decomposition into microservices more difficult, notably consistency expectations from multiple components which may prevent to switch to asynchronous invocations as well as an unfortunate write order which makes the decomposition into a Saga more complex.
 
 Suggested analyses for this data are to simulate the decomposition on the two traces of the contract creation use case.
 For this purpose, open the *trace analysis window* for the first use case, and paste the contents from the file `paper-example.scenariomodel` into the appropriate text area.
@@ -84,3 +88,11 @@ Traces and the deployment models for the benchmarks are located in the files `ba
 
 A suggested analysis is to run a overhead change analysis on the random traces by pasting the contents from the file `random-traces.scenariomodel`.
 This results in a significant change to the overhead in use cases one and three, but not to use case two.
+
+# Benchmark Results
+
+The results from our benchmark can be found in the `benchmark-results` folder. The file `benchmark-results-single-threaded.txt` contains the results from an older, single-threaded version of the benchmark. The file `benchmark-results-multi-threaded.txt` contains the results created with the current, multi-threaded version.
+
+# Source Code
+
+The artifact's source code contained in the `sources.zip` file. The current version is available on GitHub under <https://github.com/holgerknoche/gutta-prediction>.
