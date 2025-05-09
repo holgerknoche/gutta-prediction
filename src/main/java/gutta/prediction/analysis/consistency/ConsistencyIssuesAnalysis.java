@@ -7,6 +7,8 @@ import gutta.prediction.event.MonitoringEvent;
 import gutta.prediction.rewriting.OverheadRewriter;
 import gutta.prediction.rewriting.RewrittenEventTrace;
 import gutta.prediction.rewriting.TransactionContextRewriter;
+import gutta.prediction.util.SimpleTaskScope;
+import gutta.prediction.util.SimpleTaskScope.Subtask;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,8 +16,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.StructuredTaskScope;
-import java.util.concurrent.StructuredTaskScope.Subtask;
 
 import static java.util.Objects.requireNonNull;
 
@@ -58,7 +58,7 @@ public class ConsistencyIssuesAnalysis {
     public Map<EventTrace, ConsistencyAnalysisResult> analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel,
             DeploymentModel scenarioModel) {
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = new SimpleTaskScope<ConsistencyAnalysisResult>()) {
             var traceToTask = new HashMap<EventTrace, Subtask<ConsistencyAnalysisResult>>(traces.size());
 
             // Schedule the analyses for execution

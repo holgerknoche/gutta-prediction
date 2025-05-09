@@ -3,12 +3,12 @@ package gutta.prediction.analysis.overhead;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
 import gutta.prediction.rewriting.OverheadRewriter;
+import gutta.prediction.util.SimpleTaskScope;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.inference.TTest;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.StructuredTaskScope;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +35,7 @@ public class DurationChangeAnalysis {
         var originalSumOfRemoteCalls = 0;
         var scenarioSumOfRemoteCalls = 0;
         
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = new SimpleTaskScope<OverheadAnalyzer.Result>()) {
             // Enqueue the analysis tasks for the original traces
             var originalTraceSubtasks = traces.stream()
                     .map(trace -> scope.fork(() -> this.analyzeTrace(trace, deploymentModel)))
