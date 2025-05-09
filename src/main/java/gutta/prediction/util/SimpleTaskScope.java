@@ -124,6 +124,8 @@ public class SimpleTaskScope<T> implements AutoCloseable {
             // the remaining errors as suppressed
             var executionException = new ExecutionException("Error while executing subtasks.", errorsIterator.next());           
             errorsIterator.forEachRemaining(executionException::addSuppressed);
+            
+            throw executionException;
         }
     }
     
