@@ -25,25 +25,26 @@ class StandaloneDeploymentModelBuilderTest {
     
     @Test
     void simpleModel() {
-        var input = "component Component1 {\n" +
-                "    useCase UseCase\n" +
-                "    serviceCandidate Candidate [\n" +
-                "        transactionBehavior = REQUIRED\n" +
-                "    ]\n" +
-                "    async serviceCandidate Candidate2" +
-                "}\n" +
-                "component Component2 {\n" +
-                "    entityType EntityType\n" +
-                "    entityType SubType partOf EntityType\n" +                
-                "}\n" +
-                "dataStore DataStore {\n" +
-                "    entityType EntityType\n" +
-                "    entityType SubType\n" +
-                "}\n" +
-                "// A comment\n" +
-                "remote Component1 -> Component2 [\n" +
-                "    overhead = 10\n" +
-                "]";
+        var input = """
+component Component1 {
+    useCase UseCase
+    serviceCandidate Candidate [
+        transactionBehavior = REQUIRED
+    ]
+    async serviceCandidate Candidate2}
+component Component2 {
+    entityType EntityType
+    entityType SubType partOf EntityType
+}
+dataStore DataStore {
+    entityType EntityType
+    entityType SubType
+}
+// A comment
+remote Component1 -> Component2 [
+    overhead = 10
+]                
+""";                
         
         var parsedModel = this.parse(input);
         
@@ -75,8 +76,10 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateComponent() {
-        var input = "component Test {}\n"
-                + "component \"Test\" {}";
+        var input = """
+component Test {}
+component \"Test\" {}
+"""; 
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("2,0: Duplicate component 'Test'.", exception.getMessage());
@@ -87,13 +90,15 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateUseCase() {
-        var input = "component Test1 {\n" +
-                "    useCase Test\n" +
-                "}\n" +
-                "component Test2 {\n" +
-                "    useCase \"Test\"\n" +
-                "}\n";
-        
+        var input = """
+component Test1 {
+    useCase Test
+}
+component Test2 {
+    useCase "Test"
+}
+""";
+                
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("5,4: Duplicate use case 'Test'.", exception.getMessage());
     }
@@ -103,12 +108,14 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void duplicateProperty() {
-        var input = "component Component1 {}\n" +
-                "component \"Component2\" {}\n" +
-                "remote Component1 -> Component2 [\n" +
-                "    property = 123\n" +
-                "    \"property\" = 456\n" +
-                "]";
+        var input = """
+component Component1 {}
+component "Component2" {}
+remote Component1 -> Component2 [
+    property = 123
+    "property" = 456
+]
+"""; 
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("5,4: Duplicate property 'property'.", exception.getMessage());
@@ -119,13 +126,15 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void unsupportedTransactionBehavior() {
-        var input = "component Component {\n" +
-                "    useCase UseCase\n" +
-                "    serviceCandidate Candidate [\n" +
-                "        transactionBehavior = DOESNOTEXIST\n" +
-                "    ]\n" +
-                "}";
-        
+        var input = """
+component Component {
+    useCase UseCase
+    serviceCandidate Candidate [
+        transactionBehavior = DOESNOTEXIST
+    ]
+}
+""";
+                        
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("4,8: Unsupported transaction behavior 'DOESNOTEXIST'.", exception.getMessage());
     }
@@ -135,9 +144,11 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void missingSourceComponent() {
-        var input = "component Component1 {}\n" +
-                "component Component2 {}\n" +
-                "local ComponentX -> Component2";
+        var input = """
+component Component1 {}
+component Component2 {}
+local ComponentX -> Component2
+""";                
         
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("3,6: Component 'ComponentX' does not exist.", exception.getMessage());
@@ -148,10 +159,12 @@ class StandaloneDeploymentModelBuilderTest {
      */
     @Test
     void missingTargetComponent() {
-        var input = "component Component1 {}\n" +
-                "component Component2 {}\n" +
-                "local Component1 -> ComponentX";
-        
+        var input = """
+component Component1 {}
+component Component2 {}
+local Component1 -> ComponentX
+""";
+                        
         var exception = assertThrows(DeploymentModelParseException.class, () -> this.parse(input));
         assertEquals("3,20: Component 'ComponentX' does not exist.", exception.getMessage());
     }
