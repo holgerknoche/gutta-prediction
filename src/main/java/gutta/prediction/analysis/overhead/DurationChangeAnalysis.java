@@ -72,14 +72,19 @@ public class DurationChangeAnalysis {
         // Perform a heteroscedastic t-Test for the durations
         var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, scenarioDurations);
         var originalMean = StatUtils.mean(originalDurations);
-        var modifiedMean = StatUtils.mean(scenarioDurations);
+        var scenarioMean = StatUtils.mean(scenarioDurations);
         var significantChange = (pValue <= significanceLevel);
 
+        // Calculate Cohen's d to quantify the effect
+        var originalVariance = StatUtils.variance(originalDurations, originalMean);
+        var scenarioVariance = StatUtils.variance(scenarioDurations, scenarioMean);
+        var cohensD = Math.abs((originalMean - scenarioMean) / Math.sqrt((originalVariance + scenarioVariance) / 2));
+        
         // Calculate averages for remote calls
         var originalAverageNumberOfRemoteCalls = (double) originalSumOfRemoteCalls / (double) traces.size();
         var modifiedAverageNumberOfRemoteCalls = (double) scenarioSumOfRemoteCalls / (double) traces.size();
 
-        return new Result(significantChange, pValue, originalMean, modifiedMean, originalAverageNumberOfRemoteCalls, modifiedAverageNumberOfRemoteCalls);
+        return new Result(significantChange, pValue, cohensD, originalMean, scenarioMean, originalAverageNumberOfRemoteCalls, modifiedAverageNumberOfRemoteCalls);
     }
 
     private OverheadAnalyzer.Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
@@ -96,7 +101,7 @@ public class DurationChangeAnalysis {
      * 
      * 
      */
-    public record Result(boolean significantChange, double pValue, double originalMean, double modifiedMean, double oldAverageNumberOfRemoteCalls,
+    public record Result(boolean significantChange, double pValue, double cohensD, double originalMean, double modifiedMean, double oldAverageNumberOfRemoteCalls,
             double newAverageNumberOfRemoteCalls) {
     }
     

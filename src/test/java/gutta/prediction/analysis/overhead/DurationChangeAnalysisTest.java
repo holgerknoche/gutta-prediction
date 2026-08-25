@@ -63,6 +63,7 @@ class DurationChangeAnalysisTest {
          assertEquals(1.0, analysisResult.pValue());
          assertEquals(1050.0, analysisResult.originalMean());
          assertEquals(1050.0, analysisResult.modifiedMean());
+         assertEquals(0.0, analysisResult.cohensD());
     }
     
     /**
@@ -87,6 +88,7 @@ class DurationChangeAnalysisTest {
          assertFalse(analysisResult.significantChange());
          assertEquals(1050.0, analysisResult.originalMean());
          assertEquals(1155.0, analysisResult.modifiedMean());
+         assertEquals(0.16883953130211166, analysisResult.cohensD());
     }
     
     /**
@@ -111,6 +113,7 @@ class DurationChangeAnalysisTest {
          assertTrue(analysisResult.significantChange());
          assertEquals(1050.0, analysisResult.originalMean());
          assertEquals(1575.0, analysisResult.modifiedMean());
+         assertEquals(0.6961432213383856, analysisResult.cohensD());
     }
     
     private static DeploymentModel buildTestDeploymentModel() {
