@@ -10,7 +10,7 @@ record UseCaseOverheadAnalysisResultView(String useCaseName, double originalDura
 
     public UseCaseOverheadAnalysisResultView(String useCaseName, Result result) {
         this(useCaseName, result.originalMean(), result.modifiedMean(), result.significantChange(), result.pValue(), result.cohensD(),
-        		result.oldAverageNumberOfRemoteCalls(), result.newAverageNumberOfRemoteCalls());
+                result.oldAverageNumberOfRemoteCalls(), result.newAverageNumberOfRemoteCalls());
     }
 
     @Override

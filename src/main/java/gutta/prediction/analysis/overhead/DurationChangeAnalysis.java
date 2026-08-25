@@ -84,7 +84,8 @@ public class DurationChangeAnalysis {
         var originalAverageNumberOfRemoteCalls = (double) originalSumOfRemoteCalls / (double) traces.size();
         var modifiedAverageNumberOfRemoteCalls = (double) scenarioSumOfRemoteCalls / (double) traces.size();
 
-        return new Result(significantChange, pValue, cohensD, originalMean, scenarioMean, originalAverageNumberOfRemoteCalls, modifiedAverageNumberOfRemoteCalls);
+        return new Result(significantChange, pValue, cohensD, originalMean, scenarioMean, originalAverageNumberOfRemoteCalls,
+            modifiedAverageNumberOfRemoteCalls);
     }
 
     private OverheadAnalyzer.Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
@@ -101,8 +102,8 @@ public class DurationChangeAnalysis {
      * 
      * 
      */
-    public record Result(boolean significantChange, double pValue, double cohensD, double originalMean, double modifiedMean, double oldAverageNumberOfRemoteCalls,
-            double newAverageNumberOfRemoteCalls) {
+    public record Result(boolean significantChange, double pValue, double cohensD, double originalMean, double modifiedMean, 
+        double oldAverageNumberOfRemoteCalls, double newAverageNumberOfRemoteCalls) {
     }
     
     /**
