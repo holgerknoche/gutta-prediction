@@ -70,7 +70,7 @@ public class DurationChangeAnalysis {
         }
         
         // Perform a paired t-Test for the durations
-        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().pairedTTest(originalDurations, scenarioDurations);
+        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, scenarioDurations);
         var originalMean = StatUtils.mean(originalDurations);
         var scenarioMean = StatUtils.mean(scenarioDurations);
         var significantChange = (pValue <= significanceLevel);
