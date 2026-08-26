@@ -69,8 +69,8 @@ public class DurationChangeAnalysis {
             throw new DurationChangeAnalysisException("Execution exception during the analysis.", exceptionToReport);
         }
         
-        // Perform a heteroscedastic t-Test for the durations
-        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, scenarioDurations);
+        // Perform a paired t-Test for the durations
+        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().pairedTTest(originalDurations, scenarioDurations);
         var originalMean = StatUtils.mean(originalDurations);
         var scenarioMean = StatUtils.mean(scenarioDurations);
         var significantChange = (pValue <= significanceLevel);
@@ -78,7 +78,7 @@ public class DurationChangeAnalysis {
         // Calculate Cohen's d to quantify the effect
         var originalVariance = StatUtils.variance(originalDurations, originalMean);
         var scenarioVariance = StatUtils.variance(scenarioDurations, scenarioMean);
-        var cohensD = Math.abs((originalMean - scenarioMean) / Math.sqrt((originalVariance + scenarioVariance) / 2));
+        var cohensD = Math.abs(originalMean - scenarioMean) / Math.sqrt((originalVariance + scenarioVariance) / 2);
         
         // Calculate averages for remote calls
         var originalAverageNumberOfRemoteCalls = (double) originalSumOfRemoteCalls / (double) traces.size();
