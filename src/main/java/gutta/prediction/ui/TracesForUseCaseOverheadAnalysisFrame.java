@@ -41,7 +41,7 @@ class TracesForUseCaseOverheadAnalysisFrame extends TracesForUseCaseAnalysisFram
     protected TraceOverheadAnalysisResultView analyzeScenario(EventTrace trace, DeploymentModel originalDeploymentModel,
             DeploymentModel modifiedDeploymentModel) {
         var analysisResult = new DurationChangeAnalysis().analyzeTraces(List.of(trace), originalDeploymentModel, modifiedDeploymentModel, 0.05);
-        return new TraceOverheadAnalysisResultView(trace.traceId(), analysisResult.originalMean(), analysisResult.modifiedMean(),
+        return new TraceOverheadAnalysisResultView(trace.traceId(), analysisResult.originalMean(), analysisResult.scenarioMean(),
                 analysisResult.oldAverageNumberOfRemoteCalls(), analysisResult.newAverageNumberOfRemoteCalls());
     }
 

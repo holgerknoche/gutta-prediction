@@ -1,6 +1,7 @@
 package gutta.prediction.ui;
 
 import gutta.prediction.analysis.overhead.DurationChangeAnalysis;
+import gutta.prediction.analysis.overhead.DurationChangeAnalysis.EffectSize;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.event.EventTrace;
 
@@ -28,7 +29,7 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
 
     public UseCaseOverheadAnalysisFrame(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec,
             DeploymentModel originalDeploymentModel) {
-        
+
         super(tracesPerUseCase, originalDeploymentModelSpec, originalDeploymentModel);
 
         this.initialize();
@@ -94,8 +95,8 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
 
         private static final long serialVersionUID = -8857807589164164128L;
 
-        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Significant Change?", "p Value",
-                "Cohen's d", "Old Avg. # Remote Calls", "New Avg. # Remote Calls");
+        private static final List<String> COLUMN_NAMES = List.of("Use Case", "Old Avg. Duration", "New Avg. Duration", "Cohen's d", "Effect Size",
+                "Old Avg. # Remote Calls", "New Avg. # Remote Calls");
 
         public OverheadAnalysisTableModel(List<UseCaseOverheadAnalysisResultView> values) {
             super(COLUMN_NAMES, values);
@@ -107,12 +108,20 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
             case 0 -> object.useCaseName();
             case 1 -> formatAverage(object.originalDuration());
             case 2 -> formatAverage(object.newDuration());
-            case 3 -> asYesNo(object.significant());
-            case 4 -> formatPValue(object.pValue());
-            case 5 -> formatPValue(object.cohensD());
-            case 6 -> formatAverage(object.oldAverageNumberOfRemoteCalls());
-            case 7 -> formatAverage(object.newAverageNumberOfRemoteCalls());
+            case 3 -> formatPValue(object.cohensD());
+            case 4 -> formatEffectSize(object.effectSize());
+            case 5 -> formatAverage(object.oldAverageNumberOfRemoteCalls());
+            case 6 -> formatAverage(object.newAverageNumberOfRemoteCalls());
             default -> "";
+            };
+        }
+
+        private static String formatEffectSize(EffectSize effectSize) {
+            return switch (effectSize) {
+            case VERY_SMALL -> "very small";
+            case SMALL -> "small";
+            case MEDIUM -> "medium";
+            case LARGE -> "large";
             };
         }
 

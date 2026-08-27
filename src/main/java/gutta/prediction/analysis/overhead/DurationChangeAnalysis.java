@@ -5,7 +5,6 @@ import gutta.prediction.event.EventTrace;
 import gutta.prediction.rewriting.OverheadRewriter;
 import gutta.prediction.util.SimpleTaskScope;
 import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.stat.inference.TTest;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
@@ -34,21 +33,18 @@ public class DurationChangeAnalysis {
 
         var originalSumOfRemoteCalls = 0;
         var scenarioSumOfRemoteCalls = 0;
-        
+
         try (var scope = new SimpleTaskScope<OverheadAnalyzer.Result>()) {
             // Enqueue the analysis tasks for the original traces
-            var originalTraceSubtasks = traces.stream()
-                    .map(trace -> scope.fork(() -> this.analyzeTrace(trace, deploymentModel)))
-                    .collect(Collectors.toList());
-            
+            var originalTraceSubtasks = traces.stream().map(trace -> scope.fork(() -> this.analyzeTrace(trace, deploymentModel))).collect(Collectors.toList());
+
             // Enqueue the analysis tasks for the scenario traces
-            var rewrittenTraceSubtasks = traces.stream()
-                    .map(trace -> scope.fork(() -> this.rewriteAndAnalyzeTrace(trace, scenarioModel)))
+            var rewrittenTraceSubtasks = traces.stream().map(trace -> scope.fork(() -> this.rewriteAndAnalyzeTrace(trace, scenarioModel)))
                     .collect(Collectors.toList());
-            
+
             // Run the tasks
             scope.join().throwIfFailed();
-            
+
             // Collect the results
             for (var traceIndex = 0; traceIndex < numberOfTraces; traceIndex++) {
                 var originalTraceResult = originalTraceSubtasks.get(traceIndex).get();
@@ -58,9 +54,9 @@ public class DurationChangeAnalysis {
                 scenarioDurations[traceIndex] = rewrittenTraceResult.duration();
 
                 originalSumOfRemoteCalls += originalTraceResult.numberOfRemoteCalls();
-                scenarioSumOfRemoteCalls += rewrittenTraceResult.numberOfRemoteCalls();                
+                scenarioSumOfRemoteCalls += rewrittenTraceResult.numberOfRemoteCalls();
             }
-            
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DurationChangeAnalysisException("Unexpected interrupt during the analysis.", e);
@@ -68,55 +64,79 @@ public class DurationChangeAnalysis {
             var exceptionToReport = (e.getCause() != null) ? e.getCause() : e;
             throw new DurationChangeAnalysisException("Execution exception during the analysis.", exceptionToReport);
         }
-        
-        // Perform a paired t-Test for the durations
-        var pValue = (traces.size() < 2) ? Double.NaN : new TTest().tTest(originalDurations, scenarioDurations);
-        var originalMean = StatUtils.mean(originalDurations);
-        var scenarioMean = StatUtils.mean(scenarioDurations);
-        var significantChange = (pValue <= significanceLevel);
 
         // Calculate Cohen's d to quantify the effect
+        var originalMean = StatUtils.mean(originalDurations);
+        var scenarioMean = StatUtils.mean(scenarioDurations);
         var originalVariance = StatUtils.variance(originalDurations, originalMean);
         var scenarioVariance = StatUtils.variance(scenarioDurations, scenarioMean);
         var cohensD = Math.abs(originalMean - scenarioMean) / Math.sqrt((originalVariance + scenarioVariance) / 2);
-        
+
         // Calculate averages for remote calls
         var originalAverageNumberOfRemoteCalls = (double) originalSumOfRemoteCalls / (double) traces.size();
         var modifiedAverageNumberOfRemoteCalls = (double) scenarioSumOfRemoteCalls / (double) traces.size();
 
-        return new Result(significantChange, pValue, cohensD, originalMean, scenarioMean, originalAverageNumberOfRemoteCalls,
-            modifiedAverageNumberOfRemoteCalls);
+        return new Result(originalMean, scenarioMean, cohensD, EffectSize.fromCohensD(cohensD), originalAverageNumberOfRemoteCalls,
+                modifiedAverageNumberOfRemoteCalls);
     }
 
     private OverheadAnalyzer.Result analyzeTrace(EventTrace trace, DeploymentModel deploymentModel) {
         return new OverheadAnalyzer().analyzeTrace(trace, deploymentModel);
     }
-    
+
     private OverheadAnalyzer.Result rewriteAndAnalyzeTrace(EventTrace originalTrace, DeploymentModel scenarioModel) {
         var rewrittenTrace = new OverheadRewriter(scenarioModel).rewriteTrace(originalTrace);
-        return this.analyzeTrace(rewrittenTrace, scenarioModel);        
+        return this.analyzeTrace(rewrittenTrace, scenarioModel);
     }
-    
+
     /**
      * This class represents the result of a {@link DurationChangeAnalysis}.
-     * 
-     * 
      */
-    public record Result(boolean significantChange, double pValue, double cohensD, double originalMean, double modifiedMean, 
-        double oldAverageNumberOfRemoteCalls, double newAverageNumberOfRemoteCalls) {
+    public record Result(double originalMean, double scenarioMean, double cohensD, EffectSize effectSize, double oldAverageNumberOfRemoteCalls,
+            double newAverageNumberOfRemoteCalls) {
     }
-    
+
+    /**
+     * Enumeration of effect sizes based on Cohen's d.
+     */
+    public enum EffectSize {
+        VERY_SMALL, SMALL, MEDIUM, LARGE;
+
+        /**
+         * Determines the effect size corresponding to the given value of Cohen's d. 
+         * 
+         * @param value The value to interpret, must be between 0.0 and 1.0 (inclusive).
+         * @return The corresponding effect size
+         */
+        public static EffectSize fromCohensD(double value) {
+            if (value < 0.0 || value > 1.0) {
+                throw new IllegalArgumentException("Value must be within the interval [0.0;1.0].");
+            }
+
+            if (value < 0.2) {
+                return VERY_SMALL;
+            } else if (value < 0.5) {
+                return SMALL;
+            } else if (value < 0.8) {
+                return MEDIUM;
+            } else {
+                return LARGE;
+            }
+        }
+
+    }
+
     /**
      * This exception is thrown when an error occurs during a {@link DurationChangeAnalysis}.
      */
     static class DurationChangeAnalysisException extends RuntimeException {
-        
+
         private static final long serialVersionUID = 6140429524214282426L;
 
         public DurationChangeAnalysisException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
     }
 
 }

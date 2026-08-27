@@ -1,5 +1,12 @@
 package gutta.prediction.analysis.overhead;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import gutta.prediction.analysis.overhead.DurationChangeAnalysis.EffectSize;
 import gutta.prediction.domain.Component;
 import gutta.prediction.domain.DeploymentModel;
 import gutta.prediction.domain.ServiceCandidate;
@@ -15,14 +22,6 @@ import gutta.prediction.event.ServiceCandidateInvocationEvent;
 import gutta.prediction.event.ServiceCandidateReturnEvent;
 import gutta.prediction.event.UseCaseEndEvent;
 import gutta.prediction.event.UseCaseStartEvent;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test cases for the class {@link DurationChangeAnalysis}.
@@ -59,11 +58,10 @@ class DurationChangeAnalysisTest {
          var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, deploymentModel, SIGNIFICANCE_LEVEL);
          
          // Check the analysis results
-         assertFalse(analysisResult.significantChange());
-         assertEquals(1.0, analysisResult.pValue());
          assertEquals(1050.0, analysisResult.originalMean());
-         assertEquals(1050.0, analysisResult.modifiedMean());
+         assertEquals(1050.0, analysisResult.scenarioMean());
          assertEquals(0.0, analysisResult.cohensD());
+         assertEquals(EffectSize.VERY_SMALL, analysisResult.effectSize());
     }
     
     /**
@@ -85,10 +83,10 @@ class DurationChangeAnalysisTest {
          var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel, SIGNIFICANCE_LEVEL);
 
          // Check the analysis results
-         assertFalse(analysisResult.significantChange());
          assertEquals(1050.0, analysisResult.originalMean());
-         assertEquals(1155.0, analysisResult.modifiedMean());
+         assertEquals(1155.0, analysisResult.scenarioMean());
          assertEquals(0.16883953130211166, analysisResult.cohensD());
+         assertEquals(EffectSize.VERY_SMALL, analysisResult.effectSize());
     }
     
     /**
@@ -110,10 +108,10 @@ class DurationChangeAnalysisTest {
          var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel, SIGNIFICANCE_LEVEL);
         
          // Check the analysis results
-         assertTrue(analysisResult.significantChange());
          assertEquals(1050.0, analysisResult.originalMean());
-         assertEquals(1575.0, analysisResult.modifiedMean());
+         assertEquals(1575.0, analysisResult.scenarioMean());
          assertEquals(0.6961432213383856, analysisResult.cohensD());
+         assertEquals(EffectSize.MEDIUM, analysisResult.effectSize());
     }
     
     private static DeploymentModel buildTestDeploymentModel() {
