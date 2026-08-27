@@ -22,10 +22,9 @@ public class DurationChangeAnalysis {
      * @param traces            The traces to analyze
      * @param deploymentModel   The deployment model of the given trace
      * @param scenarioModel     The scenario model based on the given deployment model
-     * @param significanceLevel The desired significance level for the significance test
      * @return The result of the analysis
      */
-    public Result analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel, double significanceLevel) {
+    public Result analyzeTraces(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
         var numberOfTraces = traces.size();
 
         var originalDurations = new double[numberOfTraces];

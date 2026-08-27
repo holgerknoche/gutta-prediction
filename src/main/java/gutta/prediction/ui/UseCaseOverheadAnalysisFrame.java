@@ -8,10 +8,7 @@ import gutta.prediction.event.EventTrace;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.JToolBar;
 import javax.swing.table.TableModel;
 
 /**
@@ -19,13 +16,7 @@ import javax.swing.table.TableModel;
  */
 class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseOverheadAnalysisResultView> {
 
-    private static final double DEFAULT_SIGNIFICANCE_LEVEL = 0.05;
-
     private static final long serialVersionUID = -5771105484367717055L;
-
-    private final InitializeOnce<JLabel> significanceLevelLabel = new InitializeOnce<>(this::createSignificanceLevelLabel);
-
-    private final InitializeOnce<JTextField> significanceLevelField = new InitializeOnce<>(this::createSignificanceLevelTextField);
 
     public UseCaseOverheadAnalysisFrame(Map<String, Collection<EventTrace>> tracesPerUseCase, String originalDeploymentModelSpec,
             DeploymentModel originalDeploymentModel) {
@@ -39,25 +30,6 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
 
     private void initialize() {
         super.initialize("Overhead Change Analysis");
-    }
-
-    protected void initializeDefaults() {
-        super.initializeDefaults();
-        this.significanceLevelField.get().setText(String.valueOf(DEFAULT_SIGNIFICANCE_LEVEL));
-    }
-
-    private JLabel createSignificanceLevelLabel() {
-        return new JLabel("Significance level:");
-    }
-
-    private JTextField createSignificanceLevelTextField() {
-        return new JTextField();
-    }
-
-    @Override
-    protected void addSpecificItemsToToolBar(JToolBar toolBar) {
-        toolBar.add(this.significanceLevelLabel.get());
-        toolBar.add(this.significanceLevelField.get());
     }
 
     @Override
@@ -76,10 +48,7 @@ class UseCaseOverheadAnalysisFrame extends UseCaseAnalysisFrameTemplate<UseCaseO
     protected UseCaseOverheadAnalysisResultView analyzeScenario(String useCaseName, Collection<EventTrace> traces, DeploymentModel originalDeploymentModel,
             DeploymentModel modifiedDeploymentModel) {
 
-        var significanceLevelText = this.significanceLevelField.get().getText();
-        var significanceLevel = (significanceLevelText.isEmpty()) ? DEFAULT_SIGNIFICANCE_LEVEL : Double.parseDouble(significanceLevelText);
-
-        var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, originalDeploymentModel, modifiedDeploymentModel, significanceLevel);
+        var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, originalDeploymentModel, modifiedDeploymentModel);
         return new UseCaseOverheadAnalysisResultView(useCaseName, analysisResult);
     }
 

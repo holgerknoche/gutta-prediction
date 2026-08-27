@@ -22,7 +22,7 @@ public class DurationChangeAnalysisBenchmark extends AnalysisSpeedBenchmark {
 
     @Override
     protected void runAnalysis(Collection<EventTrace> traces, DeploymentModel deploymentModel, DeploymentModel scenarioModel) {
-        new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, scenarioModel, 0.05);
+        new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, scenarioModel);
     }
 
 }

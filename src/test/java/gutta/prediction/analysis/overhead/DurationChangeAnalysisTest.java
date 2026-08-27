@@ -39,9 +39,7 @@ class DurationChangeAnalysisTest {
     private static final Component COMPONENT_1 = new Component("component1");
     
     private static final Component COMPONENT_2 = new Component("component2");
-    
-    private static final double SIGNIFICANCE_LEVEL = 0.05;
-    
+        
     /**
      * Test case: Analysis of the trivial case that no modifications are made.
      */
@@ -55,7 +53,7 @@ class DurationChangeAnalysisTest {
              traces.add(trace);
          }
          
-         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, deploymentModel, SIGNIFICANCE_LEVEL);
+         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, deploymentModel);
          
          // Check the analysis results
          assertEquals(1050.0, analysisResult.originalMean());
@@ -80,7 +78,7 @@ class DurationChangeAnalysisTest {
                  .addSymmetricRemoteConnection(COMPONENT_1, COMPONENT_2, 5, TransactionPropagation.NONE)
                  .build();                 
          
-         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel, SIGNIFICANCE_LEVEL);
+         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel);
 
          // Check the analysis results
          assertEquals(1050.0, analysisResult.originalMean());
@@ -105,7 +103,7 @@ class DurationChangeAnalysisTest {
                  .addSymmetricRemoteConnection(COMPONENT_1, COMPONENT_2, 25, TransactionPropagation.NONE)
                  .build();                 
          
-         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel, SIGNIFICANCE_LEVEL);
+         var analysisResult = new DurationChangeAnalysis().analyzeTraces(traces, deploymentModel, modifiedDeploymentModel);
         
          // Check the analysis results
          assertEquals(1050.0, analysisResult.originalMean());
