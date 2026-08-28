@@ -108,11 +108,9 @@ public class DurationChangeAnalysis {
          * @return The corresponding effect size
          */
         public static EffectSize fromCohensD(double value) {
-            if (value < 0.0 || value > 1.0) {
-                throw new IllegalArgumentException("Value must be within the interval [0.0;1.0].");
-            }
-
-            if (value < 0.2) {
+            if (value < 0.0) {
+                throw new IllegalArgumentException("Value must not be negative.");
+            } else if (value < 0.2) {
                 return VERY_SMALL;
             } else if (value < 0.5) {
                 return SMALL;
